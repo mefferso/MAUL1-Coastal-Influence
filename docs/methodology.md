@@ -26,6 +26,14 @@ Event-onset results use the preceding 72 hours of exact one-hour changes, requir
 
 Wind products use trailing vector means of the hourly east/north components over 3, 6, 12 and 24 hours. Each window requires every hourly vector to have observations; direction is calculated from the mean components, and directional persistence is the resultant length of the hourly unit vectors, so compass wraparound is handled without averaging degrees.
 
+## Phase 2B independent event verification
+
+`site/data/verification.json` is a separate research artifact. MAUL1 target episodes are selected from MAUL1 native gage height alone with a fixed 72-hour antecedent baseline, at least 48 valid baseline changes, positive consecutive hourly changes, a minimum 0.25-ft rise, a minimum three-hour run, and a positive hourly rate. A six-hour falling/flat reset separates candidate responses. A missing hour breaks continuity; zero or near-zero robust MAD, unavailable baselines, uncertain short/magnitude-limited rises, and archive-start rises are emitted as explicit records rather than silently converted into detections.
+
+DENL1 discharge, NWCL1 residual, and MDLL1 stage episodes are detected independently. Only qualifying detected predictor episodes are matched one-to-one to MAUL1 signal episodes in predeclared 0–72-hour (DENL1) or 0–18-hour (NWCL1/MDLL1) windows. A predictor after target onset is retained as an unmatched post-target record and cannot receive a negative lead. Matches are `detected_not_validated`: they demonstrate timestamp alignment only, not a useful precursor, forecast skill, causal attribution, or a universal lag. Unmatched predictors, target nonresponses, uncertain onsets, gaps, and quiet/no-signal records remain in the artifact.
+
+The August 2016, Beta 2020, November 2024, April 2025, Laura 2020, and October 2024 windows are reported explicitly. Sally and Beta 2020 share a dependent-window group because their archive windows overlap; they are not independent samples. MAUL1 00065 gage height remains separate from direct 63160 NAVD88 elevation, no pre-2026 NAVD88 threshold exceedance is inferred, and MCHL1 is not combined with USACE 85420/85420LA.
+
 Historical windows overlap in time: `sally-2020` (September 12–21) overlaps `beta-2020` (September 18–28). Those named storms may be part of one hydrometeorological response episode and must not be counted as independent verification samples without an event-dependence review. Lake-rise examples with weak MAUL1 response remain in the archive as negative or ambiguous evidence.
 
 ## Next scientific gates

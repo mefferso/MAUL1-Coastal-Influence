@@ -27,6 +27,7 @@ python scripts/build.py                    # all configured historical and recen
 python scripts/build.py beta-2020          # one event
 python -m unittest discover -s tests -v
 python scripts/analyze.py
+python -m json.tool site/data/verification.json > /dev/null
 python -m http.server 8000 --directory site
 ```
 
@@ -41,4 +42,4 @@ Open `http://localhost:8000`. Historical backfill is manual in Actions; site val
 * No lag estimate is accepted as universal. A 2020 published peak time difference does not by itself establish advance detection. Historical MAUL1 00065 datum chronology remains unresolved; only direct 63160 NAVD88 values qualify for the 4.0-ft threshold. Phase 2A onset results are experimental research diagnostics, not validated forecasts.
 * The browser loads Plotly, Leaflet and OpenStreetMap tiles from public third-party CDNs; those resources and GitHub Pages must be reachable.
 
-See [methodology](docs/methodology.md) for the physical logic, Phase 2A onset diagnostics, and research gates. The event page separates experimental onset timestamps from legacy correlations and labels both as research-only. To publish, set repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow uses the GitHub Pages environment and the `site/` artifact.
+See [methodology](docs/methodology.md) for the physical logic, Phase 2A onset diagnostics, independent Phase 2B event verification, and research gates. The generated `site/data/verification.json` keeps target episodes, predictor episodes, one-to-one timing matches, unmatched signals, coverage, datum safeguards, sensitivity checks, and the six required case-study windows separate from the raw/hourly datasets. The event page separates experimental onset timestamps from legacy correlations and labels both as research-only. To publish, set repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow uses the GitHub Pages environment and the `site/` artifact.

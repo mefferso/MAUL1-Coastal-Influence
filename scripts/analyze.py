@@ -61,6 +61,136 @@ def coverage_summary(series,min_coverage=1):
   'missing_fraction':round(missing/expected,3) if expected else 1.0,
   'minimum_hourly_coverage':min_coverage}
 
+def _datum_status(station,variable,datum):
+ if station == 'MAUL1' and variable == 'stage' and datum == 'gage height':
+  return 'native_gage_height',False
+ if station == 'MAUL1' and variable == 'elevation' and datum == 'NAVD88':
+  return 'direct_navd88',True
+ if station == 'MAUL1':
+  return 'native_unverified',False
+ return 'source_native',False
+
+def _episode_record(status,station,variable,rows,onset=None,end=None,peak=None,
+                    baseline=None,baseline_status='available',signal_threshold=None,
+                    min_coverage=1,**extra):
+ datum=next((row.get('datum') for row in rows if row.get('datum') is not None),None)
+ datum_status,navd88_eligible=_datum_status(station,variable,datum)
+ valid=[row for row in rows if _usable(row,min_coverage)]
+ record={'onset_utc':onset.strftime('%Y-%m-%dT%H:%M:%SZ') if onset else None,
+  'onset_known':onset is not None,'peak_utc':peak.strftime('%Y-%m-%dT%H:%M:%SZ') if peak else None,
+  'duration_hours':None,'rise':None,'max_hourly_rise':None,'status':status,
+  'station':station,'variable':variable,'datum':datum,'datum_status':datum_status,
+  'navd88_threshold_eligible':navd88_eligible,'coverage':coverage_summary(rows,min_coverage),
+  'baseline_status':baseline_status,'baseline_hours':72,'minimum_baseline_points':48,
+  'sigma_threshold':signal_threshold,'signal_type':'positive_consecutive_hourly_rise'}
+ if onset and end:
+  record['duration_hours']=int((end-onset).total_seconds()/3600)+1
+ if onset and peak and valid:
+  before=[row for row in valid if _dt(row['time']) < onset]
+  start_value=before[-1]['value'] if before else None
+  peak_row=next((row for row in valid if _dt(row['time']) == peak),None)
+  if start_value is not None and peak_row is not None:
+   record['rise']=round(peak_row['value']-start_value,6)
+  changes=[]
+  by_time={_dt(row['time']):row for row in valid}
+  cursor=onset
+  while cursor <= end:
+   current=by_time.get(cursor); previous=by_time.get(cursor-timedelta(hours=1))
+   if current and previous: changes.append(current['value']-previous['value'])
+   cursor += timedelta(hours=1)
+  if changes: record['max_hourly_rise']=round(max(changes),6)
+ if baseline:
+  record.update(baseline_median=round(baseline[0],6),robust_sigma=round(baseline[1],6))
+ if signal_threshold is not None: record['positive_change_cutoff']=round(signal_threshold,6)
+ record.update(extra)
+ return record
+
+def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
+                    baseline_hours=72,min_baseline_points=48,sigma_threshold=2.0,
+                    min_coverage=1,reset_hours=6,sigma_floor=1e-6):
+ """Identify independent positive-rise episodes from one hourly series.
+
+ The antecedent baseline is fixed at the candidate onset and uses only exact,
+ consecutive hourly changes in the preceding ``baseline_hours``. Missing or
+ below-coverage hours break both baseline support and episode persistence.
+ """
+ ordered=sorted(series,key=lambda row:row['time'])
+ if not ordered:
+  return [_episode_record('unavailable_baseline',station,variable,ordered,
+   baseline_status='unavailable',signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+ by_time={_dt(row['time']):row for row in ordered}
+ changes={}
+ for stamp,row in by_time.items():
+  previous=by_time.get(stamp-timedelta(hours=1))
+  if previous and _usable(row,min_coverage) and _usable(previous,min_coverage):
+   changes[stamp]=row['value']-previous['value']
+ positive=[stamp for stamp,value in sorted(changes.items()) if value > 0]
+ if not positive:
+  return [_episode_record('unavailable_baseline',station,variable,ordered,
+   baseline_status='unavailable' if len(changes) < min_baseline_points else 'available',
+   signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+
+ episodes=[]; blocked_until=None; baseline_seen=False; uncertain_seen=False
+ for candidate in positive:
+  if blocked_until and candidate <= blocked_until: continue
+  baseline_start=candidate-timedelta(hours=baseline_hours)
+  baseline=[value for stamp,value in changes.items() if baseline_start <= stamp < candidate]
+  if len(baseline) < min_baseline_points:
+   # A rise already present at the archive boundary is useful evidence, but
+   # its onset cannot be dated without the missing antecedent record.
+   if candidate == positive[0]:
+    end=candidate
+    while end+timedelta(hours=1) in changes and changes[end+timedelta(hours=1)] > 0:
+     end += timedelta(hours=1)
+    run_length=int((end-candidate).total_seconds()/3600)+1
+    if run_length >= min_duration_hours:
+     peak=end
+     episodes.append(_episode_record('already_underway',station,variable,ordered,
+      end=end,peak=peak,baseline_status='unavailable',signal_threshold=sigma_threshold,
+      min_coverage=min_coverage,reason='archive begins during a sustained positive rise'))
+     blocked_until=end+timedelta(hours=reset_hours)
+    else:
+     # Short positive noise before the first usable baseline is not enough
+     # evidence that the archive began during an event; keep looking.
+     pass
+    continue
+   continue
+  baseline_seen=True
+  center=_median(baseline); scale=robust_sigma(baseline)
+  if scale <= sigma_floor:
+   uncertain_seen=True
+   continue
+  cutoff=max(0.0,center+sigma_threshold*scale)
+  if changes[candidate] <= cutoff: continue
+  end=candidate
+  while end+timedelta(hours=1) in changes and changes[end+timedelta(hours=1)] > 0:
+   end += timedelta(hours=1)
+  duration=int((end-candidate).total_seconds()/3600)+1
+  gap_after_run=(end+timedelta(hours=1) in by_time and end+timedelta(hours=1) not in changes)
+  peak=max((stamp for stamp in by_time if candidate <= stamp <= end),
+   key=lambda stamp: by_time[stamp]['value'])
+  record=_episode_record('gap' if gap_after_run else ('detected' if duration >= min_duration_hours else 'uncertain'),
+   station,variable,ordered,onset=candidate,end=end,peak=peak,
+   baseline=(center,scale),baseline_status='available',signal_threshold=cutoff,
+   min_coverage=min_coverage,minimum_rise=min_rise)
+  if gap_after_run:
+   record['reason']='missing or below-coverage hour broke positive persistence'
+  elif record['rise'] is None or record['rise'] < min_rise or (record['max_hourly_rise'] or 0) <= 0:
+   record['status']='uncertain' if duration >= min_duration_hours else 'no_signal'
+   record['reason']='did not meet fixed magnitude/duration/rate safeguards'
+  episodes.append(record)
+  blocked_until=end+timedelta(hours=reset_hours)
+ if episodes:return episodes
+ if uncertain_seen:
+  return [_episode_record('uncertain',station,variable,ordered,baseline_status='available',
+   signal_threshold=sigma_threshold,min_coverage=min_coverage,
+   reason='robust baseline scale was zero or near zero')]
+ if baseline_seen:
+  return [_episode_record('no_signal',station,variable,ordered,baseline_status='available',
+   signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+ return [_episode_record('unavailable_baseline',station,variable,ordered,
+  baseline_status='unavailable',signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+
 def _result(status,threshold,baseline_hours,min_baseline_points,persistence,**extra):
  result=dict(onset_time=None,threshold_sigma=threshold,baseline_hours=baseline_hours,
   min_baseline_points=min_baseline_points,persistence=persistence,status=status)
@@ -196,6 +326,178 @@ def peak(rows,station,variable):
  best=max(series,key=lambda r:r['value'])
  return dict(value=best['value'],time=best['time'],unit=best['unit'],datum=best['datum'])
 
+def event_independence_group(event_id):
+ if event_id in {'sally-2020','beta-2020'}: return 'sally-beta-2020'
+ return None
+
+def match_episodes(targets,predictors,max_lead_hours,max_lag_hours=0):
+ """Match each predictor episode to at most one target episode.
+
+ ``lead_hours`` is target onset minus predictor onset. Only non-negative
+ leads inside the predeclared window are matches; post-target predictors are
+ retained as explicit non-leads.
+ """
+ ordered_targets=sorted(targets,key=lambda item:item.get('onset_utc') or '9999')
+ ordered_predictors=sorted(predictors,key=lambda item:item.get('onset_utc') or '9999')
+ used=set(); matches=[]; unmatched_targets=[]
+ for target in ordered_targets:
+  target_time=target.get('onset_utc')
+  target_id=target.get('episode_id')
+  if not target_time:
+   unmatched_targets.append({'target_episode_id':target_id,'status':'target_onset_unknown'})
+   continue
+  target_dt=_dt(target_time)
+  candidates=[]
+  for index,predictor in enumerate(ordered_predictors):
+   if index in used or not predictor.get('onset_utc'): continue
+   predictor_dt=_dt(predictor['onset_utc'])
+   lead=(target_dt-predictor_dt).total_seconds()/3600
+   if -max_lag_hours <= lead <= max_lead_hours:
+    candidates.append((abs(lead),index,lead,predictor))
+  if not candidates:
+   unmatched_targets.append({'target_episode_id':target_id,'status':'no_precursor_in_window'})
+   continue
+  _,index,lead,predictor=min(candidates,key=lambda item:(item[0],item[1]))
+  used.add(index)
+  matches.append({'target_episode_id':target_id,'predictor_episode_id':predictor.get('episode_id'),
+   'predictor_station':predictor.get('station'),'lead_hours':round(lead,3),
+   'status':'detected_not_validated','window_hours':max_lead_hours,
+   'note':'Detected timing association only; not verified precursor skill or causal attribution.'})
+ unmatched_predictors=[]
+ target_times=[_dt(item['onset_utc']) for item in targets if item.get('onset_utc')]
+ for index,predictor in enumerate(ordered_predictors):
+  if index in used: continue
+  status='unavailable_onset'
+  if predictor.get('onset_utc') and target_times:
+   predictor_dt=_dt(predictor['onset_utc'])
+   if any(predictor_dt > target_dt for target_dt in target_times): status='post_target'
+   else: status='no_target_in_window'
+  unmatched_predictors.append({'predictor_episode_id':predictor.get('episode_id'),'station':predictor.get('station'),
+   'status':status})
+ return {'matches':matches,'unmatched_targets':unmatched_targets,'unmatched_predictors':unmatched_predictors,
+  'window_hours':max_lead_hours,'post_target_is_not_a_lead':True}
+
+PREDICTOR_CONFIG={
+ ('DENL1','discharge'):{'pathway':'river','max_lead_hours':72,'min_rise':50.0},
+ ('NWCL1','residual'):{'pathway':'coastal','max_lead_hours':18,'min_rise':0.05},
+ ('MDLL1','stage'):{'pathway':'coastal','max_lead_hours':18,'min_rise':0.05},
+}
+
+def _with_episode_ids(episodes,event_id,prefix):
+ result=[]
+ for number,episode in enumerate(episodes,1):
+  item=dict(episode); item['episode_id']=f'{event_id}-{prefix}-{number:02d}'
+  result.append(item)
+ return result
+
+def _wind_context(hourly,target_episodes):
+ records=[]
+ for target in target_episodes:
+  if not target.get('onset_utc'): continue
+  onset=_dt(target['onset_utc'])
+  candidates=[row for row in hourly if row.get('station')=='NWCL1' and row.get('variable')=='wind_vector_trailing'
+   and row.get('window_hours') in {3,6,12,24} and abs((_dt(row['time'])-onset).total_seconds()) <= 3600]
+  if candidates:
+   records.append({'target_episode_id':target['episode_id'],'samples':sorted(candidates,key=lambda row:row['window_hours'])[:4]})
+ return records
+
+def _series_for(hourly,station,variable):
+ return [row for row in hourly if row.get('station')==station and row.get('variable')==variable]
+
+def event_verification(data,hourly):
+ event_id=data['id']
+ target_series=_series_for(hourly,'MAUL1','stage')
+ sensitivity_checks={}
+ for sigma in (1.5,2.0,2.5):
+  sensitivity=detect_episodes(target_series,'MAUL1','stage',min_rise=0.25,sigma_threshold=sigma)
+  sensitivity_checks[str(sigma)]={'target_episode_count':len(sensitivity),
+   'detected_onsets':[episode['onset_utc'] for episode in sensitivity if episode['status']=='detected'],
+   'statuses':[episode['status'] for episode in sensitivity]}
+ target_episodes=_with_episode_ids(
+  detect_episodes(target_series,'MAUL1','stage',min_rise=0.25,sigma_threshold=2.0),event_id,'maul1')
+ predictor_episodes={}
+ for (station,variable),config in PREDICTOR_CONFIG.items():
+  series=_series_for(hourly,station,variable)
+  episodes=detect_episodes(series,station,variable,min_rise=config['min_rise'],sigma_threshold=2.0)
+  predictor_episodes[station]=_with_episode_ids(episodes,event_id,station.lower())
+ matches=[]; unmatched_targets=[]; unmatched_predictors=[]
+ match_by_pathway={}
+ for station,episodes in predictor_episodes.items():
+  variable=next(variable for (candidate,variable) in PREDICTOR_CONFIG if candidate==station)
+  config=PREDICTOR_CONFIG[(station,variable)]
+  match_targets=[target for target in target_episodes if target['status'] in {'detected','already_underway'}]
+  match_predictors=[episode for episode in episodes if episode['status']=='detected']
+  matching=match_episodes(match_targets,match_predictors,config['max_lead_hours'])
+  for item in matching['matches']: item['pathway']=config['pathway']
+  for item in matching['unmatched_targets']: item.update(pathway=config['pathway'])
+  for item in matching['unmatched_predictors']: item.update(pathway=config['pathway'])
+  matches.extend(matching['matches']); unmatched_targets.extend(matching['unmatched_targets']); unmatched_predictors.extend(matching['unmatched_predictors'])
+  match_by_pathway[station]=matching
+ coverage={}
+ for (station,variable) in [('MAUL1','stage'),('DENL1','discharge'),('NWCL1','residual'),('MDLL1','stage'),('MCHL1','stage')]:
+  series=_series_for(hourly,station,variable)
+  coverage[f'{station}:{variable}']=coverage_summary(series)
+ target_match_ids={item['target_episode_id'] for item in matches}
+ river_ids={item['target_episode_id'] for item in matches if item['pathway']=='river'}
+ coastal_ids={item['target_episode_id'] for item in matches if item['pathway']=='coastal'}
+ group=event_independence_group(event_id)
+ return {'event_id':event_id,'name':data['name'],'independence_group':group,
+  'independence_note':('Potentially dependent with the overlapping Sally/Beta 2020 window; do not count these windows as independent samples.' if group else 'Event-window episode records are descriptive; no independence claim is made across hydrometeorological events.'),
+  'target_station':'MAUL1','target_episodes':target_episodes,'sensitivity_checks':sensitivity_checks,
+  'predictor_episodes':predictor_episodes,'matches':matches,
+  'unmatched_targets':unmatched_targets,'unmatched_predictors':unmatched_predictors,
+  'wind_context':_wind_context(hourly,target_episodes),'coverage':coverage,
+  'datum_notes':['MAUL1 stage is native 00065 gage height and is not converted to NAVD88.',
+   'MAUL1 63160 direct NAVD88 elevation remains separate and is not used to infer historical threshold exceedance.',
+   'MCHL1 and USACE station 85420/85420LA sources remain independent and are not combined.'],
+  'summary':{'target_signal_episode_count':len([x for x in target_episodes if x['status'] in {'detected','already_underway'}]),
+   'target_episodes_with_river_precursor':len(river_ids),'target_episodes_with_coastal_precursor':len(coastal_ids),
+   'target_episodes_with_any_precursor':len(target_match_ids),'target_episodes_without_matched_precursor':len([x for x in target_episodes if x['status'] in {'detected','already_underway'} and x['episode_id'] not in target_match_ids]),
+   'matches':len(matches),'unmatched_predictors':len(unmatched_predictors)}}
+
+def build_verification(events):
+ event_records=[]
+ for path in events:
+  with gzip.open(path,'rt') as stream: data=json.load(stream)
+  hourly_path=ROOT/'site'/'data'/f"{data['id']}-hourly.json.gz"
+  if hourly_path.exists():
+   with gzip.open(hourly_path,'rt') as stream: hourly=json.load(stream)['records']
+  else:
+   hourly=hourly_products(data['rows'],data['start']+'T00:00:00Z',data['end']+'T23:00:00Z')
+  event_records.append(event_verification(data,hourly))
+ all_targets=[target for event in event_records for target in event['target_episodes']]
+ all_matches=[match for event in event_records for match in event['matches']]
+ all_unmatched_predictors=[item for event in event_records for item in event['unmatched_predictors']]
+ leads=sorted(item['lead_hours'] for item in all_matches if item['lead_hours'] >= 0)
+ cases=[]
+ case_ids=['flood-2016','beta-2020','front-2024-11','front-2025-04','laura-2020','front-2024-10']
+ for case_id in case_ids:
+  event=next((item for item in event_records if item['event_id']==case_id),None)
+  if not event: continue
+  target_coverage=event['coverage']['MAUL1:stage']
+  cases.append({'event_id':case_id,'name':event['name'],'independence_group':event['independence_group'],
+   'target_episode_count':len(event['target_episodes']),'target_signal_episode_count':event['summary']['target_signal_episode_count'],
+   'match_count':len(event['matches']),
+   'coverage_quality':'available' if target_coverage['valid_hours'] else 'unavailable',
+   'note':('Overlapping Sally/Beta window; results are descriptive and potentially dependent.' if case_id=='beta-2020' else
+    'Independent event-window review; timing associations are not verified prediction skill.')})
+ return {'schema_version':'2B.1','method':'Independent event episodes from native hourly observations; target membership is selected from MAUL1 alone.',
+  'baseline':{'hours':72,'minimum_valid_change_points':48,'sigma_sensitivities':[1.5,2.0,2.5],
+   'selected_sigma':2.0,'positive_changes_only':True,'minimum_hourly_coverage':1},
+  'matching_windows_hours':{'DENL1':{'pathway':'river','lead_min':0,'lead_max':72},'NWCL1':{'pathway':'coastal','lead_min':0,'lead_max':18},'MDLL1':{'pathway':'coastal','lead_min':0,'lead_max':18}},
+  'events':event_records,'case_studies':cases,
+  'summary':{'event_count':len(event_records),'target_episode_records':len(all_targets),
+   'target_signal_episode_records':len([x for x in all_targets if x['status'] in {'detected','already_underway'}]),
+   'matches_detected_not_validated':len(all_matches),'target_episodes_with_river_precursor':len({x['target_episode_id'] for x in all_matches if x['pathway']=='river'}),
+   'target_episodes_with_coastal_precursor':len({x['target_episode_id'] for x in all_matches if x['pathway']=='coastal'}),
+   'unmatched_predictor_records':len(all_unmatched_predictors),'positive_lead_hours':leads,
+   'lead_hours_summary':({'count':len(leads),'minimum':min(leads),'maximum':max(leads),'median':_median(leads)} if leads else {'count':0}),
+   'note':'Counts are descriptive event-window records. Sally and Beta 2020 are potentially dependent; hourly observations are not independent samples.'},
+  'limitations':['Detected first signals are not proof of useful precursor skill.',
+   'No classification, forecast probability, causal attribution, or universal lag is inferred.',
+   'No pre-2026 NAVD88 threshold exceedance is inferred from MAUL1 00065 gage height.',
+   'Gaps, unavailable baselines, uncertain onsets, and post-target predictors remain explicit in event records.']}
+
 def analyze(path):
  data=json.loads(gzip.decompress(path.read_bytes()));rows=data['rows'];legacy_target=hourly_change(rows,'MAUL1','stage')
  inputs=[('DENL1','discharge',range(0,73)),('NWCL1','residual',range(-24,25)),('MDLL1','stage',range(-24,25)),('MCHL1','stage',range(-24,25))]
@@ -215,9 +517,11 @@ def canonical_event_paths():
  return sorted(path for path in (ROOT/'site/data').glob('*.json.gz') if path.name.removesuffix('.json.gz') in EVENTS)
 
 def main():
- output=[]
- for file in canonical_event_paths():
+ paths=canonical_event_paths(); output=[]
+ for file in paths:
   output.append(analyze(file))
  (ROOT/'site/data/analysis.json').write_text(json.dumps(output,indent=2))
+ verification=build_verification(paths)
+ (ROOT/'site/data/verification.json').write_text(json.dumps(verification,indent=2))
  print(json.dumps(output,indent=2))
 if __name__=='__main__':main()
