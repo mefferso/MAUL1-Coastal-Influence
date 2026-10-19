@@ -25,6 +25,7 @@ EVENTS = {
  'front-2024-11': ('November 2024 coastal-advisory window', '2024-11-14', '2024-11-24'),
  'front-2025-04': ('April 2025 southeast-wind window', '2025-04-01', '2025-04-11'),
  'front-2024-10': ('October 2024 north-wind control window', '2024-10-11', '2024-10-21'),
+ 'recent-2026': ('October 2026 direct-NAVD88 observation window', '2026-10-07', '2026-10-17'),
 }
 USGS = {'DENL1': ('07378500', ['00060', '00065']), 'MAUL1': ('07380215', ['00065', '63160']), 'MDLL1': ('301200090072400', ['00065'])}
 PARAMS = {'00060': ('discharge', 'cfs', 'native'), '00065': ('stage', 'ft', 'gage height'), '63160': ('elevation', 'ft', 'NAVD88')}
