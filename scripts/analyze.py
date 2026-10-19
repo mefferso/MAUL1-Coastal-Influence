@@ -6,6 +6,7 @@ import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
+from build import EVENTS
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 
 def _dt(value):
@@ -28,8 +29,8 @@ def aggregate_hourly(rows,station,variable,start,end):
  result=[]; cursor=start_dt.replace(minute=0,second=0,microsecond=0)
  while cursor < end_dt:
   records=buckets.get(cursor,[]); values=[float(r['value']) for r in records]
-  # Median is robust for levels; discharge uses a within-hour mean.
-  value=(sum(values)/len(values) if variable == 'discharge' and values else _median(values))
+  # Median is robust for levels; discharge and wind components use means.
+  value=(sum(values)/len(values) if variable in {'discharge','wind_u','wind_v'} and values else _median(values))
   item={'time':cursor.strftime('%Y-%m-%dT%H:%M:%SZ'),'value':round(value,6) if value is not None else None,
    'coverage':len(values),'missing':not bool(values),'station':station,'variable':variable}
   if records:
@@ -50,27 +51,82 @@ def robust_sigma(values):
  center=_median(values); deviations=[abs(v-center) for v in values]
  return 1.4826*(_median(deviations) or 0.0)
 
-def detect_onset(series,threshold=2.0,baseline_points=6,persistence=2):
- """Detect a persistent trailing deviation using data available at each row."""
- valid=[r for r in series if r.get('coverage',1) and r.get('value') is not None]
- for i in range(baseline_points + persistence - 1,len(valid)):
-  window=valid[i-baseline_points:i]
-  baseline=[r['value'] for r in window]
-  scale=robust_sigma(baseline)
-  if scale == 0: scale=1e-9
-  center=_median(baseline)
-  signal=all(abs(r['value']-center) >= threshold*scale for r in valid[i-persistence+1:i+1])
-  if signal:
-   return {'onset_time':valid[i]['time'],'threshold_sigma':threshold,'baseline_points':baseline_points,
-    'persistence':persistence,'baseline_median':center,'robust_sigma':scale,'status':'reliable'}
- return {'onset_time':None,'threshold_sigma':threshold,'baseline_points':baseline_points,'persistence':persistence,'status':'unavailable'}
+def _usable(row,min_coverage):
+ return row.get('value') is not None and row.get('coverage',1) >= min_coverage
+
+def coverage_summary(series,min_coverage=1):
+ ordered=sorted(series,key=lambda r:r['time']); valid=[r for r in ordered if _usable(r,min_coverage)]
+ expected=len(ordered); missing=expected-len(valid)
+ return {'hours':expected,'valid_hours':len(valid),'missing_hours':missing,
+  'missing_fraction':round(missing/expected,3) if expected else 1.0,
+  'minimum_hourly_coverage':min_coverage}
+
+def _result(status,threshold,baseline_hours,min_baseline_points,persistence,**extra):
+ result=dict(onset_time=None,threshold_sigma=threshold,baseline_hours=baseline_hours,
+  min_baseline_points=min_baseline_points,persistence=persistence,status=status)
+ result.update(extra); return result
+
+def detect_onset(series,threshold=2.0,baseline_hours=72,min_baseline_points=48,persistence=3,min_coverage=1,sigma_floor=1e-6):
+ """Detect a sustained positive hourly rise using only the trailing record.
+
+ The baseline is the preceding 72 hours of exact one-hour changes. At least
+ 48 usable baseline changes are required. Missing hours break persistence;
+ near-zero MAD is uncertain rather than silently treated as zero noise.
+ """
+ ordered=sorted(series,key=lambda r:r['time']); by_time={_dt(r['time']):r for r in ordered}
+ if not ordered:return _result('unavailable_baseline',threshold,baseline_hours,min_baseline_points,persistence)
+ changes={}; saw_gap=False; saw_uncertain=False; baseline_available=False
+ for stamp,row in by_time.items():
+  previous=by_time.get(stamp-timedelta(hours=1))
+  if previous and _usable(row,min_coverage) and _usable(previous,min_coverage):
+   changes[stamp]=row['value']-previous['value']
+ for candidate in sorted(changes):
+  baseline_start=candidate-timedelta(hours=baseline_hours)
+  baseline=[value for stamp,value in changes.items() if baseline_start <= stamp < candidate]
+  if len(baseline) < min_baseline_points: continue
+  baseline_available=True
+  persistence_stamps=[candidate-timedelta(hours=offset) for offset in range(persistence-1,-1,-1)]
+  if any(stamp not in changes for stamp in persistence_stamps):
+   saw_gap=True; continue
+  center=_median(baseline); scale=robust_sigma(baseline)
+  if scale <= sigma_floor:
+   saw_uncertain=True; continue
+  cutoff=max(0.0,center+threshold*scale)
+  if all(changes[stamp] > cutoff and changes[stamp] > 0 for stamp in persistence_stamps):
+   return _result('detected',threshold,baseline_hours,min_baseline_points,persistence,
+    onset_time=candidate.strftime('%Y-%m-%dT%H:%M:%SZ'),baseline_median=center,robust_sigma=scale,
+    positive_change_cutoff=cutoff,signal_type='positive_consecutive_hourly_change')
+ if not baseline_available:
+  first=min(changes) if changes else None
+  if first and all(first+timedelta(hours=i) in changes and changes[first+timedelta(hours=i)] > 0 for i in range(persistence)):
+   return _result('already_underway',threshold,baseline_hours,min_baseline_points,persistence,
+    evidence_start=first.strftime('%Y-%m-%dT%H:%M:%SZ'))
+  return _result('unavailable_baseline',threshold,baseline_hours,min_baseline_points,persistence)
+ if saw_gap:return _result('gap',threshold,baseline_hours,min_baseline_points,persistence)
+ if saw_uncertain:return _result('uncertain',threshold,baseline_hours,min_baseline_points,persistence)
+ return _result('no_signal',threshold,baseline_hours,min_baseline_points,persistence)
+
+def compare_onsets(predictor,target,threshold=2.0,**kwargs):
+ found=detect_onset(predictor,threshold=threshold,**kwargs); maul=detect_onset(target,threshold=threshold,**kwargs)
+ lead=None
+ if found['onset_time'] and maul['onset_time']:
+  lead=(_dt(maul['onset_time'])-_dt(found['onset_time'])).total_seconds()/3600
+  status='detected_not_validated'
+ elif found['status'] in {'uncertain','gap'} or maul['status'] in {'uncertain','gap'}:
+  status='uncertain'
+ else: status='unavailable'
+ return dict(threshold_sigma=threshold,predictor_onset_utc=found['onset_time'],maul1_onset_utc=maul['onset_time'],lead_hours=lead,
+  predictor_status=found['status'],maul1_status=maul['status'],status=status,
+  note='First-signal timing only; no validated precursor or causal attribution.',
+  predictor_coverage=coverage_summary(predictor,kwargs.get('min_coverage',1)),
+  maul1_coverage=coverage_summary(target,kwargs.get('min_coverage',1)))
 
 def vector_hourly(rows,start,end):
  u=aggregate_hourly(rows,'NWCL1','wind_u',start,end); v=aggregate_hourly(rows,'NWCL1','wind_v',start,end)
  result=[]
  for a,b in zip(u,v):
   coverage=min(a['coverage'],b['coverage'])
-  item={'time':a['time'],'coverage':coverage,'missing':coverage==0,'station':'NWCL1','variable':'wind_vector'}
+  item={'time':a['time'],'coverage':coverage,'missing':coverage==0,'station':'NWCL1','variable':'wind_vector_hourly'}
   if coverage:
    speed=math.hypot(a['value'],b['value']); item.update(vector_u=a['value'],vector_v=b['value'],vector_speed=round(speed,6),vector_direction=round((math.degrees(math.atan2(-a['value'],-b['value']))+360)%360,3))
   result.append(item)
@@ -78,11 +134,24 @@ def vector_hourly(rows,start,end):
  for window in (3,6,12,24):
   for item in list(result):
    if not item.get('coverage'): continue
-   old=base.get((_dt(item['time'])-timedelta(hours=window)).strftime('%Y-%m-%dT%H:%M:%SZ'))
-   if old:
-    result.append(dict(item,variable='wind_vector_trailing',window_hours=window,
-     vector_u_change=round(item['vector_u']-old['vector_u'],6),vector_v_change=round(item['vector_v']-old['vector_v'],6),
-     vector_speed_change=round(item['vector_speed']-old['vector_speed'],6)))
+   window_items=[]
+   for offset in range(window):
+    stamp=(_dt(item['time'])-timedelta(hours=offset)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    if stamp not in base: window_items=[]; break
+    window_items.append(base[stamp])
+   if len(window_items) != window: continue
+   mean_u=sum(x['vector_u'] for x in window_items)/window
+   mean_v=sum(x['vector_v'] for x in window_items)/window
+   speeds=[math.hypot(x['vector_u'],x['vector_v']) for x in window_items]
+   unit_u=[x['vector_u']/speed for x,speed in zip(window_items,speeds) if speed > 1e-9]
+   unit_v=[x['vector_v']/speed for x,speed in zip(window_items,speeds) if speed > 1e-9]
+   resultant=math.hypot(sum(unit_u)/len(unit_u),sum(unit_v)/len(unit_v)) if unit_u else None
+   result.append(dict(time=item['time'],station='NWCL1',variable='wind_vector_trailing',window_hours=window,
+    coverage=sum(x['coverage'] for x in window_items),window_coverage_hours=window,
+    vector_u_mean=round(mean_u,6),vector_v_mean=round(mean_v,6),vector_speed=round(math.hypot(mean_u,mean_v),6),
+    vector_direction=round((math.degrees(math.atan2(-mean_u,-mean_v))+360)%360,3) if mean_u or mean_v else None,
+    directional_persistence=round(resultant,6) if resultant is not None else None,
+    missing=False,source='derived trailing vector mean; direction from vector components'))
  return result
 
 def hourly_products(rows,start,end):
@@ -133,21 +202,21 @@ def analyze(path):
  hourly=hourly_products(rows,data['start']+'T00:00:00Z',data['end']+'T23:00:00Z')
  hourly_path=ROOT/'site'/'data'/f"{data['id']}-hourly.json.gz"
  hourly_path.write_bytes(gzip.compress(json.dumps({'event':data['id'],'records':hourly},separators=(',',':')).encode(),mtime=0))
- target_hourly=[r for r in hourly if r['station']=='MAUL1' and r['variable']=='stage' and r.get('value') is not None]
+ target_hourly=[r for r in hourly if r['station']=='MAUL1' and r['variable']=='stage']
  onsets={}
  for station,variable in [('DENL1','discharge'),('NWCL1','residual'),('MDLL1','stage')]:
   predictor=[r for r in hourly if r['station']==station and r['variable']==variable]
   onsets[station]=[]
   for threshold in (1.5,2.0,2.5):
-   found=detect_onset(predictor,threshold=threshold)
-   target_onset=detect_onset(target_hourly,threshold=threshold)
-   lead=(_dt(target_onset['onset_time'])-_dt(found['onset_time'])).total_seconds()/3600 if found['onset_time'] and target_onset['onset_time'] else None
-   onsets[station].append(dict(predictor_onset_utc=found['onset_time'],maul1_onset_utc=target_onset['onset_time'],lead_hours=lead,threshold_sigma=threshold,predictor_coverage=sum(r.get('coverage',0) for r in predictor),status='reliable' if lead is not None else 'unavailable'))
+   onsets[station].append(compare_onsets(predictor,target_hourly,threshold=threshold,baseline_hours=72,min_baseline_points=48,persistence=3,min_coverage=1))
  return dict(event=data['id'],metrics={'den_discharge_peak':peak(rows,'DENL1','discharge'),'lake_residual_peak':peak(rows,'NWCL1','residual'),'maul_stage_peak':peak(rows,'MAUL1','stage'),'maul_direct_navd88_peak':peak(rows,'MAUL1','elevation'),'maul_24h_rise_peak':peak(rows,'MAUL1','stage_change_24h')},target='MAUL1 first difference of native gage height',hourly_file=hourly_path.name,hourly_records=len(hourly),onsets=onsets,legacy_lag_diagnostic={'description':'Pearson r of hourly first differences, exploratory only; positive lag means source change precedes MAUL1 change','results':{station:lag_correlation(hourly_change(rows,station,var),legacy_target,lags) for station,var,lags in inputs}})
+
+def canonical_event_paths():
+ return sorted(path for path in (ROOT/'site/data').glob('*.json.gz') if path.name.removesuffix('.json.gz') in EVENTS)
 
 def main():
  output=[]
- for file in sorted((ROOT/'site/data').glob('*.json.gz')):
+ for file in canonical_event_paths():
   output.append(analyze(file))
  (ROOT/'site/data/analysis.json').write_text(json.dumps(output,indent=2))
  print(json.dumps(output,indent=2))

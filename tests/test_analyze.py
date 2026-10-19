@@ -1,3 +1,8 @@
+import contextlib
+import hashlib
+import io
+import json
+import pathlib
 import sys,unittest
 sys.path.insert(0,'scripts')
 import analyze
@@ -23,11 +28,57 @@ class TestHourlyAndOnset(unittest.TestCase):
   self.assertEqual([r['value'] for r in result],[2,None,5])
   self.assertEqual([r['coverage'] for r in result],[2,0,1])
 
- def test_onset_uses_trailing_baseline_and_no_future_rows(self):
-  rows=[{'time':f'2020-01-01T{h:02d}:00:00Z','value':(0 if h<6 else 10),'coverage':1} for h in range(8)]
-  onset=analyze.detect_onset(rows,threshold=2.0,baseline_points=3,persistence=2)
-  self.assertEqual(onset['onset_time'],'2020-01-01T07:00:00Z')
-  self.assertEqual(analyze.detect_onset(rows[:7],threshold=2.0,baseline_points=3,persistence=2)['onset_time'],None)
+ def test_onset_requires_long_positive_baseline_and_no_future_rows(self):
+  from datetime import datetime,timedelta,timezone
+  rows=[]; start=datetime(2020,1,1,tzinfo=timezone.utc)
+  value=0.0
+  for h in range(80):
+   if h < 72: value=0.1*(h%2)
+   else: value += 1.0
+   rows.append({'time':(start+timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ'),'value':value,'coverage':1})
+  onset=analyze.detect_onset(rows,threshold=2.0,baseline_hours=72,min_baseline_points=48,persistence=3)
+  self.assertEqual(onset['onset_time'],'2020-01-04T02:00:00Z')
+  self.assertEqual(onset['status'],'detected')
+  self.assertIsNone(analyze.detect_onset(rows[:74],threshold=2.0,baseline_hours=72,min_baseline_points=48,persistence=3)['onset_time'])
+
+ def test_falling_series_is_not_a_rising_onset(self):
+  from datetime import datetime,timedelta,timezone
+  start=datetime(2020,1,1,tzinfo=timezone.utc)
+  rows=[{'time':(start+timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ'),'value':100-h*0.5,'coverage':1} for h in range(80)]
+  result=analyze.detect_onset(rows,baseline_hours=72,min_baseline_points=48,persistence=3)
+  self.assertIsNone(result['onset_time'])
+
+ def test_missing_hour_breaks_persistence_and_is_reported(self):
+  from datetime import datetime,timedelta,timezone
+  start=datetime(2020,1,1,tzinfo=timezone.utc); rows=[]
+  for h in range(77):
+   rows.append({'time':(start+timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ'),'value':0.1*(h%2) if h<72 else h-71,'coverage':0 if h==74 else 1})
+  result=analyze.detect_onset(rows,threshold=1.5,baseline_hours=72,min_baseline_points=48,persistence=3)
+  self.assertIsNone(result['onset_time']); self.assertEqual(result['status'],'gap')
+
+ def test_near_zero_mad_is_uncertain_not_a_detection(self):
+  from datetime import datetime,timedelta,timezone
+  start=datetime(2020,1,1,tzinfo=timezone.utc)
+  rows=[{'time':(start+timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ'),'value':(0 if h<72 else h),'coverage':1} for h in range(80)]
+  result=analyze.detect_onset(rows,threshold=2.0,baseline_hours=72,min_baseline_points=48,persistence=3)
+  self.assertIsNone(result['onset_time']); self.assertEqual(result['status'],'uncertain')
+
+ def test_short_archive_with_rise_is_marked_already_underway(self):
+  from datetime import datetime,timedelta,timezone
+  start=datetime(2020,1,1,tzinfo=timezone.utc)
+  rows=[{'time':(start+timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ'),'value':h,'coverage':1} for h in range(8)]
+  result=analyze.detect_onset(rows,baseline_hours=72,min_baseline_points=48,persistence=3)
+  self.assertEqual(result['status'],'already_underway')
+  self.assertIsNone(result['onset_time'])
+
+ def test_lead_is_detected_timing_not_reliable_prediction(self):
+  from datetime import datetime,timedelta,timezone
+  start=datetime(2020,1,1,tzinfo=timezone.utc)
+  series=[{'time':(start+timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ'),'value':0.1*(h%2) if h<72 else h-71,'coverage':1} for h in range(80)]
+  result=analyze.compare_onsets(series,series,threshold=2.0,baseline_hours=72,min_baseline_points=48,persistence=3)
+  self.assertEqual(result['threshold_sigma'],2.0)
+  self.assertEqual(result['status'],'detected_not_validated')
+  self.assertNotEqual(result['status'],'reliable')
 
  def test_datum_change_blocks_trailing_signal(self):
   rows=[
@@ -47,5 +98,23 @@ class TestHourlyAndOnset(unittest.TestCase):
    ])
   result=analyze.vector_hourly(rows,'2020-01-01T00:00:00Z','2020-01-02T06:00:00Z')
   derived=[r for r in result if r.get('window_hours')==3]
-  self.assertEqual(derived[-1]['vector_u_change'],3)
+  self.assertEqual(derived[-1]['vector_u_mean'],28)
+  self.assertEqual(derived[-1]['directional_persistence'],1)
   self.assertEqual({r['window_hours'] for r in result if 'window_hours' in r},{3,6,12,24})
+
+class TestAnalysisPipeline(unittest.TestCase):
+ def test_only_canonical_event_archives_are_inputs(self):
+  paths=analyze.canonical_event_paths()
+  self.assertTrue(paths)
+  self.assertTrue(all('-hourly' not in path.name for path in paths))
+  self.assertTrue(all(path.name.endswith('.json.gz') for path in paths))
+
+ def test_repeated_analysis_with_hourly_outputs_is_idempotent(self):
+  output=pathlib.Path('site/data/analysis.json')
+  with contextlib.redirect_stdout(io.StringIO()): analyze.main()
+  first=hashlib.sha256(output.read_bytes()).hexdigest()
+  with contextlib.redirect_stdout(io.StringIO()): analyze.main()
+  second=hashlib.sha256(output.read_bytes()).hexdigest()
+  self.assertEqual(first,second)
+  payload=json.loads(output.read_text())
+  self.assertTrue(all('hourly_file' in item for item in payload))
