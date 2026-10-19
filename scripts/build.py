@@ -29,6 +29,12 @@ EVENTS = {
 }
 USGS = {'DENL1': ('07378500', ['00060', '00065']), 'MAUL1': ('07380215', ['00065', '63160']), 'MDLL1': ('301200090072400', ['00065'])}
 PARAMS = {'00060': ('discharge', 'cfs', 'native'), '00065': ('stage', 'ft', 'gage height'), '63160': ('elevation', 'ft', 'NAVD88')}
+RETRIEVAL_STATUSES = ('retrieved', 'queried_unavailable', 'not_queried', 'retrieval_error')
+MCHL1_SOURCES = [
+ {'id':'hads-mchl1','name':'NWS HADS MCHL1 / CE678A12','interface':'https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py','station':'MCHL1','datum':'HADS native gage height (unverified)'},
+ {'id':'usace-85420','name':'USACE Pass Manchac near Pontchatoula','interface':'https://rivergages.mvr.usace.army.mil/WaterControl/stationinfo2.cfm?sid=85420','station':'USACE-85420','datum':'USACE station datum (unresolved)'},
+ {'id':'usace-85420la','name':'USACE Pass Manchac','interface':'https://rivergages.mvr.usace.army.mil/WaterControl/stationinfo2.cfm?sid=85420LA','station':'USACE-85420LA','datum':'USACE station datum (unresolved)'},
+]
 
 def get_json(base, params):
  url = base + '?' + urllib.parse.urlencode(params)
@@ -100,6 +106,18 @@ def parse_hads(payload):
   rows.append(dict(time=iso(item['utc_valid']+'+00:00'),value=value,station='MCHL1',variable='stage',unit='ft',datum='HADS native gage height (unverified)',quality='unverified',source='Iowa Environmental Mesonet archive of NWS HADS SHEF'))
  return rows
 
+def parse_usace_row(item, source_id):
+ """Parse an explicitly named USACE record without treating it as MCHL1."""
+ try: value=float(item['value'])
+ except (KeyError, ValueError, TypeError): return []
+ return [dict(time=iso(item['time']), value=value, station='USACE-'+source_id,
+  variable='stage', unit='ft', datum='USACE station datum (unresolved)',
+  original_datum='USACE station datum (unresolved)', quality='unverified',
+  source=f'USACE RiverGages {source_id}')]
+
+def navd88_threshold_eligible(row):
+ return row.get('station') == 'MAUL1' and row.get('variable') == 'elevation' and row.get('datum') == 'NAVD88'
+
 def get_hads(start,end):
  url='https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py?'+urllib.parse.urlencode(dict(stations='MCHL1',sts=start+'T00:00Z',ets=end+'T23:59Z',what='txt'))
  for attempt in range(3):
@@ -108,6 +126,17 @@ def get_hads(start,end):
   except OSError:
    if attempt==2: raise
    time.sleep(2**attempt)
+
+def mchl1_provenance(start, end, hads_status, hads_error=None):
+ """Return per-source status; USACE sources remain separate and unspliced."""
+ statuses=[]
+ statuses.append(dict(source='hads-mchl1', period_start=start, period_end=end, status=hads_status,
+  error=hads_error, interface=MCHL1_SOURCES[0]['interface']))
+ for source in MCHL1_SOURCES[1:]:
+  statuses.append(dict(source=source['id'], period_start=start, period_end=end,
+   status='not_queried', error='Station metadata identified; historical observations require datum/instrument review before ingestion.',
+   interface=source['interface']))
+ return statuses
 
 def dedupe(rows):
  selected = {}
@@ -145,7 +174,7 @@ def coverage(rows):
 
 def build(event_id):
  name, start, end = EVENTS[event_id]
- rows=[]; issues=[]; sources=[]
+ rows=[]; issues=[]; sources=[]; provenance=[]
  for station,(site, codes) in USGS.items():
   try:
    data,url=get_json('https://waterservices.usgs.gov/nwis/iv/', dict(format='json', sites=site, parameterCd=','.join(codes), startDT=start, endDT=end, siteStatus='all'))
@@ -159,12 +188,14 @@ def build(event_id):
    data,url=get_json('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter',params)
    rows+=parse_wind(data) if product=='wind' else parse_coops(data,variable,datum);sources.append(url)
   except (OSError, ValueError, KeyError) as e: issues.append(f'NWCL1 {product}: {e}')
- if start >= '2024-01-01':
-  try:
-   data,url=get_hads(start,end);rows+=parse_hads(data);sources.append(url)
-  except (OSError, ValueError) as e: issues.append(f'MCHL1 HADS: {e}')
+ try:
+  data,url=get_hads(start,end); hads_rows=parse_hads(data); rows+=hads_rows; sources.append(url)
+  provenance=mchl1_provenance(start,end,'retrieved' if hads_rows else 'queried_unavailable')
+ except (OSError, ValueError) as e:
+  provenance=mchl1_provenance(start,end,'retrieval_error',str(e)); issues.append(f'MCHL1 HADS: {e}')
+ sources.extend(source['interface'] for source in MCHL1_SOURCES[1:])
  rows=dedupe(rows); rows=dedupe(rows+residuals(rows)+changes(rows))
- result=dict(id=event_id,name=name,start=start,end=end,generated=dt.datetime.now(dt.timezone.utc).isoformat(),rows=rows,coverage=coverage(rows),issues=issues,sources=sources,
+ result=dict(id=event_id,name=name,start=start,end=end,generated=dt.datetime.now(dt.timezone.utc).isoformat(),rows=rows,coverage=coverage(rows),issues=issues,sources=sources,mchl1_provenance=provenance,
   caveats=['MAUL1 historical 00065 gage height is not converted to NAVD88. Only direct 63160 elevations qualify for the 4.0 ft NAVD88 threshold.', 'NWCL1 observed and predicted levels use station MLLW; their difference is a non-tidal residual. Do not compare absolute lake height with other stations.', 'MDLL1 uses USGS 301200090072400 at Crossover 4 for this period; older Midlake USGS 073802330 is a separate instrument and is not spliced.', 'Event names describe meteorology, not measured dominant forcing.'])
  OUT.mkdir(parents=True,exist_ok=True)
  (OUT/f'{event_id}.json.gz').write_bytes(gzip.compress(json.dumps(result,separators=(',',':')).encode(),mtime=0))

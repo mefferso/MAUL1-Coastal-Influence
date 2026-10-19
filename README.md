@@ -26,6 +26,7 @@ Requires Python 3.10+ and network access; no Python packages.
 python scripts/build.py                    # all configured historical and recent windows
 python scripts/build.py beta-2020          # one event
 python -m unittest discover -s tests -v
+python scripts/analyze.py
 python -m http.server 8000 --directory site
 ```
 
@@ -34,10 +35,10 @@ Open `http://localhost:8000`. Historical backfill is manual in Actions; site val
 ## Known limits
 
 * The first archive covers the seven requested storm windows, three exploratory non-tropical windows, and one 2026 direct-NAVD88 observation window. Storm windows include at least 72 hours around their core periods. It does not yet constitute complete continuous 2016–2026 coverage or a validated event census.
-* MCHL1 HADS observations were recovered for the 2024–2025 windows. No MCHL1 data were found for the seven early event windows. Its vertical-datum history remains unresolved and the instrument must not be merged with PMPL1 or nearby USGS records.
+* MCHL1 retrieval is attempted for every event window. HADS MCHL1, USACE 85420, and USACE 85420LA are reported as separate sources with per-period retrieval status; no USACE record is relabeled or spliced into MCHL1. Its vertical-datum history remains unresolved.
 * MAUL1 direct 63160 NAVD88 begins in 2026; the pre-2026 event windows show native gage-height changes, not verified threshold exceedances. The October 2026 window exercises the direct-NAVD88 display. The 2016 archive has substantial gaps at MAUL1.
 * No river-versus-coastal classification has passed independent event review. The site conservatively labels every event indeterminate.
-* No lag estimate is accepted as universal. A 2020 published peak time difference does not by itself establish advance detection.
+* No lag estimate is accepted as universal. A 2020 published peak time difference does not by itself establish advance detection. Historical MAUL1 00065 datum chronology remains unresolved; only direct 63160 NAVD88 values qualify for the 4.0-ft threshold. Phase 2A onset results are experimental research diagnostics, not validated forecasts.
 * The browser loads Plotly, Leaflet and OpenStreetMap tiles from public third-party CDNs; those resources and GitHub Pages must be reachable.
 
-See [methodology](docs/methodology.md) for the physical logic and research gates. To publish, set repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow uses the GitHub Pages environment and the `site/` artifact.
+See [methodology](docs/methodology.md) for the physical logic, Phase 2A onset diagnostics, and research gates. The event page separates experimental onset timestamps from legacy correlations and labels both as research-only. To publish, set repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow uses the GitHub Pages environment and the `site/` artifact.

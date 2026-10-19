@@ -46,3 +46,17 @@ class TestTrends(unittest.TestCase):
   result=build.changes(rows)
   self.assertEqual([r['value'] for r in result if r['variable']=='stage_change_1h'],[.5])
   self.assertEqual([r['value'] for r in result if r['variable']=='stage_change_3h'],[1])
+
+class TestPhase2Provenance(unittest.TestCase):
+ def test_mchl1_sources_are_separate_and_statuses_are_explicit(self):
+  self.assertEqual([s['id'] for s in build.MCHL1_SOURCES], ['hads-mchl1', 'usace-85420', 'usace-85420la'])
+  self.assertEqual(set(build.RETRIEVAL_STATUSES), {'retrieved', 'queried_unavailable', 'not_queried', 'retrieval_error'})
+
+ def test_maul_threshold_eligibility_requires_direct_navd88(self):
+  self.assertFalse(build.navd88_threshold_eligible({'station':'MAUL1','variable':'stage','datum':'gage height','value':5}))
+  self.assertTrue(build.navd88_threshold_eligible({'station':'MAUL1','variable':'elevation','datum':'NAVD88','value':4.1}))
+
+ def test_historical_mchl1_is_not_relabelled(self):
+  row=build.parse_usace_row({'time':'2020-01-01T00:00:00Z','value':'2.5'}, '85420LA')[0]
+  self.assertEqual(row['station'], 'USACE-85420LA')
+  self.assertIn('original_datum', row)
