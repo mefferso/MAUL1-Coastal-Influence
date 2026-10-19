@@ -22,6 +22,14 @@ jobs:
       - run: python -m json.tool site/data/manifest.json > /dev/null
       - run: python -m json.tool site/data/analysis.json > /dev/null
       - run: python -m json.tool site/data/verification.json > /dev/null
+      - name: Validate historical reports when present
+        run: |
+          if [ -f site/data/history/manifest.json ]; then
+            python scripts/history_validate.py --root site/data/history > /dev/null
+            for report in coverage.json quality.json wind-comparison.json discovery.json; do
+              if [ -f "site/data/history/$report" ]; then python -m json.tool "site/data/history/$report" > /dev/null; fi
+            done
+          fi
       - run: node --check site/app.js
       - run: node tests/site-smoke.cjs
       - uses: actions/upload-pages-artifact@v3

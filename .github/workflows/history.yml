@@ -1,0 +1,51 @@
+name: Historical archive backfill
+on:
+  workflow_dispatch:
+    inputs:
+      start_month:
+        description: First UTC month, inclusive (YYYY-MM)
+        required: true
+        default: '2016-01'
+      end_month:
+        description: Last UTC month, inclusive (YYYY-MM)
+        required: true
+        default: '2026-12'
+      refresh:
+        description: Re-fetch existing successful partitions
+        required: true
+        type: boolean
+        default: false
+      run_discovery:
+        description: Rebuild hourly reports and event discovery after acquisition
+        required: true
+        type: boolean
+        default: true
+permissions:
+  contents: write
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire monthly partitions
+        run: >-
+          python scripts/history.py
+          --start-month "${{ inputs.start_month }}"
+          --end-month "${{ inputs.end_month }}"
+          --rebuild
+          ${{ inputs.refresh == 'true' && '--refresh' || '' }}
+      - name: Validate acquired history
+        run: python scripts/history_validate.py --root site/data/history
+      - name: Build reports and discovery
+        if: ${{ inputs.run_discovery == true }}
+        run: python scripts/discover.py --root site/data/history
+      - name: Commit changed history artifacts
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/history
+          git diff --cached --quiet || (git commit -m "data: backfill historical archive" && git push)
