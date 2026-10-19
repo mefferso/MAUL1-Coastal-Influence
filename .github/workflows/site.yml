@@ -16,12 +16,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python scripts/analyze.py > /dev/null
+      - run: python scripts/analyze.py > /dev/null
       - run: python -m unittest discover -s tests -v
       - run: python -m json.tool site/data/manifest.json > /dev/null
+      - run: python -m json.tool site/data/analysis.json > /dev/null
+      - run: python -m json.tool site/data/verification.json > /dev/null
       - run: node --check site/app.js
       - run: node tests/site-smoke.cjs
-      - run: python scripts/analyze.py > /dev/null
-      - run: python -m json.tool site/data/analysis.json > /dev/null
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
