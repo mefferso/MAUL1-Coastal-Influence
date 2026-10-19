@@ -18,6 +18,14 @@ Primary scientific reference: *Coastal-Flood Identification and Prediction at MA
 4. Compute wind vectors from each raw meteorological FROM angle: `u = −speed × sin(angle)` and `v = −speed × cos(angle)`. Aggregate vector components, never the raw angles.
 5. Any future lag analysis must use event-specific changes or detrended levels, show lead-sign conventions, account for gaps, and separate peak coincidence from actionable lead time.
 
+## Phase 2A experimental onset diagnostics
+
+The archive derives UTC-hour products from observations that actually fall within each hour. Empty hours remain empty, coverage is recorded, and no interpolation is used. Water levels use a robust within-hour median; Denham discharge uses a within-hour mean; wind uses component-wise vector statistics. Trailing changes use only exact available hourly observations and never cross a datum boundary.
+
+Event-onset results use a trailing robust baseline (median and MAD-derived robust sigma), persistent trailing signals, and sensitivities of 1.5, 2.0 and 2.5 sigma. A predictor lead is a timestamp comparison, not a propagation time, forecast lead, causal attribution, or significance claim. Results marked unavailable or uncertain are not forced into an onset. The legacy optimized correlation remains visible only as a labeled exploratory diagnostic.
+
+Historical windows overlap in time: `sally-2020` (September 12–21) overlaps `beta-2020` (September 18–28). Those named storms may be part of one hydrometeorological response episode and must not be counted as independent verification samples without an event-dependence review. Lake-rise examples with weak MAUL1 response remain in the archive as negative or ambiguous evidence.
+
 ## Next scientific gates
 
 * Resolve MCHL1's HADS/USACE instrument history and reference datum, and investigate its absent 2016–2021 archive, keeping PMPL1, USGS 073802302 and USACE 85420LA distinct.

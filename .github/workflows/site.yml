@@ -21,6 +21,7 @@ jobs:
       - run: node --check site/app.js
       - run: node tests/site-smoke.cjs
       - run: python scripts/analyze.py > /dev/null
+      - run: python -m json.tool site/data/analysis.json > /dev/null
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
