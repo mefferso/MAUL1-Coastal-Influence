@@ -36,6 +36,20 @@ The August 2016, Beta 2020, November 2024, April 2025, Laura 2020, and October 2
 
 Historical windows overlap in time: `sally-2020` (September 12–21) overlaps `beta-2020` (September 18–28). Those named storms may be part of one hydrometeorological response episode and must not be counted as independent verification samples without an event-dependence review. Lake-rise examples with weak MAUL1 response remain in the archive as negative or ambiguous evidence.
 
+## Phase 3B continuous historical validation
+
+`scripts/validate_phase3b.py` runs from the complete hourly archive after archive integrity validation. It reuses the fixed Phase 2B detector settings (72-hour baseline, at least 48 valid one-hour changes, positive consecutive changes, three-hour persistence, fixed station-specific minimum rise, 2.0 robust-sigma primary setting, and six-hour reset) and reports 1.5/2.0/2.5-sigma sensitivity without selecting a preferred setting on the same data. Missing values are never filled.
+
+For Phase 3B, detected, uncertain, gap, and archive-boundary-censored episodes are retained. The event table groups overlapping active intervals and intervals separated by no more than 72 hours across stations; 48- and 96-hour alternatives are reported. This transitive time-cluster rule reduces repeated counting but cannot establish that groups are independent storms. The event grouping is performed before the fixed 2023-01-01 calibration/holdout partition. A 72-hour seam embargo excludes boundary-crossing groups. This is a future data-partition proposal, not a trained model or holdout skill result.
+
+For a known detected MAUL1 episode, the group’s first response onset is compared with the latest qualifying predictor onset strictly before it, within the predeclared DENL1 0–72-hour or NWCL1/MDLL1 0–18-hour window. Coincident and post-target signals are separate outcomes. Only positive differences appear in the advance timing table. Lead distributions are conditional on the detector and grouped archive sample; they are not actionable forecasts or propagation times. A 90% valid-hour window-coverage screen (with 80% and 100% alternatives) describes observation sufficiency, not signal validity. Wind context uses vector components from NWCL1 and NDBC over the preceding six hours with no favorable-wind threshold.
+
+Quiet monthly controls require at least 90% valid hourly coverage for MAUL1 stage, DENL1 discharge, NWCL1 residual, and MDLL1 stage, with no target/core-predictor candidate overlapping the month under the same detector. Every other month is retained with explicit exclusion reasons. A quiet month is a detector-based control label, not proof of an absence of forcing; MCHL1 and NDBC availability remain visible separately.
+
+The validation report leaves probability of detection, false-alarm ratio, and critical success index unavailable because the archive has no pre-issued forecast opportunities, independent causal response labels, or proven independent target-event samples. Target groups without a detected prior signal, predictor-only groups, post-target signals, coincident signals, and uncertain onsets are retained as descriptive counts. Lack of DENL1 response cannot rule out local runoff or other tributaries; NWCL1 residual alone cannot label coastal forcing.
+
+The four priority case timelines include context from pinned NOAA NCEI Storm Events detail-file revisions. These reports document reported hazards and, for Beta, an external report of 4.04 ft NAVD88 at MAUL1. That report is kept distinct from the historical 63160 series pending its sensor/report provenance; it does not license conversion of the 00065 gage-height record. External event descriptions are contextual evidence, not causal ground truth. NCEI local timestamps are not relabeled as UTC observation times.
+
 ## Next scientific gates
 
 * Resolve MCHL1's HADS/USACE instrument history and reference datum, and investigate its absent 2016–2021 archive, keeping PMPL1, USGS 073802302 and USACE 85420LA distinct.
