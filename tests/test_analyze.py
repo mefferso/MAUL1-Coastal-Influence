@@ -134,6 +134,14 @@ class TestIndependentEpisodes(unittest.TestCase):
   self.assertEqual(detected[0]['datum_status'],'native_gage_height')
   self.assertFalse(detected[0]['navd88_threshold_eligible'])
 
+ def test_long_hourly_series_uses_bounded_baseline_windows(self):
+  values=[100.0]
+  for hour in range(1,10000):
+   values.append(values[-1]+(0.001 if hour % 2 else -0.001))
+  episodes=analyze.detect_episodes(self._series(values),station='MAUL1',variable='stage',min_rise=0.25)
+  self.assertTrue(any(episode['status']=='no_signal' for episode in episodes))
+  self.assertFalse(any(episode['status']=='detected' for episode in episodes))
+
  def test_falling_or_short_changes_do_not_create_response_episode(self):
   values=[10.0]
   for hour in range(1,96): values.append(values[-1]-(0.1 if hour >= 72 else 0.01))

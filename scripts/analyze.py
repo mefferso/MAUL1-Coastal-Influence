@@ -2,6 +2,7 @@
 import json
 import gzip
 import math
+from bisect import bisect_left
 import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
@@ -124,7 +125,8 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
   previous=by_time.get(stamp-timedelta(hours=1))
   if previous and _usable(row,min_coverage) and _usable(previous,min_coverage):
    changes[stamp]=row['value']-previous['value']
- positive=[stamp for stamp,value in sorted(changes.items()) if value > 0]
+ change_times=sorted(changes)
+ positive=[stamp for stamp in change_times if changes[stamp] > 0]
  if not positive:
   return [_episode_record('unavailable_baseline',station,variable,ordered,
    baseline_status='unavailable' if len(changes) < min_baseline_points else 'available',
@@ -134,7 +136,9 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
  for candidate in positive:
   if blocked_until and candidate <= blocked_until: continue
   baseline_start=candidate-timedelta(hours=baseline_hours)
-  baseline=[value for stamp,value in changes.items() if baseline_start <= stamp < candidate]
+  candidate_index=bisect_left(change_times,candidate)
+  baseline_start_index=bisect_left(change_times,baseline_start,0,candidate_index)
+  baseline=[changes[stamp] for stamp in change_times[baseline_start_index:candidate_index]]
   if len(baseline) < min_baseline_points:
    # A rise already present at the archive boundary is useful evidence, but
    # its onset cannot be dated without the missing antecedent record.
