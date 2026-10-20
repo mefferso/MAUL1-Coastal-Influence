@@ -44,6 +44,7 @@ class TestSourceAdapters(unittest.TestCase):
   with patch.object(history_sources,'_request',side_effect=[error,(payload,'realtime')]) as request:
    result=history_sources.fetch_ndbc_month(month)
   self.assertEqual(request.call_count,2)
+  self.assertEqual(request.call_args_list[1].args[0],'https://www.ndbc.noaa.gov/data/realtime2/NWCL1.txt')
   self.assertEqual(result['status'],'retrieved')
   self.assertEqual(result['availability'],'realtime_45_day_feed')
   self.assertEqual(result['rows'][0]['station'],'NWCL1-NDBC')
