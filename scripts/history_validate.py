@@ -25,6 +25,7 @@ def validate_rows(rows):
    floor={'stage':5.0,'elevation':5.0,'water':5.0,'residual':5.0,'discharge':10000.0,'wind':50.0,'wind_u':50.0,'wind_v':50.0}.get(variable,5.0)
    threshold=max(floor,median*10)
    for previous,current,delta in zip(ordered,ordered[1:],deltas):
+    if variable=='wind_direction': continue  # Circular headings have no scalar jump threshold.
     if delta > threshold: findings.append({'kind':'suspicious_jump','group':group,'from_time':previous['time'],'to_time':current['time'],'delta':round(delta,6),'threshold':threshold})
  return findings
 
