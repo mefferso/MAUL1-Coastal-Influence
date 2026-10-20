@@ -1,5 +1,9 @@
 import datetime as dt
+import gzip
+import json
+import pathlib
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, 'scripts')
@@ -7,6 +11,22 @@ import discover
 
 
 class TestContinuousDiscovery(unittest.TestCase):
+ def test_load_hourly_keeps_only_discovery_series(self):
+  records=[
+   {'time':'2024-01-01T00:00:00Z','station':'MAUL1','variable':'stage','value':1.0},
+   {'time':'2024-01-01T00:00:00Z','station':'DENL1','variable':'discharge','value':100.0},
+   {'time':'2024-01-01T00:00:00Z','station':'NWCL1','variable':'residual','value':0.1},
+   {'time':'2024-01-01T00:00:00Z','station':'MDLL1','variable':'stage','value':2.0},
+   {'time':'2024-01-01T00:00:00Z','station':'MAUL1','variable':'elevation','value':3.0},
+  ]
+  with tempfile.TemporaryDirectory() as temporary:
+   root=pathlib.Path(temporary); hourly=root/'hourly'; hourly.mkdir()
+   with gzip.open(hourly/'2024-01.json.gz','wt',encoding='utf-8') as stream:
+    json.dump({'records':records},stream)
+   loaded=discover._load_hourly(root)
+  self.assertEqual({(row['station'],row['variable']) for row in loaded},{
+   ('MAUL1','stage'),('DENL1','discharge'),('NWCL1','residual'),('MDLL1','stage')})
+  self.assertEqual(len(loaded),4)
  def test_merge_dependent_groups_overlapping_pathway_episodes(self):
   episodes=[
    {'episode_id':'river-1','pathway':'river','onset_utc':'2020-09-20T00:00:00Z','end_utc':'2020-09-20T12:00:00Z'},
