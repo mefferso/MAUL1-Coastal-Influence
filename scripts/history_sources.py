@@ -12,6 +12,7 @@ import build
 import history
 
 USER_AGENT='MAUL1-research/3A (public historical archive)'
+_NDBC_RAW_BY_YEAR={}
 
 def _bounds(month):
  start=history._month_start(month); end=history._month_end(month)
@@ -140,7 +141,8 @@ def fetch_hads_month(month):
 def fetch_ndbc_month(month):
  start,end=_bounds(month); year=start.year; url=f'https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h{year}.txt.gz'
  try:
-  raw,request=_request(url); return parse_ndbc_payload(raw,month,request)
+  if year not in _NDBC_RAW_BY_YEAR: _NDBC_RAW_BY_YEAR[year]=_request(url)[0]
+  return parse_ndbc_payload(_NDBC_RAW_BY_YEAR[year],month,url)
  except Exception as error: return failure_result('NWCL1-NDBC',month,url,str(error))
 
 def fetch_usace_month(source_id,month):
