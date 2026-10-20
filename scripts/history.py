@@ -198,7 +198,7 @@ def hourly_month(raw_partitions,month):
 
 def coverage_report(manifest,hourly):
  monthly=defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:{'valid_hours':0,'reported_hours':0})))
- totals=defaultdict(lambda:{'valid_hours':0,'reported_hours':0})
+ totals=defaultdict(lambda:{'valid_hours':0,'reported_hours':0,'expected_hours':0,'missing_hours':0,'not_yet_observed_hours':0})
  for row in hourly.get('records',[]):
   if not row.get('time') or not row.get('station') or not row.get('variable'): continue
   month=_month_stamp(row['time']).strftime('%Y-%m')
@@ -210,7 +210,9 @@ def coverage_report(manifest,hourly):
    bucket['valid_hours']+=1
    totals[f'{station}:{variable}']['valid_hours']+=1
  months=[]
- stations=defaultdict(lambda:{'valid_months':0,'retrieval_errors':0,'queried_unavailable':0,'partial_months':0,'rows':0})
+ stations=defaultdict(lambda:{'valid_months':0,'retrieval_errors':0,'queried_unavailable':0,'not_queried':0,'partial_months':0,'rows':0})
+ current_month=dt.datetime.now(dt.timezone.utc).strftime('%Y-%m')
+ now=dt.datetime.now(dt.timezone.utc)
  for month,source_map in sorted(manifest.get('months',{}).items()):
   expected_hours=int((_month_end(month)-_month_start(month)).total_seconds()//3600)
   hourly_coverage={}
@@ -218,21 +220,30 @@ def coverage_report(manifest,hourly):
    hourly_coverage[station]={}
    for variable,counts in sorted(variables.items()):
     valid=counts['valid_hours']
-    hourly_coverage[station][variable]={
-     'valid_hours':valid,'expected_hours':expected_hours,
-     'missing_hours':max(0,expected_hours-valid),
-     'reported_hours':counts['reported_hours']}
+    reporting_hours=expected_hours
+    if month==current_month and variable!='prediction':
+     reporting_hours=max(0,min(expected_hours,int((now-_month_start(month)).total_seconds()//3600)))
+    missing=max(0,reporting_hours-valid)
+    not_yet=max(0,expected_hours-reporting_hours)
+    entry={'valid_hours':valid,'expected_hours':expected_hours,'reporting_hours':reporting_hours,
+     'missing_hours':missing,'not_yet_observed_hours':not_yet,'reported_hours':counts['reported_hours']}
+    hourly_coverage[station][variable]=entry
+    total=totals[f'{station}:{variable}']
+    total['expected_hours']+=expected_hours
+    total['missing_hours']+=missing
+    total['not_yet_observed_hours']+=not_yet
   months.append({'month':month,'expected_hours':expected_hours,'sources':source_map,'hourly_coverage':hourly_coverage})
   for station,record in source_map.items():
    status=record.get('status')
    if status in {'retrieved','skipped','partially_retrieved'}: stations[station]['valid_months']+=1
    if status=='partially_retrieved': stations[station]['partial_months']+=1
    if status=='retrieval_error': stations[station]['retrieval_errors']+=1
-   if status in {'queried_unavailable','not_queried'}: stations[station]['queried_unavailable']+=1
+   if status=='queried_unavailable': stations[station]['queried_unavailable']+=1
+   if status=='not_queried': stations[station]['not_queried']+=1
    stations[station]['rows']+=record.get('row_count',0) or 0
- for bucket in totals.values():
-  bucket['missing_hours']=max(0,bucket['reported_hours']-bucket['valid_hours'])
- return {'schema_version':SCHEMA_VERSION,'months':months,'stations':dict(sorted(stations.items())),
+ return {'schema_version':SCHEMA_VERSION,
+  'coverage_basis':'Full UTC calendar months; for the current month, missing_hours stops at the current UTC hour and later hours are reported as not_yet_observed_hours. The prediction variable retains its full forecast horizon.',
+  'months':months,'stations':dict(sorted(stations.items())),
   'hourly_valid_records':dict(sorted((key,value['valid_hours']) for key,value in totals.items())),
   'hourly_variable_coverage':dict(sorted(totals.items()))}
 
@@ -240,10 +251,18 @@ def _write_json(path,payload):
  path=pathlib.Path(path); path.parent.mkdir(parents=True,exist_ok=True)
  path.write_text(json.dumps(payload,indent=2,sort_keys=True)+'\n')
 
+def _iter_hourly_records(root,months):
+ for month in months:
+  path=hourly_path(root,month)
+  if not path.exists(): continue
+  with gzip.open(path,'rt',encoding='utf-8') as stream:
+   yield from json.load(stream).get('records',[])
+
 def rebuild_hourly_reports(root=None):
  root=pathlib.Path(root or pathlib.Path(__file__).resolve().parents[1]/'site/data/history')
- manifest=_read_manifest(root); all_records=[]
- for month in sorted(manifest.get('months',{})):
+ manifest=_read_manifest(root); months=sorted(manifest.get('months',{}))
+ primary=[]; independent=[]; hourly_record_count=0
+ for month in months:
   partitions=[]; seen_paths=set()
   context_month=(_month_start(month)-dt.timedelta(days=1)).strftime('%Y-%m')
   for source_month in (context_month,month):
@@ -254,13 +273,13 @@ def rebuild_hourly_reports(root=None):
   hourly=hourly_month(partitions,month)
   path=hourly_path(root,month); path.parent.mkdir(parents=True,exist_ok=True)
   path.write_bytes(gzip.compress(json.dumps(hourly,sort_keys=True,separators=(',',':')).encode(),mtime=0))
-  all_records.extend(hourly['records'])
- coverage=coverage_report(manifest,{'records':all_records})
+  hourly_record_count+=len(hourly['records'])
+  primary.extend(row for row in hourly['records'] if row.get('station')=='NWCL1' and row.get('variable') in {'wind','wind_direction'} and row.get('value') is not None)
+  independent.extend(row for row in hourly['records'] if row.get('station')=='NWCL1-NDBC' and row.get('variable') in {'wind','wind_direction'} and row.get('value') is not None)
+ coverage=coverage_report(manifest,{'records':_iter_hourly_records(root,months)})
  _write_json(root/'coverage.json',coverage)
  try:
   import history_validate
-  primary=[row for row in all_records if row.get('station')=='NWCL1' and row.get('variable') in {'wind','wind_direction'}]
-  independent=[row for row in all_records if row.get('station')=='NWCL1-NDBC' and row.get('variable') in {'wind','wind_direction'}]
   wind=history_validate.compare_wind(primary,independent)
  except ImportError:
   wind={'status':'not_available','overlap_records':0,'averaged_sources':False}
@@ -270,7 +289,7 @@ def rebuild_hourly_reports(root=None):
  except ImportError:
   quality={'schema_version':SCHEMA_VERSION,'finding_count':0,'findings':[],'status':'not_available'}
  _write_json(root/'quality.json',quality)
- return {'months':len(manifest.get('months',{})),'hourly_records':len(all_records),'coverage':coverage,'wind_comparison':wind,'quality':quality}
+ return {'months':len(months),'hourly_records':hourly_record_count,'coverage':coverage,'wind_comparison':wind,'quality':quality}
 
 def main(argv=None):
  parser=argparse.ArgumentParser(description=__doc__)

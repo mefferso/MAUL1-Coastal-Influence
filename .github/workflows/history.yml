@@ -62,8 +62,32 @@ jobs:
           PY
       - name: Validate acquired history
         run: python scripts/history_validate.py --root site/data/history
+      - name: Commit acquired partitions
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/history/raw site/data/history/manifest.json
+          git diff --cached --quiet || (git commit -m "data: persist acquired historical partitions" && git push)
       - name: Rebuild hourly reports
-        run: PYTHONPATH=scripts python -c "import json,history; print(json.dumps(history.rebuild_hourly_reports('site/data/history'),sort_keys=True))"
+        run: |
+          set +e
+          PYTHONPATH=scripts python - <<'PY' > history-rebuild.log 2>&1
+          import json, history
+          result=history.rebuild_hourly_reports('site/data/history')
+          print(json.dumps({'months':result['months'],'hourly_records':result['hourly_records'],
+            'quality_status':result['quality']['status'],'quality_findings':result['quality']['finding_count'],
+            'wind_status':result['wind_comparison']['status'],'wind_overlap':result['wind_comparison']['overlap_records']},sort_keys=True))
+          PY
+          status=$?
+          if [ "$status" -ne 0 ]; then tail -n 200 history-rebuild.log; fi
+          exit "$status"
+      - name: Upload rebuild diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-rebuild-diagnostics-${{ github.run_id }}
+          path: history-rebuild.log
+          if-no-files-found: ignore
       - name: Build event discovery
         if: ${{ env.RUN_DISCOVERY == 'true' }}
         run: python scripts/discover.py --root site/data/history
