@@ -1106,6 +1106,9 @@ def match_maul1_responses(response_events, predictor_episodes, index):
                           and 0 < (onset-parse_time(episode['onset_utc'])).total_seconds()/3600 <= window]
             if not candidates:
                 continue
+            candidate_ids = {item['episode_id'] for item in candidates}
+            associated_predictor_ids.update(candidate_ids)
+            event_precursor_ids.update(candidate_ids)
             predictor = max(candidates, key=lambda item: parse_time(item['onset_utc']))
             lead = (onset-parse_time(predictor['onset_utc'])).total_seconds()/3600
             match = {'response_event_id': event['event_id'], 'target_onset_utc': event['onset_utc'],
@@ -1122,6 +1125,7 @@ def match_maul1_responses(response_events, predictor_episodes, index):
                     continue
                 signal_time = parse_time(episode['onset_utc'])
                 if onset <= signal_time <= peak + dt.timedelta(hours=72):
+                    post_target_predictor_ids.add(episode['episode_id'])
                     if signal_time == onset:
                         timing_status = 'coincident_with_target_onset'
                     elif signal_time <= peak:
@@ -1192,6 +1196,7 @@ def _render_revised_report(result, cases):
     if not analysis['lead_time_distributions_hours']:
         lines.append('| None | 0 | — | — | — |')
     lines += ['', f"Coverage-qualified timing counts are {analysis['coverage_qualified_lead_time_distributions_hours'] or 'none'}. Matches are retrospective detector-onset differences; they are not issued forecasts or actionable warning.", '',
+              f"Among {len(analysis['predictor_periods'])} detected core predictor episodes, {analysis['candidate_precursor_period_count']} fall in a pre-onset lead window, {analysis['post_target_signal_count']} occur after target onset through 72 hours after its peak, and {analysis['predictor_only_period_count']} are outside those reviewed event windows. These classifications are retrospective episode relationships, not forecast outcomes.", '',
               f"The archive yields **{controls['eligible_control_count']} eligible, independent seven-day nonresponse windows** and {controls['excluded_candidate_count']} excluded candidates under the stated 90% coverage and event-buffer rules. Eligible category memberships: {controls['counts_by_category'] or 'none'}.", '', controls['rule'], '',
               'These controls describe observed periods without a defined MAUL1 response. Predictor activity within a control is not a false alarm because no forecast opportunity was defined. Missing/failed retrieval periods do not qualify as observed nonresponses.', '', '## Priority case reviews', '']
     for case in cases:
@@ -1451,6 +1456,7 @@ def run(root='site/data/history', output=None):
           'events': response_events, 'event_evaluations': revised_event_matches, 'matches': revised_matches,
           'post_target_signals': [signal for row in revised_event_matches for signal in row['post_target_signals']],
           'predictor_periods': predictor_periods,
+          'candidate_precursor_period_count': sum(row['association_status'] == 'candidate_precursor' for row in predictor_periods),
           'predictor_only_period_count': sum(row['association_status'] == 'predictor_only_period' for row in predictor_periods),
           'post_target_signal_count': sum(row['association_status'] == 'post_target_signal' for row in predictor_periods),
           'negative_controls': response_controls,

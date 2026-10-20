@@ -293,5 +293,15 @@ class TestPhase3BValidation(unittest.TestCase):
         self.assertEqual(len(larger_only),1)
 
 
+    def test_matched_predictor_period_is_not_misclassified_as_predictor_only(self):
+        event = {'event_id':'response-2','onset_utc':'2020-09-20T12:00:00Z',
+                 'onset_known':True,'peak_utc':'2020-09-21T12:00:00Z'}
+        predictor = episode('river-early','DENL1','discharge','river_timing','2020-09-20T06:00:00Z')
+        evaluations, matches, periods = phase3b.match_maul1_responses([event],[predictor],{})
+        self.assertEqual(len(matches),1)
+        self.assertIn('river-early',evaluations[0]['candidate_precursor_episode_ids'])
+        self.assertEqual(periods[0]['association_status'],'candidate_precursor')
+
+
 if __name__ == '__main__':
     unittest.main()
