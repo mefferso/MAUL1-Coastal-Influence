@@ -5,6 +5,7 @@ first-signal detector. It evaluates timing and observation sufficiency; it
 does not infer causes, calibrate forecast probabilities, or claim skill.
 """
 import argparse
+import bisect
 import csv
 import datetime as dt
 import gzip
@@ -389,6 +390,44 @@ def cluster_episodes(episodes, separation_hours=72):
                'interpretation': 'Algorithmically separated event group; timing evidence only, not an independently established storm, cause, or forecast case.'}
         result.append(row)
     return result
+
+
+def legacy_group_diagnostic(episodes, separation_hours=72):
+    """Quantify the old all-station transitive grouping and show bridge records."""
+    all_groups = cluster_episodes([e for e in episodes if e.get('_cluster_start')], separation_hours)
+    target_groups = cluster_episodes([e for e in episodes if e.get('role') == 'target' and e.get('_cluster_start')], separation_hours)
+    largest = []
+    lookup = {episode['episode_id']: episode for episode in episodes}
+    for group in sorted(all_groups, key=lambda item: (item['duration_hours'], item['episode_count']), reverse=True)[:5]:
+        ids = group['target_episode_ids'] + group['predictor_episode_ids']
+        ordered = sorted((lookup[item] for item in ids if item in lookup),
+                         key=lambda e: (e['_cluster_start'], e['episode_id']))
+        chain = []
+        chain_end = None
+        for episode in ordered:
+            start = parse_time(episode['_cluster_start'])
+            finish = _episode_end(episode)
+            if chain_end is None or (start <= chain_end + dt.timedelta(hours=separation_hours) and finish > chain_end):
+                chain.append({'episode_id': episode['episode_id'], 'station': episode.get('station'),
+                              'role': episode.get('role'), 'status': episode.get('status'),
+                              'start_utc': episode['_cluster_start'], 'end_utc': iso(finish),
+                              'extends_chain_to_utc': iso(max(finish, chain_end) if chain_end else finish)})
+                chain_end = max(finish, chain_end) if chain_end else finish
+        largest.append({'start_utc': group['start_utc'], 'end_utc': group['end_utc'],
+                        'duration_hours': group['duration_hours'], 'episode_count': group['episode_count'],
+                        'target_episode_ids': group['target_episode_ids'],
+                        'predictor_episode_ids': group['predictor_episode_ids'],
+                        'detected_target_episode_count': group['detected_target_episode_count'],
+                        'detected_predictor_episode_count': group['detected_predictor_episode_count'],
+                        'chain_extending_records': chain})
+    target_groups_count = sum(group['detected_target_episode_count'] > 0 for group in all_groups)
+    return {'separation_hours': separation_hours, 'all_station_group_count': len(all_groups),
+            'target_only_group_count': sum(group['detected_target_episode_count'] > 0 for group in target_groups),
+            'target_containing_all_station_group_count': target_groups_count,
+            'groups_with_predictor_records': sum(bool(group['predictor_episode_ids']) and bool(group['target_episode_ids']) for group in all_groups),
+            'groups_with_predictor_only_bridge_candidates': sum(bool(group['predictor_episode_ids']) and bool(group['target_episode_ids']) for group in all_groups),
+            'largest_groups': largest,
+            'diagnosis': 'Original groups include every timed detector record (including no_signal records) from target, predictor, and support series. Any active record can extend the rolling group end, so a chain of individually nearby records can connect multi-month periods; predictor-only records can bridge target episodes. The MAUL1-first catalogue below is independent of those records.'}
 
 
 def interval_rows(index, key, start, end):
@@ -802,6 +841,373 @@ def _render_markdown(result, cases):
     return '\n'.join(lines)+'\n'
 
 
+def _continuous_valid_segments(rows):
+    """Return native-datum runs without filling missing hours or datum transitions."""
+    segments = []
+    for stamp, row in sorted(rows.items()):
+        if not valid(row):
+            continue
+        if (not segments or stamp - parse_time(segments[-1][-1]['time']) != dt.timedelta(hours=1)
+                or row.get('datum') != segments[-1][-1].get('datum')):
+            segments.append([row])
+        else:
+            segments[-1].append(row)
+    return segments
+
+
+def maul1_response_events(index, minimum_rise=1.0, recovery_drop=None, recovery_hours=24):
+    """Find MAUL1-only native-stage excursions separated by sustained recovery.
+
+    A centered three-hour median limits single-hour noise. A response is a
+    trough-to-peak excursion of at least ``minimum_rise`` native feet. The
+    next response cannot begin until stage has remained at least
+    ``recovery_drop`` below the prior peak for ``recovery_hours`` consecutive
+    observations. No predictor series is read by this method.
+    """
+    series = index.get(TARGET, {})
+    events = []
+    event_number = 0
+    for segment_number, rows in enumerate(_continuous_valid_segments(series), 1):
+        stamps = [parse_time(row['time']) for row in rows]
+        values = [float(row['value']) for row in rows]
+        smooth = [statistics.median(values[max(0, i-1):min(len(values), i+2)])
+                  for i in range(len(values))]
+        cursor = 0
+        while cursor < len(rows)-1:
+            trough = peak = cursor
+            recovery_start = None
+            recovery_count = 0
+            separated_at = None
+            i = cursor + 1
+            while i < len(rows):
+                if smooth[i] < smooth[trough] and peak <= trough:
+                    trough = i
+                    peak = i
+                elif smooth[i] > smooth[peak]:
+                    peak = i
+                    recovery_start = None
+                    recovery_count = 0
+                required_retracement = (recovery_drop if recovery_drop is not None else
+                                       max(0.25, (smooth[peak] - smooth[trough]) * 0.5))
+                if peak > trough and smooth[i] <= smooth[peak] - required_retracement:
+                    if recovery_count == 0:
+                        recovery_start = i
+                    recovery_count += 1
+                else:
+                    recovery_count = 0
+                    recovery_start = None
+                if recovery_count >= recovery_hours:
+                    separated_at = i
+                    break
+                i += 1
+            if smooth[peak] - smooth[trough] >= minimum_rise:
+                onset_level = smooth[trough] + min(0.1, (smooth[peak] - smooth[trough]) * 0.2)
+                onset_index = next((j for j in range(trough + 1, peak + 1)
+                                    if smooth[j] >= onset_level), trough)
+                event_number += 1
+                left_censored = trough == 0 and segment_number > 1
+                archive_left_censored = trough == 0 and segment_number == 1
+                right_censored = separated_at is None
+                recovery_end_index = separated_at if separated_at is not None else None
+                flags = []
+                if left_censored or archive_left_censored:
+                    flags.append('left_boundary_onset_uncertain')
+                if segment_number > 1:
+                    flags.append('observation_gap_or_datum_transition')
+                if right_censored:
+                    flags.append('recovery_not_observed_before_segment_end')
+                rise = smooth[peak] - smooth[trough]
+                events.append({
+                    'event_id': f'maul1-response-{event_number:04d}',
+                    'datum_segment': segment_number,
+                    'datum': rows[0].get('datum'),
+                    'onset_utc': iso(stamps[onset_index]),
+                    'trough_utc': iso(stamps[trough]),
+                    'peak_utc': iso(stamps[peak]),
+                    'recovery_end_utc': iso(stamps[recovery_end_index]) if recovery_end_index is not None else None,
+                    'onset_known': not (left_censored or archive_left_censored),
+                    'peak_native_gage_height': round(smooth[peak], 4),
+                    'trough_native_gage_height': round(smooth[trough], 4),
+                    'rise_native_gage_height': round(rise, 4),
+                    'rise_duration_hours': round((stamps[peak]-stamps[onset_index]).total_seconds()/3600, 3),
+                    'event_duration_hours': round((stamps[peak]-stamps[trough]).total_seconds()/3600, 3),
+                    'minimum_rise_native_feet': minimum_rise,
+                    'recovery_rule': f'at least {max(0.25, rise * 0.5):.3f} ft below peak (half the excursion, 0.25-ft floor) for {recovery_hours} consecutive hourly observations',
+                    'status': ('left_censored' if left_censored or archive_left_censored else
+                              'recovery_right_censored' if right_censored else 'observed_response'),
+                    'uncertainty_flags': flags,
+                    'interpretation': 'MAUL1 native gage-height response only; no datum conversion or causal label.'})
+            if separated_at is None:
+                break
+            # Begin the next independent search at the lowest observed recovery
+            # level; all later predictor behavior is irrelevant to this split.
+            cursor = min(range(peak + 1, separated_at + 1), key=lambda j: smooth[j])
+            if cursor <= peak:
+                cursor = separated_at
+    return events
+
+
+def exclude_response_overlapping_controls(windows, response_events, antecedent_hours=72,
+                                          recovery_buffer_hours=48):
+    """Mark control candidates touching a response, its antecedent, or recovery buffer."""
+    protected = []
+    for event in response_events:
+        onset = parse_time(event.get('trough_utc') or event['onset_utc'])
+        finish = parse_time(event.get('recovery_end_utc') or event['peak_utc'])
+        protected.append((onset-dt.timedelta(hours=antecedent_hours),
+                          finish+dt.timedelta(hours=recovery_buffer_hours), event['event_id']))
+    output = []
+    accepted = []
+    for number, window in enumerate(sorted(windows, key=lambda item: item['start_utc']), 1):
+        start, end = parse_time(window['start_utc']), parse_time(window['end_utc'])
+        overlaps = [event_id for left, right, event_id in protected if start < right and end > left]
+        overlaps += [control_id for left, right, control_id in accepted if start < right and end > left]
+        row = dict(window)
+        row['control_candidate_id'] = window.get('control_candidate_id', f'control-candidate-{number:05d}')
+        row['status'] = 'excluded' if overlaps else 'eligible_control_candidate'
+        row['exclusion_reasons'] = ['event_or_buffer_overlap'] if overlaps else []
+        row['overlapping_event_or_control_ids'] = overlaps
+        if not overlaps:
+            accepted.append((start, end, row['control_candidate_id']))
+        output.append(row)
+    return output
+
+
+def assign_revised_temporal_subset(start, end, boundary='2023-01-01T00:00:00Z', embargo_hours=72):
+    cut = parse_time(boundary)
+    embargo = dt.timedelta(hours=embargo_hours)
+    if end <= cut - embargo:
+        return 'calibration_2016_2022'
+    if start >= cut + embargo:
+        return 'holdout_2023_2026'
+    return 'excluded_split_seam'
+
+
+def build_response_control_windows(index, response_events, minimum_fraction=0.9,
+                                   window_days=7, step_days=7):
+    """Sample fixed non-overlapping observed nonresponse windows with explicit exclusions."""
+    required = [TARGET, ('DENL1', 'discharge'), ('NWCL1', 'residual'), ('MDLL1', 'stage')]
+    stamps = sorted(index.get(TARGET, {}))
+    if not stamps:
+        return {'rule': 'fixed seven-day windows; at least 90% valid coverage in MAUL1 and all core predictors',
+                'windows': [], 'eligible_control_count': 0, 'excluded_candidate_count': 0,
+                'counts_by_category': {}}
+    step = dt.timedelta(days=step_days)
+    width = dt.timedelta(days=window_days)
+    cursor = stamps[0].replace(minute=0, second=0, microsecond=0)
+    last = stamps[-1]
+    stage_items = sorted((stamp, float(row['value'])) for stamp, row in index[TARGET].items() if valid(row))
+    stage_times = [item[0] for item in stage_items]
+    calibration_cut = parse_time('2023-01-01T00:00:00Z')
+    archive_q75 = _quantile([value for stamp, value in stage_items if stamp < calibration_cut], .75)
+    discharge_items = sorted((stamp, float(row['value'])) for stamp, row in index.get(('DENL1', 'discharge'), {}).items() if valid(row))
+    discharge_times = [item[0] for item in discharge_items]
+    candidates = []
+    while cursor + width <= last + dt.timedelta(hours=1):
+        end = cursor + width
+        metrics = {f'{station}:{variable}': window_coverage(index, (station, variable), cursor, end)
+                   for station, variable in required}
+        stage_left, stage_right = bisect.bisect_left(stage_times, cursor), bisect.bisect_left(stage_times, end)
+        stage_values = [value for _, value in stage_items[stage_left:stage_right]]
+        if stage_values:
+            stage_range = max(stage_values) - min(stage_values)
+            stage_median = statistics.median(stage_values)
+            q75 = archive_q75
+        else:
+            stage_range = stage_median = q75 = None
+        reasons = [f'{key}: valid coverage below {minimum_fraction:.0%}' for key, item in metrics.items()
+                   if item['valid_fraction'] is None or item['valid_fraction'] < minimum_fraction]
+        categories = []
+        if stage_range is not None:
+            if stage_range <= 0.25:
+                categories.append('quiet_low_variation')
+            if stage_median >= q75 and stage_range < 1.0:
+                categories.append('elevated_lake_without_qualifying_response')
+            if 0.25 < stage_range < 1.0:
+                categories.append('routine_variability_without_qualifying_response')
+            discharge_left = bisect.bisect_left(discharge_times, cursor)
+            discharge_right = bisect.bisect_left(discharge_times, end)
+            local_discharge = discharge_items[discharge_left:discharge_right]
+            rise72 = 0.0
+            minimum_prior = None
+            prior_queue = []
+            for stamp, value in local_discharge:
+                cutoff = stamp - dt.timedelta(hours=72)
+                while prior_queue and prior_queue[0][0] < cutoff:
+                    prior_queue.pop(0)
+                if prior_queue:
+                    rise72 = max(rise72, value - prior_queue[0][1])
+                while prior_queue and prior_queue[-1][1] >= value:
+                    prior_queue.pop()
+                prior_queue.append((stamp, value))
+            if rise72 >= 50000 and stage_range < 1.0:
+                categories.append('DENL1_increase_without_qualifying_MAUL1_response')
+            if not categories:
+                categories.append('no_qualifying_MAUL1_response_other')
+        subset = assign_revised_temporal_subset(cursor, end)
+        if subset == 'excluded_split_seam':
+            reasons.append('fixed_calibration_holdout_seam_embargo')
+        candidates.append({'start_utc': iso(cursor), 'end_utc': iso(end),
+                           'temporal_subset': subset,
+                           'stage_range_native_gage_height': round(stage_range, 4) if stage_range is not None else None,
+                           'stage_median_native_gage_height': round(stage_median, 4) if stage_median is not None else None,
+                           'calibration_2016_2022_native_stage_75th_percentile': round(q75, 4) if q75 is not None else None,
+                           'categories': categories, 'coverage': metrics,
+                           'status': 'excluded' if reasons else 'eligible_control_candidate',
+                           'exclusion_reasons': reasons})
+        cursor += step
+    candidates = exclude_response_overlapping_controls(candidates, response_events)
+    # Restore coverage exclusion status/reasons after overlap annotation.
+    for row in candidates:
+        if row['exclusion_reasons'] and row['exclusion_reasons'] != ['event_or_buffer_overlap']:
+            row['status'] = 'excluded'
+        elif row.get('coverage') and any(item['valid_fraction'] is None or item['valid_fraction'] < minimum_fraction
+                                         for item in row['coverage'].values()):
+            row['status'] = 'excluded'
+            row['exclusion_reasons'] = ['required_series_coverage_below_threshold'] + row['exclusion_reasons']
+    eligible = [row for row in candidates if row['status'] == 'eligible_control_candidate']
+    counts = Counter(category for row in eligible for category in row.get('categories', []))
+    split_counts = Counter(row['temporal_subset'] for row in candidates if row['status'] == 'eligible_control_candidate')
+    return {'rule': 'Fixed, non-overlapping 7-day windows stepped weekly. Require >=90% valid hourly coverage in native MAUL1 stage, DENL1 discharge, same-datum NWCL1 residual, and MDLL1 stage. Exclude any window overlapping a response, its 72-hour antecedent, or observed recovery plus 48 hours. Apply the fixed 2023-01-01 calibration/holdout split with a 72-hour seam embargo. Controls are observational nonresponse samples, not forecast opportunities.',
+            'minimum_valid_coverage': minimum_fraction, 'window_hours': int(width.total_seconds()/3600),
+            'step_hours': int(step.total_seconds()/3600), 'required_series': [f'{s}:{v}' for s,v in required],
+            'response_threshold_native_feet': 1.0, 'windows': candidates,
+            'eligible_control_count': len(eligible),
+            'excluded_candidate_count': len(candidates)-len(eligible),
+            'eligible_control_counts_by_fixed_subset': dict(split_counts),
+            'counts_by_category': dict(counts)}
+
+
+def match_maul1_responses(response_events, predictor_episodes, index):
+    """Evaluate predeclared timing windows only after MAUL1 events are fixed."""
+    matches = []
+    per_event = []
+    associated_predictor_ids = set()
+    post_target_predictor_ids = set()
+    for event in response_events:
+        event_matches = []
+        event_precursor_ids = set()
+        onset = parse_time(event['onset_utc']) if event['onset_known'] else None
+        for station, variable, pathway, window, _ in PREDICTORS:
+            if onset is None:
+                continue
+            candidates = [episode for episode in predictor_episodes
+                          if episode.get('station') == station and episode.get('variable') == variable
+                          and episode.get('status') == 'detected' and episode.get('onset_utc')
+                          and 0 < (onset-parse_time(episode['onset_utc'])).total_seconds()/3600 <= window]
+            if not candidates:
+                continue
+            predictor = max(candidates, key=lambda item: parse_time(item['onset_utc']))
+            lead = (onset-parse_time(predictor['onset_utc'])).total_seconds()/3600
+            match = {'response_event_id': event['event_id'], 'target_onset_utc': event['onset_utc'],
+                     'predictor_episode_id': predictor['episode_id'], 'predictor_station': station,
+                     'predictor_variable': variable, 'timing_evidence': pathway,
+                     'lead_hours': round(lead, 3), 'maximum_window_hours': window,
+                     'status': 'descriptive_pre_onset_timing_only', 'forecast_utility_validated': False}
+            event_matches.append(match)
+        post_target_signals = []
+        if onset:
+            peak = parse_time(event['peak_utc'])
+            for episode in predictor_episodes:
+                if episode.get('role') in {'target', 'support'} or episode.get('status') != 'detected' or not episode.get('onset_utc'):
+                    continue
+                signal_time = parse_time(episode['onset_utc'])
+                if onset <= signal_time <= peak + dt.timedelta(hours=72):
+                    if signal_time == onset:
+                        timing_status = 'coincident_with_target_onset'
+                    elif signal_time <= peak:
+                        timing_status = 'after_target_onset_before_peak'
+                    else:
+                        timing_status = 'after_target_peak_within_72h'
+                    post_target_predictor_ids.add(episode['episode_id'])
+                    post_target_signals.append({'predictor_episode_id':episode['episode_id'],
+                        'predictor_station':episode['station'],'predictor_variable':episode['variable'],
+                        'onset_utc':episode['onset_utc'],'status':timing_status})
+        coverage = {f'{station}:{variable}': window_coverage(index, (station, variable),
+                    onset-dt.timedelta(hours=window), onset)
+                    for station, variable, _, window, _ in PREDICTORS} if onset else {}
+        eligible_coverage = bool(onset and all(item['valid_fraction'] is not None and item['valid_fraction'] >= .9
+                                               for item in coverage.values()))
+        event_row = {'response_event_id': event['event_id'], 'onset_known': event['onset_known'],
+                     'qualifying_match_count': len(event_matches), 'matches': event_matches,
+                     'candidate_precursor_episode_ids': sorted(event_precursor_ids),
+                     'post_target_signals': post_target_signals,
+                     'predictor_window_coverage': coverage,
+                     'coverage_qualified_90pct': eligible_coverage,
+                     'status': ('onset_uncertain' if not event['onset_known'] else
+                                'timing_match' if event_matches else 'no_detected_pre_onset_signal')}
+        per_event.append(event_row)
+        matches.extend(event_matches)
+    predictor_ids = {episode['episode_id'] for episode in predictor_episodes
+                     if episode.get('role') not in {'target','support'} and episode.get('status') == 'detected'}
+    predictor_periods = [{'predictor_episode_id':episode['episode_id'],
+                          'station':episode['station'],'variable':episode['variable'],
+                          'onset_utc':episode.get('onset_utc'),'status':episode.get('status'),
+                          'association_status':('candidate_precursor' if episode['episode_id'] in associated_predictor_ids else
+                              'post_target_signal' if episode['episode_id'] in post_target_predictor_ids else
+                              'predictor_only_period')}
+                         for episode in predictor_episodes
+                         if episode.get('role') not in {'target','support'} and episode.get('status') == 'detected']
+    return per_event, matches, predictor_periods
+
+def _render_revised_report(result, cases):
+    analysis = result['maul1_first_analysis']
+    controls = analysis['negative_controls']
+    lines = ['# Phase 3B — MAUL1-first event validation', '',
+             '**Exploratory retrospective validation. This analysis does not establish causal attribution, forecast skill, or operational guidance.**', '',
+             '## Why the original groups merged', '',
+             'The prior method sorted all detector records (including `no_signal` records) from MAUL1, DENL1, NWCL1, MDLL1, and MCHL1, then extended a group transitively whenever the next record began within 72 hours of the current group end. Consequently a sequence of unrelated station-level records could connect months of observations; predictor-only records could bridge target events. The old reports and outputs remain available as the Phase 3B legacy comparison.', '',
+             '| Sigma | MAUL1 detected records | all-station groups | target-containing all-station groups | target-only groups | largest group |',
+             '|---:|---:|---:|---:|---:|---|']
+    for sigma, data in result['legacy_grouping_diagnostic_by_sigma'].items():
+        largest = data['largest_groups'][0] if data['largest_groups'] else {}
+        lines.append(f"| {sigma} | {result['sensitivity']['sigma'][sigma]['maul1_detected']} | {data['all_station_group_count']} | {result['sensitivity']['sigma'][sigma]['target_groups']} | {data['target_only_group_count']} | {largest.get('start_utc','—')} to {largest.get('end_utc','—')} ({largest.get('duration_hours','—')} h; {largest.get('episode_count','—')} records) |")
+    lines += ['', 'Largest 72-hour transitive components and chain-extending records:', '']
+    for sigma, data in result['legacy_grouping_diagnostic_by_sigma'].items():
+        lines.append(f"### {sigma}σ legacy components")
+        for number, group in enumerate(data['largest_groups'][:3], 1):
+            links = ', '.join(f"{item['episode_id']} [{item['station']}/{item['role']}/{item['status']}, {item['start_utc']}→{item['end_utc']}]" for item in group['chain_extending_records'][:40])
+            lines.append(f"- Group {number}: {group['start_utc']} to {group['end_utc']}; {group['duration_hours']} h; {group['episode_count']} records; {group['detected_target_episode_count']} detected MAUL1 records; {group['detected_predictor_episode_count']} detected predictor records. Chain extensions: {links or 'none'}" + (' [first 40 shown]' if len(group['chain_extending_records']) > 40 else ''))
+        lines.append('')
+    lines += ['## MAUL1-first response definition', '', analysis['predeclared_primary_rule'], '',
+              f"This fixed definition yields **{analysis['response_event_count']} primary candidate response events**: {analysis['onset_known_count']} with observed onset and {analysis['onset_uncertain_count']} left-censored at an archive, gap, or datum-segment boundary. Recovery was observed for {analysis['recovery_observed_count']} events. A separate exploratory tier retains {analysis['exploratory_smaller_response_count']} excursions from 0.5 to <1.0 ft. MAUL1 00065 remains native gage height; values are not converted to NAVD88.", '',
+              '| Minimum native-stage rise | Sustained recovery | Candidate events | Known onset |', '|---:|---:|---:|---:|']
+    for key, row in analysis['sensitivity'].items():
+        threshold, recovery = key.split('ft_recovery')
+        lines.append(f"| {threshold} | {recovery} | {row['response_event_count']} | {row['onset_known_count']} |")
+    lines += ['', 'Sensitivity settings are reported without selecting a setting based on predictor matches. Event separation uses only MAUL1 behavior. The fixed 2023 split retains its 72-hour seam embargo.', '',
+              '## Precursor timing and nonresponse samples', '',
+              f"Known-onset responses with at least one station timing detection within its predeclared lead window: **{analysis['events_with_pre_onset_timing_match']}**; without detected pre-onset timing: **{analysis['events_without_pre_onset_timing_match']}**; uncertain-onset events: **{analysis['uncertain_onset_events']}**. {analysis['coverage_qualified_events_90pct']} events meet the 90% completeness screen for all predictor windows.", '', '| Predictor | Matches | Median lead | P25–P75 | Range |', '|---|---:|---:|---:|---:|']
+    for station, values in analysis['lead_time_distributions_hours'].items():
+        lines.append(f"| {station} | {values['n_event_group_matches']} | {values['median_hours']} h | {values['p25_hours']}–{values['p75_hours']} h | {values['min_hours']}–{values['max_hours']} h |")
+    if not analysis['lead_time_distributions_hours']:
+        lines.append('| None | 0 | — | — | — |')
+    lines += ['', f"Coverage-qualified timing counts are {analysis['coverage_qualified_lead_time_distributions_hours'] or 'none'}. Matches are retrospective detector-onset differences; they are not issued forecasts or actionable warning.", '',
+              f"The archive yields **{controls['eligible_control_count']} eligible, independent seven-day nonresponse windows** and {controls['excluded_candidate_count']} excluded candidates under the stated 90% coverage and event-buffer rules. Eligible category memberships: {controls['counts_by_category'] or 'none'}.", '', controls['rule'], '',
+              'These controls describe observed periods without a defined MAUL1 response. Predictor activity within a control is not a false alarm because no forecast opportunity was defined. Missing/failed retrieval periods do not qualify as observed nonresponses.', '', '## Priority case reviews', '']
+    for case in cases:
+        ids = ', '.join(case.get('revised_response_event_ids', [])) or 'no revised event overlaps the case window'
+        matches = case.get('revised_response_matches', [])
+        match_text = '; '.join(f"{m['predictor_station']} {m['lead_hours']} h" for m in matches) or 'no detected pre-onset timing match'
+        lines.append(f"### {case['name']}")
+        coverage = case['observed_series_summaries']['MAUL1:stage']
+        lines.append(f"MAUL1-first events: {ids}. Revised timing: {match_text}. MAUL1 archive coverage in the case is {coverage['coverage_fraction']:.1%} ({coverage['valid_hours']}/{coverage['expected_hours']} hours).")
+        if case['event_id'] == 'flood-2016':
+            lines.append('The archive begins during the August flood window; any response whose trough/onset lies at a segment boundary is left-censored. Observed rise/peak times do not recover an unobserved start, and DENL1 or MDLL1 timing does not establish cause. MCHL1 retrieval coverage is incomplete.')
+        elif case['event_id'] == 'beta-2020':
+            lines.append('Events are formed from MAUL1 stage only, without using the storm name. Predictor comparison is possible only for observed onset and adequate coverage. NCEI NAVD88 context is external documentary information, not a direct archived USGS 63160 observation or datum conversion.')
+        elif case['event_id'] == 'front-2024-11':
+            lines.append('Revised onset and peak come from native MAUL1 stage alone. NOAA storm-event records are reported-impact context, not response ground truth; timing is not causal attribution.')
+        else:
+            lines.append('The event is defined without wind or predictor activity. Wind and incomplete MCHL1 observations remain context; no local NCEI event row does not establish absence of local forcing.')
+        lines.append('')
+    lines += ['## Scientific limits and files', '',
+              'No POD, false-alarm ratio, CSI, causal percentages, or forecast probabilities are calculated: the archive lacks independent forcing labels and issue-time forecast opportunities. A predictor signal before onset is a timing relationship only. No DENL1 rise cannot exclude tributary runoff; positive NWCL1 residual cannot alone establish coastal forcing. MCHL1, USACE 85420, and USACE 85420LA remain separate. Missing observations are not interpolated.', '',
+              'The original Phase 3B findings remain in `validation.json`, `summary.json`, `events.csv`, `matches.csv`, and `report.md`; immutable `legacy-validation.json.gz`, `legacy-report.md`, `legacy-summary.json`, `legacy-cases.json`, `legacy-events.csv`, and `legacy-matches.csv` snapshots preserve the prior analysis. This revision adds `response-events.csv`, `response-matches.csv`, `control-windows.csv`, and `event-diagnostics.json`.', '',
+              'The revised method improves interpretability by defining MAUL1 rises independently of predictor activity and sampling observed nonresponse windows. It does not establish reproducible useful advance warning. Phase 4 operational forecasting is not scientifically justified by these retrospective samples alone.']
+    return '\n'.join(lines)+'\n'
+
+
 def run(root='site/data/history', output=None):
     root = pathlib.Path(root)
     output = pathlib.Path(output or root / 'phase3b')
@@ -818,10 +1224,12 @@ def run(root='site/data/history', output=None):
 
     primary_episodes = detect_all(index, 2.0)
     sigma_results = {}
+    legacy_diagnostics = {}
     for sigma in SIGMAS:
         episodes = primary_episodes if sigma == 2.0 else detect_all(index, sigma)
         targets = [e for e in episodes if e['role'] == 'target']
         sigma_groups = cluster_episodes([e for e in episodes if e.get('_cluster_start')],72)
+        legacy_diagnostics[str(sigma)] = legacy_group_diagnostic(episodes, 72)
         sigma_results[str(sigma)] = {'maul1_records': len(targets),
             'maul1_detected': sum(e.get('status') == 'detected' for e in targets),
             'maul1_statuses': dict(Counter(e.get('status') for e in targets)),
@@ -831,7 +1239,8 @@ def run(root='site/data/history', output=None):
             'support_detected': sum(e.get('role') == 'support' and e.get('status') == 'detected' for e in episodes),
             'target_groups': sum(g['detected_target_episode_count']>0 for g in sigma_groups),
             'target_groups_with_advance_timing_association': sum(g['status']=='target_with_advance_timing_signals' for g in sigma_groups),
-            'descriptive_group_match_count': sum(g['timing_match_count'] for g in sigma_groups)}
+            'descriptive_group_match_count': sum(g['timing_match_count'] for g in sigma_groups),
+            'legacy_group_diagnostic': legacy_diagnostics[str(sigma)]}
 
     episodes = [e for e in primary_episodes if e.get('_cluster_start')]
     groups_by_separation = {gap: cluster_episodes(episodes, gap) for gap in SEPARATIONS}
@@ -847,6 +1256,31 @@ def run(root='site/data/history', output=None):
     target_groups = [g for g in groups if g['detected_target_episode_count']]
     outcomes = Counter(g['status'] for g in target_groups)
     controls = negative_control_months(monthly_coverage,manifest.get('months',{}),primary_episodes,index=index)
+    # Primary response rules are declared from MAUL1 behavior alone before
+    # predictor timing is evaluated. Native 00065 values remain unconverted.
+    response_events = maul1_response_events(index, minimum_rise=1.0, recovery_hours=24)
+    exploratory_response_events = [event for event in maul1_response_events(index, minimum_rise=0.5, recovery_hours=24)
+                                   if event['rise_native_gage_height'] < 1.0]
+    revised_event_matches, revised_matches, predictor_periods = match_maul1_responses(response_events, primary_episodes, index)
+    response_controls = build_response_control_windows(index, response_events)
+    response_sensitivity = {}
+    for threshold in (0.5, 1.0, 1.5, 2.0):
+        for recovery_hours in (12, 24, 48):
+            candidate_events = maul1_response_events(index, minimum_rise=threshold, recovery_hours=recovery_hours)
+            key = f'{threshold:.2f}ft_recovery{recovery_hours}h'
+            response_sensitivity[key] = {'response_event_count': len(candidate_events),
+                'onset_known_count': sum(event['onset_known'] for event in candidate_events),
+                'left_censored_count': sum(not event['onset_known'] for event in candidate_events),
+                'median_rise_native_feet': round(statistics.median([event['rise_native_gage_height'] for event in candidate_events]), 4) if candidate_events else None}
+    response_splits = []
+    split_boundary = parse_time('2023-01-01T00:00:00Z')
+    for event in response_events:
+        onset = parse_time(event['onset_utc'])
+        peak = parse_time(event['peak_utc'])
+        subset = assign_revised_temporal_subset(onset, peak)
+        response_splits.append({'response_event_id':event['event_id'],'subset':subset,
+            'onset_utc':event['onset_utc'],'peak_utc':event['peak_utc'],
+            'rule':'Fixed 2023-01-01 split with 72-hour seam embargo; assignment occurs after MAUL1-only event definition.'})
     split = temporal_split(groups)
     split_counts = Counter(row['subset'] for row in split)
 
@@ -887,6 +1321,17 @@ def run(root='site/data/history', output=None):
     # gaps, censored onsets, and weak candidate records are not discarded.
     support_episodes = [e for e in primary_episodes if e['role'] == 'support']
     case_records = priority_case_reviews(index, discovery, verification, support_episodes)
+    for case in case_records:
+        case_start = parse_time(case['start_utc']) - dt.timedelta(hours=72)
+        case_end = parse_time(case['end_utc_exclusive'])
+        case_events = [event for event in response_events
+                       if (case_start <= parse_time(event['onset_utc']) < case_end or
+                           parse_time(event['onset_utc']) <= case_end and
+                           parse_time(event['peak_utc']) >= case_start)]
+        case['revised_response_event_ids'] = [event['event_id'] for event in case_events]
+        case['revised_response_matches'] = [match for match in revised_matches
+                                            if match['response_event_id'] in case['revised_response_event_ids']]
+        case['revised_method_interpretation'] = ('Event candidates are identified from MAUL1 native stage alone; timing associations are evaluated afterward. Unknown onset or missing coverage limits precursor interpretation. External storm context is not ground truth.')
     coverage_result = coverage_audit(root, coverage.get('hourly_variable_coverage', {}), manifest, index)
     # Quality flags are retained as review candidates; flags are not automatic
     # data rejection criteria.
@@ -926,7 +1371,7 @@ def run(root='site/data/history', output=None):
         'reason': 'Event independence and binary forecast opportunity/outcome labels are not established.'}}
     result = {
       'schema_version': SCHEMA_VERSION,
-      'method': 'Independent Phase 3B descriptive validation over the Phase 3A continuous UTC hourly archive. Existing fixed event detector; time-cluster groups; no causal labels or forecast skill.',
+      'method': 'Phase 3B retains the original detector and transitive time groups for comparison, and adds an MAUL1-only native-stage response catalogue with non-overlapping recovery-defined events. Predictor matching follows target definition. No causal labels or forecast skill.',
       'archive': {'first_month': months[0] if months else None, 'last_month': months[-1] if months else None,
                   'month_count': len(months), 'hourly_records_loaded': len(records),
                   'source_month_status_counts': coverage_result['monthly_source_status_counts']},
@@ -941,7 +1386,34 @@ def run(root='site/data/history', output=None):
                        'DENL1': '50 cfs', 'NWCL1:residual': '0.05 ft', 'MDLL1:stage': '0.05 native ft'},
                    'sigma': 2.0, 'MCHL1_role':'supporting propagation observations only; no predeclared matching lead window and no causal classification.',
                    'maul1_episodes_in_prior_discovery': len(discovered_target)},
+      'legacy_grouping_diagnostic_by_sigma': legacy_diagnostics,
+      'maul1_first_analysis': {
+          'predeclared_primary_rule': 'Centered 3-hour median of native MAUL1 gage height; trough-to-peak rise >=1.0 native foot; next response starts only after 24 consecutive valid hourly observations retrace at least half of the preceding excursion below its peak (with a 0.25-ft floor). Missing hours and datum transitions split segments; onset at a segment boundary is censored. The <1.0-ft responses at >=0.5 ft are retained as a separate exploratory tier. The rule is selected without predictor outcomes.',
+          'response_event_count': len(response_events),
+          'exploratory_smaller_response_count': len(exploratory_response_events),
+          'eligible_negative_control_count': response_controls['eligible_control_count'],
+          'negative_control_category_counts': response_controls['counts_by_category'],
+          'exploratory_smaller_responses': exploratory_response_events,
+          'onset_known_count': sum(event['onset_known'] for event in response_events),
+          'onset_uncertain_count': sum(not event['onset_known'] for event in response_events),
+          'recovery_observed_count': sum(event['recovery_end_utc'] is not None for event in response_events),
+          'events_with_pre_onset_timing_match': sum(row['qualifying_match_count'] > 0 for row in revised_event_matches),
+          'events_without_pre_onset_timing_match': sum(row['status'] == 'no_detected_pre_onset_signal' for row in revised_event_matches),
+          'uncertain_onset_events': sum(row['status'] == 'onset_uncertain' for row in revised_event_matches),
+          'coverage_qualified_events_90pct': sum(row['coverage_qualified_90pct'] for row in revised_event_matches),
+          'lead_time_distributions_hours': lead_summaries(revised_matches),
+          'coverage_qualified_lead_time_distributions_hours': lead_summaries([match for row in revised_event_matches if row['coverage_qualified_90pct'] for match in row['matches']]),
+          'sensitivity': response_sensitivity,
+          'calibration_holdout': {'boundary_utc':'2023-01-01T00:00:00Z','embargo_hours':72,'assignments':response_splits,'counts':dict(Counter(row['subset'] for row in response_splits))},
+          'events': response_events, 'event_evaluations': revised_event_matches, 'matches': revised_matches,
+          'post_target_signals': [signal for row in revised_event_matches for signal in row['post_target_signals']],
+          'predictor_periods': predictor_periods,
+          'predictor_only_period_count': sum(row['association_status'] == 'predictor_only_period' for row in predictor_periods),
+          'post_target_signal_count': sum(row['association_status'] == 'post_target_signal' for row in predictor_periods),
+          'negative_controls': response_controls,
+          'statistical_skill_metrics': {'status':'unavailable','reason':'These historical retrospective signals are not forecasts issued at defined opportunities, and no independent event/forcing labels establish outcomes.'}},
       'sensitivity': {'sigma': sigma_results,
+
                       'event_separation_hours': {str(gap): {'all_time_clusters': len(values),
                           'target_containing_groups': sum(g['detected_target_episode_count']>0 for g in values),
                           'multi_target_groups': sum(g['detected_target_episode_count']>1 for g in values)}
@@ -975,6 +1447,7 @@ def run(root='site/data/history', output=None):
                    'assessment': 'This is a future-proof partition proposal only. Counts do not imply sufficient independent, well-observed, labeled target events for holdout verification; the current archive lacks independent causal labels and operational forecasts.'},
       'coverage_audit': coverage_result,
       'negative_control_selection': controls,
+      'legacy_negative_control_selection': controls,
       'quality_audit': {'finding_count': quality.get('finding_count'),
                         'finding_counts_by_station_variable': dict(finding_groups),
                         'interpretation': 'Automated flags are candidates for human review, not proof of bad observations.'},
@@ -997,7 +1470,9 @@ def run(root='site/data/history', output=None):
       'split_assignments': split,
       'cases_file': 'cases.json',
       'limitations': [
-        'Historical time clusters are not independent storm labels; a 72-hour separation rule can join distinct forcing or split one prolonged episode.',
+        'Legacy all-station transitive episode groups are retained for comparison and can join distinct MAUL1 responses through predictor-only and no-signal records. The new MAUL1-first catalogue uses recovery-defined native-stage excursions.',
+        'The 0.5-ft response threshold and recovery rule are a reproducible physical excursion definition, not a hydrologic truth label; threshold/recovery sensitivity is reported.',
+        'Negative-control windows are observed nonresponse samples, not forecast opportunities or true negatives; adequate coverage does not provide forcing ground truth.',
         'MAUL1 00065 is native gage height and is not used to infer 4.0 ft NAVD88 exceedances.',
         'A first-signal match is a retrospective timing association, not evidence of actionable warning, propagation, causality, or forecast skill.',
         'Positive NWCL1 residual alone is not coastal evidence; independent MDLL1 and wind context are shown without an unvalidated wind threshold.',
@@ -1022,6 +1497,8 @@ def run(root='site/data/history', output=None):
                      'verification_metrics': result['verification_metrics'],
                      'cases': [{'event_id':case['event_id'],'name':case['name'],
                                 'target_episode_count':case['canonical_event_window_summary'].get('target_signal_episode_count'),
+                                'revised_event_count':len(case.get('revised_response_event_ids',[])),
+                                'revised_match_count':len(case.get('revised_response_matches',[])),
                                 'timing_matches':case['canonical_event_window_summary'].get('matches'),
                                 'target_coverage':case['observed_series_summaries']['MAUL1:stage']}
                                for case in case_records],
@@ -1065,10 +1542,44 @@ def run(root='site/data/history', output=None):
                     'unavailable_baseline': 'insufficient valid antecedent baseline',
                     'already_underway': 'left-censored archive-start onset'} .get(item.get('status'), 'not a qualifying detected onset'))
                 writer.writerow(row)
+    with (output / 'response-events.csv').open('w', newline='', encoding='utf-8') as stream:
+        fields = ['event_id','onset_utc','onset_known','trough_utc','peak_utc','recovery_end_utc',
+                  'peak_native_gage_height','trough_native_gage_height','rise_native_gage_height',
+                  'rise_duration_hours','event_duration_hours','datum','status','uncertainty_flags']
+        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction='ignore'); writer.writeheader()
+        for event in response_events:
+            row = dict(event); row['uncertainty_flags'] = json.dumps(row.get('uncertainty_flags', []))
+            writer.writerow(row)
+    with (output / 'response-matches.csv').open('w', newline='', encoding='utf-8') as stream:
+        fields = ['response_event_id','target_onset_utc','predictor_episode_id','predictor_station',
+                  'predictor_variable','lead_hours','maximum_window_hours','status','forecast_utility_validated']
+        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction='ignore'); writer.writeheader()
+        writer.writerows(revised_matches)
+    with (output / 'control-windows.csv').open('w', newline='', encoding='utf-8') as stream:
+        fields = ['control_candidate_id','start_utc','end_utc','status','categories',
+                  'stage_range_native_gage_height','stage_median_native_gage_height','coverage',
+                  'exclusion_reasons','overlapping_event_or_control_ids']
+        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction='ignore'); writer.writeheader()
+        for control in response_controls['windows']:
+            row = dict(control)
+            for key in ('categories','coverage','exclusion_reasons','overlapping_event_or_control_ids'):
+                row[key] = json.dumps(row.get(key), separators=(',',':'))
+            writer.writerow(row)
+    diagnostic_file = {'legacy_grouping_by_sigma':legacy_diagnostics,
+                       'maul1_first_rule':result['maul1_first_analysis']['predeclared_primary_rule'],
+                       'response_sensitivity':response_sensitivity,
+                       'response_event_count':len(response_events),
+                       'eligible_negative_control_count':response_controls['eligible_control_count'],
+                       'negative_control_categories':response_controls['counts_by_category']}
+    (output / 'event-diagnostics.json').write_text(json.dumps(diagnostic_file, indent=2, sort_keys=True)+'\n')
+    (output / 'revised-report.md').write_text(_render_revised_report(result, case_records))
     (output / 'report.md').write_text(_render_markdown(result, case_records))
     print(json.dumps({'months': len(months), 'hourly_records': len(records),
                       'target_episodes': result['detector']['maul1_detected_episode_count'],
                       'target_groups': len(target_groups), 'matches': len(match_rows),
+                      'maul1_first_response_events': len(response_events),
+                      'eligible_nonresponse_controls': response_controls['eligible_control_count'],
+                      'revised_timing_matches': len(revised_matches),
                       'quality_findings': quality.get('finding_count'),
                       'output': str(output)}, sort_keys=True))
     return result

@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -35,13 +35,17 @@ jobs:
         run: python scripts/validate_phase3b.py --root site/data/history --output site/data/history/phase3b
       - name: Validate generated reports
         run: |
-          for report in validation.json summary.json cases.json coverage.json; do
+          for report in validation.json summary.json cases.json coverage.json event-diagnostics.json; do
             python -m json.tool "site/data/history/phase3b/$report" > /dev/null
           done
           test -s site/data/history/phase3b/report.md
           test -s site/data/history/phase3b/events.csv
           test -s site/data/history/phase3b/matches.csv
           test -s site/data/history/phase3b/exclusions.csv
+          test -s site/data/history/phase3b/revised-report.md
+          test -s site/data/history/phase3b/response-events.csv
+          test -s site/data/history/phase3b/response-matches.csv
+          test -s site/data/history/phase3b/control-windows.csv
       - name: Commit Phase 3B reports
         run: |
           git config user.name github-actions[bot]

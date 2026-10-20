@@ -184,5 +184,98 @@ class TestPhase3BValidation(unittest.TestCase):
         self.assertEqual(quiet['quiet_control_months'][0]['coverage']['NWCL1:residual']['valid_hours'],2)
 
 
+    def test_maul1_response_events_separate_cycles_and_ignore_predictor_bridges(self):
+        start = dt.datetime(2020, 9, 1, tzinfo=dt.timezone.utc)
+        stages = [0.0, 0.0, 0.1, 0.25, 0.5, 0.8, 1.0, 1.0, 1.0, 0.75]
+        stages += [0.40] * 24
+        stages += [0.60, 0.50, 0.40, 0.30, 0.20, 0.10, 0.0]
+        stages += [0.1, 0.25, 0.5, 0.75, 1.0, 1.3, 1.5, 1.2]
+        stages += [0.90] * 12
+        index = {('MAUL1', 'stage'): {
+            start + dt.timedelta(hours=i): {'time': phase3b.iso(start + dt.timedelta(hours=i)),
+                'value': value, 'coverage': 1, 'datum': 'gage height'}
+            for i, value in enumerate(stages)}}
+        before = phase3b.maul1_response_events(index, minimum_rise=0.5, recovery_hours=12)
+        index[('DENL1', 'discharge')] = {
+            start + dt.timedelta(hours=i): {'time': phase3b.iso(start + dt.timedelta(hours=i)),
+                'value': 10000 + i * 100, 'coverage': 1}
+            for i in range(len(stages))}
+        after = phase3b.maul1_response_events(index, minimum_rise=0.5, recovery_hours=12)
+        self.assertEqual(len(before), 2)
+        self.assertEqual([(e['onset_utc'], e['peak_utc']) for e in before],
+                         [(e['onset_utc'], e['peak_utc']) for e in after])
+        self.assertGreaterEqual(before[0]['rise_native_gage_height'], 0.5)
+        self.assertNotEqual(before[0]['event_id'], before[1]['event_id'])
+
+    def test_maul1_response_event_after_observation_gap_has_uncertain_onset(self):
+        start = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+        values = [0, .1, .3, .6, .9, 1.1] + [.4] * 24
+        values += [None] * 4 + [0, .1, .3, .7, 1.0, 1.3] + [.5] * 24
+        rows = {}
+        for i, value in enumerate(values):
+            if value is not None:
+                stamp = start + dt.timedelta(hours=i)
+                rows[stamp] = {'time': phase3b.iso(stamp), 'value': value,
+                               'coverage': 1, 'datum': 'gage height'}
+        events = phase3b.maul1_response_events({('MAUL1', 'stage'): rows}, minimum_rise=0.5, recovery_hours=12)
+        self.assertEqual(len(events), 2)
+        self.assertFalse(events[1]['onset_known'])
+        self.assertIn('observation_gap_or_datum_transition', events[1]['uncertainty_flags'])
+
+    def test_control_windows_exclude_response_antecedent_recovery_and_each_other(self):
+        start = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+        events = [{'event_id': 'rise',
+                   'onset_utc': phase3b.iso(start + dt.timedelta(days=10)),
+                   'peak_utc': phase3b.iso(start + dt.timedelta(days=10, hours=12)),
+                   'recovery_end_utc': phase3b.iso(start + dt.timedelta(days=12))}]
+        windows = [
+            {'start_utc': phase3b.iso(start), 'end_utc': phase3b.iso(start + dt.timedelta(days=7))},
+            {'start_utc': phase3b.iso(start + dt.timedelta(days=7)), 'end_utc': phase3b.iso(start + dt.timedelta(days=14))},
+            {'start_utc': phase3b.iso(start + dt.timedelta(days=14)), 'end_utc': phase3b.iso(start + dt.timedelta(days=21))},
+        ]
+        annotated = phase3b.exclude_response_overlapping_controls(windows, events,
+                                                                  antecedent_hours=72,
+                                                                  recovery_buffer_hours=48)
+        self.assertEqual(annotated[0]['status'], 'eligible_control_candidate')
+        self.assertEqual(annotated[1]['status'], 'excluded')
+        self.assertIn('event_or_buffer_overlap', annotated[1]['exclusion_reasons'])
+        self.assertEqual(annotated[2]['status'], 'eligible_control_candidate')
+
+
+    def test_legacy_group_diagnostic_shows_predictor_bridge_records(self):
+        events = [episode('target-a','MAUL1','stage','target','2020-01-01T00:00:00Z',2),
+                  episode('bridge','DENL1','discharge','river_timing','2020-01-03T00:00:00Z',2),
+                  episode('target-b','MAUL1','stage','target','2020-01-05T00:00:00Z',2)]
+        diagnostic = phase3b.legacy_group_diagnostic(events, 72)
+        self.assertEqual(diagnostic['all_station_group_count'], 1)
+        self.assertEqual(diagnostic['target_only_group_count'], 2)
+        bridge_ids = {item['episode_id'] for item in diagnostic['largest_groups'][0]['chain_extending_records']}
+        self.assertIn('bridge', bridge_ids)
+
+
+    def test_post_target_predictor_is_retained_but_not_called_a_precursor(self):
+        event = {'event_id':'response-1','onset_utc':'2020-09-20T12:00:00Z',
+                 'onset_known':True,'peak_utc':'2020-09-21T12:00:00Z'}
+        predictor = episode('river-late','DENL1','discharge','river_timing','2020-09-20T18:00:00Z')
+        evaluations, matches, periods = phase3b.match_maul1_responses([event],[predictor],{})
+        self.assertEqual(matches, [])
+        self.assertEqual(evaluations[0]['status'],'no_detected_pre_onset_signal')
+        self.assertEqual(evaluations[0]['post_target_signals'][0]['status'],
+                         'after_target_onset_before_peak')
+        self.assertEqual(periods[0]['association_status'],'post_target_signal')
+
+
+    def test_revised_fixed_temporal_split_excludes_embargo_seam(self):
+        self.assertEqual(phase3b.assign_revised_temporal_subset(
+            phase3b.parse_time('2022-12-20T00:00:00Z'),
+            phase3b.parse_time('2022-12-27T00:00:00Z')),'calibration_2016_2022')
+        self.assertEqual(phase3b.assign_revised_temporal_subset(
+            phase3b.parse_time('2022-12-31T00:00:00Z'),
+            phase3b.parse_time('2023-01-02T00:00:00Z')),'excluded_split_seam')
+        self.assertEqual(phase3b.assign_revised_temporal_subset(
+            phase3b.parse_time('2023-01-05T00:00:00Z'),
+            phase3b.parse_time('2023-01-12T00:00:00Z')),'holdout_2023_2026')
+
+
 if __name__ == '__main__':
     unittest.main()
