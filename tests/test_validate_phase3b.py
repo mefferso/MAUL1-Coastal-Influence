@@ -17,6 +17,29 @@ def episode(identifier, station, variable, role, onset, duration=1, status='dete
 
 
 class TestPhase3BValidation(unittest.TestCase):
+    def test_dashboard_summary_contains_revised_results_and_no_legacy_fallback(self):
+        source = {
+            'predeclared_primary_rule': {'minimum_rise_ft': 1.0},
+            'response_event_count': 189, 'onset_known_count': 179,
+            'onset_uncertain_count': 10, 'recovery_observed_count': 152,
+            'exploratory_smaller_response_count': 114,
+            'eligible_negative_control_count': 63,
+            'negative_control_category_counts': {'quiet': 13},
+            'events_with_pre_onset_timing_match': 103,
+            'events_without_pre_onset_timing_match': 76,
+            'candidate_precursor_period_count': 143, 'post_target_signal_count': 926,
+            'predictor_only_period_count': 895,
+            'lead_time_distributions_hours': {'DENL1': {'median_hours': 44}},
+            'coverage_qualified_lead_time_distributions_hours': {},
+            'sensitivity': [], 'statistical_skill_metrics': {'status': 'unavailable'},
+            'events': ['large payload'], 'matches': ['large payload']}
+        summary = phase3b._dashboard_analysis_summary(source)
+        self.assertEqual(summary['response_event_count'], 189)
+        self.assertEqual(summary['eligible_negative_control_count'], 63)
+        self.assertEqual(summary['lead_time_distributions_hours']['DENL1']['median_hours'], 44)
+        self.assertNotIn('events', summary)
+        self.assertNotIn('matches', summary)
+
     def test_new_canal_residual_is_derived_only_from_same_datum_hourly_pairs(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)

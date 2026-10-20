@@ -1227,6 +1227,19 @@ def _render_revised_report(result, cases):
     return '\n'.join(lines)+'\n'
 
 
+def _dashboard_analysis_summary(analysis):
+    """Keep revised MAUL1-first findings in the compact object loaded by the site."""
+    fields = ('predeclared_primary_rule', 'response_event_count', 'onset_known_count',
+              'onset_uncertain_count', 'recovery_observed_count',
+              'exploratory_smaller_response_count', 'eligible_negative_control_count',
+              'negative_control_category_counts', 'events_with_pre_onset_timing_match',
+              'events_without_pre_onset_timing_match', 'candidate_precursor_period_count',
+              'post_target_signal_count', 'predictor_only_period_count',
+              'lead_time_distributions_hours', 'coverage_qualified_lead_time_distributions_hours',
+              'sensitivity', 'statistical_skill_metrics')
+    return {key: analysis[key] for key in fields}
+
+
 def run(root='site/data/history', output=None):
     root = pathlib.Path(root)
     output = pathlib.Path(output or root / 'phase3b')
@@ -1539,6 +1552,7 @@ def run(root='site/data/history', output=None):
     short_summary = {'schema_version': SCHEMA_VERSION,
                      'archive': result['archive'], 'independence': result['independence'],
                      'detector': result['detector'], 'outcomes': result['outcomes'],
+                     'maul1_first_analysis': _dashboard_analysis_summary(result['maul1_first_analysis']),
                      'negative_control_selection': {'quiet_control_count':controls['quiet_control_count'],
                                                      'excluded_month_count':controls['excluded_month_count']},
                      'lead_time_distributions_hours': result['lead_time_distributions_hours'],
