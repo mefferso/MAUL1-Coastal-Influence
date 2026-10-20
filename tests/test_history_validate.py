@@ -109,5 +109,6 @@ class TestHistoryValidation(unittest.TestCase):
   self.assertEqual(month_coverage['expected_hours'],696)
   self.assertEqual(month_coverage['valid_hours'],1)
   self.assertEqual(month_coverage['missing_hours'],695)
+  self.assertEqual(month_coverage['not_yet_observed_hours'],0)
 
 if __name__=='__main__': unittest.main()
