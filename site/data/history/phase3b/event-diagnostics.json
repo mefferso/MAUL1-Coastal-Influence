@@ -119877,9 +119877,11 @@
   },
   "maul1_first_rule": "Centered 3-hour median of native MAUL1 gage height; trough-to-peak rise >=1.0 native foot; next response starts only after 24 consecutive valid hourly observations retrace at least half of the preceding excursion below its peak (with a 0.25-ft floor). Missing hours and datum transitions split segments; onset at a segment boundary is censored. The <1.0-ft responses at >=0.5 ft are retained as a separate exploratory tier. The rule is selected without predictor outcomes.",
   "negative_control_categories": {
+    "DENL1_increase_without_qualifying_MAUL1_response": 0,
     "elevated_lake_without_qualifying_response": 9,
     "no_qualifying_MAUL1_response_other": 20,
-    "routine_variability_without_qualifying_response": 43
+    "quiet_low_variation": 13,
+    "routine_variability_without_qualifying_response": 30
   },
   "response_event_count": 189,
   "response_sensitivity": {

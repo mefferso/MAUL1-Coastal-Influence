@@ -64,7 +64,9 @@ Known-onset responses with at least one station timing detection within its pred
 
 Coverage-qualified timing counts are {'DENL1': {'n_event_group_matches': 59, 'median_hours': 42.0, 'p25_hours': 22.5, 'p75_hours': 56.5, 'min_hours': 1.0, 'max_hours': 71.0, 'strictly_positive_advance_matches': 59, 'note': 'Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.'}, 'MDLL1': {'n_event_group_matches': 42, 'median_hours': 5.0, 'p25_hours': 3.0, 'p75_hours': 7.0, 'min_hours': 2.0, 'max_hours': 13.0, 'strictly_positive_advance_matches': 42, 'note': 'Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.'}, 'NWCL1': {'n_event_group_matches': 22, 'median_hours': 5.5, 'p25_hours': 3.0, 'p75_hours': 8.5, 'min_hours': 1.0, 'max_hours': 16.0, 'strictly_positive_advance_matches': 22, 'note': 'Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.'}}. Matches are retrospective detector-onset differences; they are not issued forecasts or actionable warning.
 
-The archive yields **63 eligible, independent seven-day nonresponse windows** and 502 excluded candidates under the stated 90% coverage and event-buffer rules. Eligible category memberships: {'elevated_lake_without_qualifying_response': 9, 'routine_variability_without_qualifying_response': 43, 'no_qualifying_MAUL1_response_other': 20}.
+Among 1964 detected core predictor episodes, 143 fall in a pre-onset lead window, 926 occur after target onset through 72 hours after its peak, and 895 are outside those reviewed event windows. These classifications are retrospective episode relationships, not forecast outcomes.
+
+The archive yields **63 eligible, independent seven-day nonresponse windows** and 502 excluded candidates under the stated 90% coverage and event-buffer rules. Eligible category memberships: {'quiet_low_variation': 13, 'elevated_lake_without_qualifying_response': 9, 'routine_variability_without_qualifying_response': 30, 'no_qualifying_MAUL1_response_other': 20, 'DENL1_increase_without_qualifying_MAUL1_response': 0}.
 
 Fixed, non-overlapping 7-day windows stepped weekly. Require >=90% valid hourly coverage in native MAUL1 stage, DENL1 discharge, same-datum NWCL1 residual, and MDLL1 stage. Exclude any window overlapping a response, its 72-hour antecedent, or observed recovery plus 48 hours. Apply the fixed 2023-01-01 calibration/holdout split with a 72-hour seam embargo. Controls are observational nonresponse samples, not forecast opportunities.
 
@@ -73,7 +75,7 @@ These controls describe observed periods without a defined MAUL1 response. Predi
 ## Priority case reviews
 
 ### August 2016 Louisiana flood
-MAUL1-first events: maul1-response-0007 (response_onset_inside_case; onset 2016-08-14T00:00:00Z; peak 2016-08-17T17:00:00Z; rise 3.25 ft native). Revised timing: no detected pre-onset timing match. MAUL1 archive coverage in the case is 65.8% (221/336 hours).
+MAUL1-first events: maul1-response-0007 (response_onset_inside_case_but_uncertain; onset 2016-08-14T00:00:00Z; peak 2016-08-17T17:00:00Z; rise 3.25 ft native). Revised timing: no detected pre-onset timing match. MAUL1 archive coverage in the case is 65.8% (221/336 hours).
 Supporting context: winds NWCL1 3.604 kt from 207.5°, direction persistence 0.342, 336/336 h; NWCL1-NDBC 3.623 kt from 207.9°, direction persistence 0.337, 335/336 h; MCHL1 0/336 valid h, 0 detected support episode(s). These observations provide context only; no causal label is inferred.
 The archive begins during the August flood window; any response whose trough/onset lies at a segment boundary is left-censored. Observed rise/peak times do not recover an unobserved start, and DENL1 or MDLL1 timing does not establish cause. MCHL1 retrieval coverage is incomplete.
 
@@ -95,6 +97,8 @@ The event is defined without wind or predictor activity. Wind and incomplete MCH
 ## Scientific limits and files
 
 No POD, false-alarm ratio, CSI, causal percentages, or forecast probabilities are calculated: the archive lacks independent forcing labels and issue-time forecast opportunities. A predictor signal before onset is a timing relationship only. No DENL1 rise cannot exclude tributary runoff; positive NWCL1 residual cannot alone establish coastal forcing. MCHL1, USACE 85420, and USACE 85420LA remain separate. Missing observations are not interpolated.
+
+Acquisition gaps remain explicit in the archive manifest/coverage report: MCHL1 has 84 retrieval-error months (including 2016-01 through 2022-11 except 2022-12, and 2025-03); MDLL1 has four queried-unavailable early-2016 months; NWCL1-NDBC has eight retrieval-error and two queried-unavailable months; both USACE sources were not queried. These are unresolved acquisition states, not evidence that historical observations did not exist.
 
 The original Phase 3B findings remain in `validation.json`, `summary.json`, `events.csv`, `matches.csv`, and `report.md`; immutable `legacy-validation.json.gz`, `legacy-report.md`, `legacy-summary.json`, `legacy-cases.json`, `legacy-events.csv`, and `legacy-matches.csv` snapshots preserve the prior analysis. This revision adds `response-events.csv`, `response-matches.csv`, `control-windows.csv`, and `event-diagnostics.json`.
 
