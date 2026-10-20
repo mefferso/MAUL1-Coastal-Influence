@@ -6718,7 +6718,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -6775,7 +6775,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -6832,7 +6832,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -6889,7 +6889,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -6946,7 +6946,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -7003,7 +7003,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -7060,7 +7060,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -7117,7 +7117,7 @@
       },
       "NWCL1-NDBC": {
         "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
+        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed has no rows for requested month",
         "observed_end": null,
         "observed_start": null,
         "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
@@ -7173,14 +7173,15 @@
         "status": "skipped"
       },
       "NWCL1-NDBC": {
-        "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
-        "observed_end": null,
-        "observed_start": null,
-        "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
-        "row_count": 0,
-        "source": "NWCL1-NDBC",
-        "status": "retrieval_error"
+        "availability": "realtime_45_day_feed",
+        "error": null,
+        "observed_end": "2026-09-30T23:54:00Z",
+        "observed_start": "2026-09-05T00:00:00Z",
+        "path": "raw/NWCL1-NDBC/2026-09.json.gz",
+        "request": "https://www.ndbc.noaa.gov/data/realtime2/NWCL1.txt",
+        "row_count": 27090,
+        "source": "NDBC recent real-time standard meteorological file",
+        "status": "retrieved"
       },
       "USACE-85420": {
         "availability": null,
@@ -7230,14 +7231,15 @@
         "status": "skipped"
       },
       "NWCL1-NDBC": {
-        "availability": "archive_not_yet_published",
-        "error": "HTTP Error 404: Not Found; archive for the active year is not yet published and real-time feed request failed: HTTP Error 404: Not Found",
-        "observed_end": null,
-        "observed_start": null,
-        "request": "https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h2026.txt.gz",
-        "row_count": 0,
-        "source": "NWCL1-NDBC",
-        "status": "retrieval_error"
+        "availability": "realtime_45_day_feed",
+        "error": null,
+        "observed_end": "2026-10-20T12:48:00Z",
+        "observed_start": "2026-10-01T00:00:00Z",
+        "path": "raw/NWCL1-NDBC/2026-10.json.gz",
+        "request": "https://www.ndbc.noaa.gov/data/realtime2/NWCL1.txt",
+        "row_count": 20675,
+        "source": "NDBC recent real-time standard meteorological file",
+        "status": "retrieved"
       },
       "USACE-85420": {
         "availability": null,
