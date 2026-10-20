@@ -1,4 +1,6 @@
 import unittest
+import gzip
+import json
 import sys
 sys.path.insert(0,'scripts')
 import history
@@ -44,6 +46,26 @@ class TestHourlyDerivation(unittest.TestCase):
   self.assertFalse(any(row['variable']=='stage_change_1h' for row in result['records']))
 
 class TestHistoryValidation(unittest.TestCase):
+ def test_rebuild_passes_preceding_month_partition_for_24_hour_antecedent(self):
+  january={'schema_version':'3A.1','station':'MAUL1','month_start':'2024-01-01T00:00:00Z','month_end_exclusive':'2024-02-01T00:00:00Z','rows':[
+   {'time':'2024-01-31T00:00:00Z','station':'MAUL1','variable':'stage','value':1.0,'unit':'ft','datum':'gage height'}]}
+  february={'schema_version':'3A.1','station':'MAUL1','month_start':'2024-02-01T00:00:00Z','month_end_exclusive':'2024-03-01T00:00:00Z','rows':[
+   {'time':'2024-02-01T00:00:00Z','station':'MAUL1','variable':'stage','value':3.5,'unit':'ft','datum':'gage height'}]}
+  with tempfile.TemporaryDirectory() as temporary:
+   root=pathlib.Path(temporary)
+   jan_path=history.partition_path(root,'MAUL1','2024-01')
+   feb_path=history.partition_path(root,'MAUL1','2024-02')
+   history.write_partition(jan_path,january); history.write_partition(feb_path,february)
+   history._write_manifest(root,{'schema_version':'3A.1','months':{
+    '2024-01':{'MAUL1':{'status':'retrieved','row_count':1,'path':str(jan_path.relative_to(root))}},
+    '2024-02':{'MAUL1':{'status':'retrieved','row_count':1,'path':str(feb_path.relative_to(root))}}}})
+   history.rebuild_hourly_reports(root)
+   with gzip.open(root/'hourly'/'2024-02.json.gz','rt',encoding='utf-8') as stream:
+    report=json.load(stream)
+   antecedent=next(row for row in report['records'] if row['station']=='MAUL1' and row['variable']=='stage_change_24h' and row['time']=='2024-02-01T00:00:00Z')
+   self.assertEqual(antecedent['value'],2.5)
+   self.assertEqual(history.load_partition(jan_path)['rows'],january['rows'])
+
  def test_rebuild_writes_hourly_and_reports_without_altering_raw_partition(self):
   payload={'schema_version':'3A.1','station':'MAUL1','month_start':'2024-02-01T00:00:00Z','month_end_exclusive':'2024-03-01T00:00:00Z','rows':[{'time':'2024-02-01T00:00:00Z','station':'MAUL1','variable':'stage','value':1.0,'unit':'ft','datum':'gage height'}]}
   with tempfile.TemporaryDirectory() as temporary:
@@ -83,5 +105,9 @@ class TestHistoryValidation(unittest.TestCase):
   self.assertEqual(report['months'][0]['month'],'2024-02')
   self.assertEqual(report['stations']['MAUL1']['valid_months'],1)
   self.assertEqual(report['stations']['NWCL1-NDBC']['retrieval_errors'],1)
+  month_coverage=report['months'][0]['hourly_coverage']['MAUL1']['stage']
+  self.assertEqual(month_coverage['expected_hours'],696)
+  self.assertEqual(month_coverage['valid_hours'],1)
+  self.assertEqual(month_coverage['missing_hours'],695)
 
 if __name__=='__main__': unittest.main()
