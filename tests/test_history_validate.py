@@ -90,6 +90,14 @@ class TestHistoryValidation(unittest.TestCase):
   kinds={item['kind'] for item in findings}
   self.assertTrue({'duplicate_timestamp','unit_change','datum_change','suspicious_jump'} <= kinds)
 
+ def test_wind_direction_wraparound_is_not_a_linear_quality_jump(self):
+  rows=[
+   {'time':'2024-02-01T00:00:00Z','station':'NWCL1','variable':'wind_direction','value':359,'unit':'degrees from','datum':'none'},
+   {'time':'2024-02-01T01:00:00Z','station':'NWCL1','variable':'wind_direction','value':1,'unit':'degrees from','datum':'none'},
+  ]
+  findings=history_validate.validate_rows(rows)
+  self.assertFalse(any(item['kind']=='suspicious_jump' for item in findings))
+
  def test_wind_comparison_handles_direction_wraparound_without_averaging_sources(self):
   primary=[{'time':'2024-02-01T00:00:00Z','variable':'wind','value':10,'unit':'knots','source':'CO-OPS'}, {'time':'2024-02-01T00:00:00Z','variable':'wind_direction','value':359,'unit':'degrees from','source':'CO-OPS'}]
   independent=[{'time':'2024-02-01T00:00:00Z','variable':'wind','value':10,'unit':'knots','source':'NDBC'}, {'time':'2024-02-01T00:00:00Z','variable':'wind_direction','value':1,'unit':'degrees from','source':'NDBC'}]
