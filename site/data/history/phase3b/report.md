@@ -8,7 +8,7 @@ The archive contains descriptive timing associations, but it does not establish 
 
 ## Data and detection audit
 
-The analysis used 130 UTC months (2016-01 through 2026-10) and retained source-level unresolved months in the coverage audit. The selected target detector produced 593 detected MAUL1 rise episodes, grouped into 101 target-containing time clusters with a fixed 72-hour cross-station separation rule. These are algorithmic clusters, not verified independent storms.
+The analysis used 130 UTC months (2016-01 through 2026-10) and retained source-level unresolved months in the coverage audit. The selected target detector produced 593 detected MAUL1 rise episodes, grouped into 33 target-containing time clusters with a fixed 72-hour cross-station separation rule. These are algorithmic clusters, not verified independent storms.
 
 | Station | Variable | Valid hours | Missing hours | Not yet observed | Expected hours |
 |---|---|---:|---:|---:|---:|
@@ -24,6 +24,7 @@ The analysis used 130 UTC months (2016-01 through 2026-10) and retained source-l
 | NWCL1-NDBC | wind_u | 86048 | 3558 | 274 | 89880 |
 | NWCL1-NDBC | wind_v | 86048 | 3558 | 274 | 89880 |
 | NWCL1 | prediction | 94968 | 0 | 0 | 94968 |
+| NWCL1 | residual | 94501 | 193 | 0 | 94694 |
 | NWCL1 | water | 94501 | 193 | 274 | 94968 |
 | NWCL1 | wind | 94018 | 676 | 274 | 94968 |
 | NWCL1 | wind_direction | 94018 | 676 | 274 | 94968 |
@@ -34,9 +35,9 @@ Monthly retrieval errors, empty successful queries, and not-queried sources are 
 
 | Detector sigma | MAUL1 detected episodes | Target-containing groups | Groups with advance timing association | Descriptive group matches | All target detector records |
 |---:|---:|---:|---:|---:|---:|
-| 1.5 | 992 | 25 | 15 | 18 | 2164 |
-| 2.0 | 593 | 101 | 64 | 75 | 1410 |
-| 2.5 | 327 | 155 | 75 | 86 | 871 |
+| 1.5 | 992 | 3 | 2 | 3 | 2164 |
+| 2.0 | 593 | 33 | 22 | 29 | 1410 |
+| 2.5 | 327 | 102 | 60 | 74 | 871 |
 
 The sensitivity results show that episode counts change materially with the pre-existing 1.5/2.0/2.5 robust-sigma setting. The 72-hour baseline, minimum 48 baseline changes, 3-hour minimum persistence, fixed station-specific minimum rise, positive consecutive changes, and 6-hour reset were kept fixed. Thresholds were not reselected on the same archive to claim skill.
 
@@ -48,9 +49,9 @@ The month-reset counterfactual in `validation.json` reports local left-censor, e
 
 | Predictor | Matched event groups | Median lead | Interquartile range | Range |
 |---|---:|---:|---:|---:|
-| DENL1 | 40 | 24.0 h | 11.75–48.5 h | 3.0–72.0 h |
-| NWCL1 | 0 | unavailable | unavailable | unavailable |
-| MDLL1 | 35 | 4.0 h | 2.5–6.5 h | 1.0–11.0 h |
+| DENL1 | 12 | 33.5 h | 27.0–49.0 h | 3.0–63.0 h |
+| NWCL1 | 5 | 4.0 h | 1.0–6.0 h | 1.0–8.0 h |
+| MDLL1 | 12 | 3.5 h | 2.0–5.5 h | 1.0–8.0 h |
 
 The lead table includes detected time groups with available onset records. The coverage-qualified subset (0.9 hourly completeness in each station-specific matching window) is summarized separately in `validation.json`; all retained/excluded groups remain in `events.csv` and `exclusions.csv`.
 
@@ -58,7 +59,7 @@ These are retrospective onset differences conditional on the detector finding a 
 
 ## Nonresponse, missed events, and metrics
 
-The event table retains 3 detected MAUL1 groups without a qualifying earlier signal, 28 predictor-only groups, 32 groups with detected predictors only after target onset, 2 coincident groups with no positive lead, and 0 groups with uncertain target onset. The 0.9-coverage screen leaves 0 target groups for descriptive network-availability summaries.
+The event table retains 0 detected MAUL1 groups without a qualifying earlier signal, 5 predictor-only groups, 11 groups with detected predictors only after target onset, 0 coincident groups with no positive lead, and 0 groups with uncertain target onset. The 0.9-coverage screen leaves 31 target groups for descriptive network-availability summaries.
 
 The control audit retained 0 well-observed quiet month(s) under a 90% coverage screen for MAUL1 stage, DENL1 discharge, NWCL1 residual, and MDLL1 stage; 130 months are retained with source/coverage/signal exclusion reasons. Quiet means no detector candidate in those series, not no forcing.
 

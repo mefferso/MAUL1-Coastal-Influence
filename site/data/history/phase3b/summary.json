@@ -1,7 +1,7 @@
 {
   "archive": {
     "first_month": "2016-01",
-    "hourly_records_loaded": 1428666,
+    "hourly_records_loaded": 1523634,
     "last_month": "2026-10",
     "month_count": 130,
     "source_month_status_counts": {
@@ -201,7 +201,9 @@
       "MDLL1:gap": 2,
       "MDLL1:no_signal": 3,
       "MDLL1:uncertain": 466,
-      "NWCL1:unavailable_baseline": 1
+      "NWCL1:detected": 601,
+      "NWCL1:no_signal": 121,
+      "NWCL1:uncertain": 2450
     },
     "reset_hours": 6,
     "sigma": 2.0,
@@ -220,59 +222,98 @@
   },
   "independence": {
     "coverage_qualified_target_groups": {
-      "0.8": 0,
-      "0.9": 0,
-      "1.0": 0
+      "0.8": 31,
+      "0.9": 31,
+      "1.0": 31
     },
     "coverage_screen_rule": "A detected target group is coverage-qualified when its target detector had at least 48 valid 72-hour baseline changes and all three core predictor windows (72 h DENL1; 18 h NWCL1/MDLL1) have the stated fraction of valid hourly rows. This is an observation-sufficiency screen, not evidence of true event independence or skill.",
     "known_dependence": "Named Sally and Beta 2020 event windows are retained in their existing shared independence group; priority case names are not used as ground-truth labels.",
-    "primary_all_group_count": 135,
-    "primary_multi_target_group_count": 84,
+    "primary_all_group_count": 39,
+    "primary_multi_target_group_count": 31,
     "primary_separation_hours": 72,
-    "primary_target_group_count": 101,
+    "primary_target_group_count": 33,
     "rule": "Transitive grouping of overlapping active episode intervals and intervals separated by no more than 72 hours, across all five observation stations. This is a conservative time-separation heuristic, not a claim of scientifically independent storm events."
   },
   "lead_time_distributions_hours": {
     "DENL1": {
-      "max_hours": 72.0,
-      "median_hours": 24.0,
+      "max_hours": 63.0,
+      "median_hours": 33.5,
       "min_hours": 3.0,
-      "n_event_group_matches": 40,
+      "n_event_group_matches": 12,
       "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
-      "p25_hours": 11.75,
-      "p75_hours": 48.5,
-      "strictly_positive_advance_matches": 40
+      "p25_hours": 27.0,
+      "p75_hours": 49.0,
+      "strictly_positive_advance_matches": 12
     },
     "MDLL1": {
-      "max_hours": 11.0,
+      "max_hours": 8.0,
+      "median_hours": 3.5,
+      "min_hours": 1.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 2.0,
+      "p75_hours": 5.5,
+      "strictly_positive_advance_matches": 12
+    },
+    "NWCL1": {
+      "max_hours": 8.0,
       "median_hours": 4.0,
       "min_hours": 1.0,
-      "n_event_group_matches": 35,
+      "n_event_group_matches": 5,
       "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
-      "p25_hours": 2.5,
-      "p75_hours": 6.5,
-      "strictly_positive_advance_matches": 35
+      "p25_hours": 1.0,
+      "p75_hours": 6.0,
+      "strictly_positive_advance_matches": 5
     }
   },
-  "lead_time_distributions_hours_coverage_qualified": {},
+  "lead_time_distributions_hours_coverage_qualified": {
+    "DENL1": {
+      "max_hours": 63.0,
+      "median_hours": 33.5,
+      "min_hours": 3.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 27.0,
+      "p75_hours": 49.0,
+      "strictly_positive_advance_matches": 12
+    },
+    "MDLL1": {
+      "max_hours": 8.0,
+      "median_hours": 3.5,
+      "min_hours": 1.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 2.0,
+      "p75_hours": 5.5,
+      "strictly_positive_advance_matches": 12
+    },
+    "NWCL1": {
+      "max_hours": 6.0,
+      "median_hours": 2.5,
+      "min_hours": 1.0,
+      "n_event_group_matches": 4,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 1.0,
+      "p75_hours": 4.5,
+      "strictly_positive_advance_matches": 4
+    }
+  },
   "negative_control_selection": {
     "excluded_month_count": 130,
     "quiet_control_count": 0
   },
   "outcomes": {
-    "MCHL1_support_only_groups": 1,
-    "coincident_without_advance_groups": 2,
+    "MCHL1_support_only_groups": 0,
+    "coincident_without_advance_groups": 0,
     "onset_uncertain_groups": 0,
-    "post_target_only_groups": 32,
-    "predictor_only_groups": 28,
+    "post_target_only_groups": 11,
+    "predictor_only_groups": 5,
     "status_counts": {
-      "coincident_signals_without_advance": 2,
-      "predictors_detected_after_target_onset": 32,
-      "target_with_advance_timing_signals": 64,
-      "target_without_detected_advance_signal": 3
+      "predictors_detected_after_target_onset": 11,
+      "target_with_advance_timing_signals": 22
     },
-    "target_groups_with_advance_timing_signals": 64,
-    "target_without_qualifying_advance_signal": 3
+    "target_groups_with_advance_timing_signals": 22,
+    "target_without_qualifying_advance_signal": 0
   },
   "schema_version": "3B.1",
   "verification_metrics": {
