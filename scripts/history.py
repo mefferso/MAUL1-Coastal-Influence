@@ -94,7 +94,8 @@ def acquire_month(month,stations,root=None,refresh=False,fetchers=None):
  results={}
  for station in stations:
   path=partition_path(root,station,month)
-  if path.exists() and not refresh:
+  existing_record=month_record.get(station,{})
+  if path.exists() and not refresh and existing_record.get('status')!='partially_retrieved':
    payload=load_partition(path)
    result={'status':'skipped','row_count':len(payload['rows']),'path':str(path.relative_to(root))}
    month_record[station]=result; results[station]=result; continue
