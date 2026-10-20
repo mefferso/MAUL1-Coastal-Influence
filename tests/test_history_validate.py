@@ -27,6 +27,16 @@ class TestHourlyDerivation(unittest.TestCase):
   direction=next(row for row in result['records'] if row['station']=='NWCL1' and row['variable']=='wind_direction' and row['time']=='2024-02-01T00:00:00Z')
   self.assertAlmostEqual(direction['value'],0.0,places=1)
 
+ def test_hourly_wind_direction_is_derived_for_independent_ndbc_components(self):
+  raw=[{'schema_version':'3A.1','station':'NWCL1-NDBC','month_start':'2024-02-01T00:00:00Z','month_end_exclusive':'2024-03-01T00:00:00Z','rows':[
+   {'time':'2024-02-01T00:00:00Z','station':'NWCL1-NDBC','variable':'wind_u','value':0.1745,'unit':'knots','datum':'none'},
+   {'time':'2024-02-01T00:00:00Z','station':'NWCL1-NDBC','variable':'wind_v','value':-9.9985,'unit':'knots','datum':'none'},
+   {'time':'2024-02-01T00:30:00Z','station':'NWCL1-NDBC','variable':'wind_u','value':-0.1745,'unit':'knots','datum':'none'},
+   {'time':'2024-02-01T00:30:00Z','station':'NWCL1-NDBC','variable':'wind_v','value':-9.9985,'unit':'knots','datum':'none'}]}]
+  result=history.hourly_month(raw,'2024-02')
+  direction=next(row for row in result['records'] if row['station']=='NWCL1-NDBC' and row['variable']=='wind_direction' and row['time']=='2024-02-01T00:00:00Z')
+  self.assertAlmostEqual(direction['value'],0.0,places=1)
+
  def test_hourly_month_keeps_empty_hours_missing(self):
   raw=[{'schema_version':'3A.1','station':'MAUL1','month_start':'2024-01-01T00:00:00Z','month_end_exclusive':'2024-03-01T00:00:00Z','rows':[
    {'time':'2024-01-31T23:00:00Z','station':'MAUL1','variable':'stage','value':1.0,'unit':'ft','datum':'gage height'},
