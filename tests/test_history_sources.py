@@ -1,6 +1,7 @@
 import pathlib
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import sys
 sys.path.insert(0,'scripts')
@@ -34,6 +35,17 @@ class TestSourceAdapters(unittest.TestCase):
   self.assertEqual(result['rows'],[])
   self.assertEqual(result['error'],'HTTP 403')
 
+ def test_ndbc_archive_download_is_cached_once_per_year(self):
+  history_sources._NDBC_RAW_BY_YEAR.clear()
+  payload=b'#YY MM DD hh mm WDIR WSPD GST\n2024 02 01 00 00 180 5.0 7.0\n'
+  with patch.object(history_sources,'_request',return_value=(payload,'fixture')) as request:
+   first=history_sources.fetch_ndbc_month('2024-01')
+   second=history_sources.fetch_ndbc_month('2024-02')
+  self.assertEqual(request.call_count,1)
+  self.assertEqual(first['status'],'retrieved')
+  self.assertEqual(second['status'],'retrieved')
+  self.assertEqual(second['rows'][0]['time'],'2024-02-01T00:00:00Z')
+
  def test_usace_sources_keep_actual_station_identity(self):
   result=history_sources.parse_usace_payload({'time':'2024-02-01T00:00:00Z','value':'2.5'},'85420LA','2024-02')
   self.assertEqual(result['rows'][0]['station'],'USACE-85420LA')
@@ -51,10 +63,18 @@ class TestResumableAcquisition(unittest.TestCase):
    self.assertEqual(calls,['2024-02'])
 
  def test_failed_source_is_recorded_and_has_no_rows(self):
-  result=history_sources.failure_result('MAUL1','2024-02','fixture','timeout')
+  result=history_sources.failure_result('MAUL1','2024-02','fixture','HTTP 403')
   with tempfile.TemporaryDirectory() as temporary:
    record=history.acquire_month('2024-02',['MAUL1'],root=pathlib.Path(temporary),fetchers={'MAUL1':lambda month:result})
    self.assertEqual(record['sources']['MAUL1']['status'],'retrieval_error')
    self.assertEqual(record['sources']['MAUL1']['row_count'],0)
+
+ def test_successful_empty_response_is_unavailable_not_successful_coverage(self):
+  result={'rows':[],'source':'fixture','request':'fixture','status':'retrieved','error':None}
+  with tempfile.TemporaryDirectory() as temporary:
+   root=pathlib.Path(temporary)
+   record=history.acquire_month('2024-02',['MAUL1'],root=root,fetchers={'MAUL1':lambda month:result})
+   self.assertEqual(record['sources']['MAUL1']['status'],'queried_unavailable')
+   self.assertFalse(history.partition_path(root,'MAUL1','2024-02').exists())
 
 if __name__=='__main__': unittest.main()

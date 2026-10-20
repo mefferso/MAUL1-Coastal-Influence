@@ -12,6 +12,7 @@ import build
 import history
 
 USER_AGENT='MAUL1-research/3A (public historical archive)'
+_NDBC_RAW_BY_YEAR={}
 
 def _bounds(month):
  start=history._month_start(month); end=history._month_end(month)
@@ -110,11 +111,25 @@ def fetch_coops_month(product,month):
   result=parse_coops_payload(payload,variable,'none' if variable=='wind' else 'MLLW',month); result['request']=request; return result
  except Exception as error: return failure_result('NWCL1',month,url,str(error))
 
+def _effective_status(result):
+ status=result.get('status')
+ if status=='retrieved' and not result.get('rows'): return 'queried_unavailable'
+ return status
+
 def fetch_nwcl1_month(month):
- products=[fetch_coops_month(product,month) for product in ('water_level','predictions','wind')]
+ names=('water_level','predictions','wind')
+ products=[fetch_coops_month(product,month) for product in names]
  rows=[row for result in products for row in result['rows']]
- failures=[result['error'] for result in products if result['status']!='retrieved']
- return _result(rows,'NOAA CO-OPS 8761927','NOAA CO-OPS monthly products',month,'retrieved' if rows else 'retrieval_error','; '.join(failures) if failures else None)
+ failures=[result['error'] for result in products if result.get('error')]
+ statuses=[_effective_status(result) for result in products]
+ if rows and any(status!='retrieved' for status in statuses): status='partially_retrieved'
+ elif rows: status='retrieved'
+ elif failures: status='retrieval_error'
+ else: status='queried_unavailable'
+ result=_result(rows,'NOAA CO-OPS 8761927','NOAA CO-OPS monthly products',month,status,'; '.join(failures) if failures else None)
+ result['components']={name:{'status':_effective_status(component),'row_count':len(component.get('rows',[])),
+  'request':component.get('request'),'error':component.get('error')} for name,component in zip(names,products)}
+ return result
 
 def fetch_hads_month(month):
  start,end=_bounds(month); params={'stations':'MCHL1','sts':start.strftime('%Y-%m-%dT%H:%MZ'),'ets':(end-dt.timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%MZ'),'what':'txt'}
@@ -124,9 +139,10 @@ def fetch_hads_month(month):
  except Exception as error: return failure_result('MCHL1',month,url,str(error))
 
 def fetch_ndbc_month(month):
- start,end=_bounds(month); year=start.year; url=f'https://www.ndbc.noaa.gov/view_text_file.php?filename=nwcl1h{year}.txt.gz&dir=data/historical/stdmet/'
+ start,end=_bounds(month); year=start.year; url=f'https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h{year}.txt.gz'
  try:
-  raw,request=_request(url); return parse_ndbc_payload(raw,month,request)
+  if year not in _NDBC_RAW_BY_YEAR: _NDBC_RAW_BY_YEAR[year]=_request(url)[0]
+  return parse_ndbc_payload(_NDBC_RAW_BY_YEAR[year],month,url)
  except Exception as error: return failure_result('NWCL1-NDBC',month,url,str(error))
 
 def fetch_usace_month(source_id,month):

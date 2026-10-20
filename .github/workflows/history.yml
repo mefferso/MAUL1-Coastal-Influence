@@ -9,7 +9,7 @@ on:
       end_month:
         description: Last UTC month, inclusive (YYYY-MM)
         required: true
-        default: '2026-12'
+        default: '2026-10'
       refresh:
         description: Re-fetch existing successful partitions
         required: true
@@ -20,28 +20,52 @@ on:
         required: true
         type: boolean
         default: true
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/history.yml'
+      - 'scripts/history.py'
+      - 'scripts/history_sources.py'
+      - 'scripts/history_validate.py'
+      - 'scripts/discover.py'
 permissions:
   contents: write
 jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    env:
+      START_MONTH: ${{ github.event_name == 'workflow_dispatch' && inputs.start_month || '2016-01' }}
+      END_MONTH: ${{ github.event_name == 'workflow_dispatch' && inputs.end_month || '2026-10' }}
+      REFRESH: ${{ github.event_name == 'workflow_dispatch' && inputs.refresh || false }}
+      RUN_DISCOVERY: ${{ github.event_name != 'workflow_dispatch' || inputs.run_discovery }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Acquire monthly partitions
-        run: >-
-          python scripts/history.py
-          --start-month "${{ inputs.start_month }}"
-          --end-month "${{ inputs.end_month }}"
-          --rebuild
-          ${{ inputs.refresh == 'true' && '--refresh' || '' }}
+      - name: Acquire annual batches
+        run: |
+          python - <<'PY'
+          import os, subprocess, sys
+          sys.path.insert(0, 'scripts')
+          from history import month_range
+          months = month_range(os.environ['START_MONTH'], os.environ['END_MONTH'])
+          for offset in range(0, len(months), 12):
+              batch = months[offset:offset + 12]
+              command = [sys.executable, 'scripts/history.py',
+                         '--start-month', batch[0], '--end-month', batch[-1]]
+              if os.environ.get('REFRESH', '').lower() == 'true':
+                  command.append('--refresh')
+              print(f"Acquiring {batch[0]} through {batch[-1]}", flush=True)
+              subprocess.run(command, check=True)
+          PY
       - name: Validate acquired history
         run: python scripts/history_validate.py --root site/data/history
-      - name: Build reports and discovery
-        if: ${{ inputs.run_discovery == true }}
+      - name: Rebuild hourly reports
+        run: PYTHONPATH=scripts python -c "import json,history; print(json.dumps(history.rebuild_hourly_reports('site/data/history'),sort_keys=True))"
+      - name: Build event discovery
+        if: ${{ env.RUN_DISCOVERY == 'true' }}
         run: python scripts/discover.py --root site/data/history
       - name: Commit changed history artifacts
         run: |
