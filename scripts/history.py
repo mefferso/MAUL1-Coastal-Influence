@@ -169,15 +169,16 @@ def hourly_month(raw_partitions,month):
     stamp=_month_stamp(row['time']); old=lookup.get(stamp-dt.timedelta(hours=window))
     if row['value'] is None or not old or old['value'] is None or row.get('datum') != old.get('datum'): continue
     records.append(dict(row,variable=f'{variable}_change_{window}h',value=round(row['value']-old['value'],6),source='derived exact trailing UTC difference'))
- wind_u=[row for row in records if row['station']=='NWCL1' and row['variable']=='wind_u']
- wind_v=[row for row in records if row['station']=='NWCL1' and row['variable']=='wind_v']
- u_lookup={_month_stamp(row['time']):row for row in wind_u}; v_lookup={_month_stamp(row['time']):row for row in wind_v}
- for hour in hours:
-  u=u_lookup.get(hour); v=v_lookup.get(hour)
-  if not u or not v or u['value'] is None or v['value'] is None: continue
-  records.append({'time':hour.strftime('%Y-%m-%dT%H:00:00Z'),'station':'NWCL1','variable':'wind_direction',
-   'value':round((math.degrees(math.atan2(-u['value'],-v['value']))+360)%360,3),'coverage':min(u['coverage'],v['coverage']),
-   'missing':False,'unit':'degrees from','datum':'none','source':'derived direction from hourly wind components'})
+ for direction_station in ('NWCL1','NWCL1-NDBC'):
+  wind_u=[row for row in records if row['station']==direction_station and row['variable']=='wind_u']
+  wind_v=[row for row in records if row['station']==direction_station and row['variable']=='wind_v']
+  u_lookup={_month_stamp(row['time']):row for row in wind_u}; v_lookup={_month_stamp(row['time']):row for row in wind_v}
+  for hour in hours:
+   u=u_lookup.get(hour); v=v_lookup.get(hour)
+   if not u or not v or u['value'] is None or v['value'] is None: continue
+   records.append({'time':hour.strftime('%Y-%m-%dT%H:00:00Z'),'station':direction_station,'variable':'wind_direction',
+    'value':round((math.degrees(math.atan2(-u['value'],-v['value']))+360)%360,3),'coverage':min(u['coverage'],v['coverage']),
+    'missing':False,'unit':'degrees from','datum':'none','source':'derived direction from hourly wind components'})
  for window in (3,6,12,24):
   for hour in hours:
    samples=[]

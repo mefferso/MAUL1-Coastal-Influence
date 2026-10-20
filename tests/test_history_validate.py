@@ -27,6 +27,16 @@ class TestHourlyDerivation(unittest.TestCase):
   direction=next(row for row in result['records'] if row['station']=='NWCL1' and row['variable']=='wind_direction' and row['time']=='2024-02-01T00:00:00Z')
   self.assertAlmostEqual(direction['value'],0.0,places=1)
 
+ def test_hourly_wind_direction_is_derived_for_independent_ndbc_components(self):
+  raw=[{'schema_version':'3A.1','station':'NWCL1-NDBC','month_start':'2024-02-01T00:00:00Z','month_end_exclusive':'2024-03-01T00:00:00Z','rows':[
+   {'time':'2024-02-01T00:00:00Z','station':'NWCL1-NDBC','variable':'wind_u','value':0.1745,'unit':'knots','datum':'none'},
+   {'time':'2024-02-01T00:00:00Z','station':'NWCL1-NDBC','variable':'wind_v','value':-9.9985,'unit':'knots','datum':'none'},
+   {'time':'2024-02-01T00:30:00Z','station':'NWCL1-NDBC','variable':'wind_u','value':-0.1745,'unit':'knots','datum':'none'},
+   {'time':'2024-02-01T00:30:00Z','station':'NWCL1-NDBC','variable':'wind_v','value':-9.9985,'unit':'knots','datum':'none'}]}]
+  result=history.hourly_month(raw,'2024-02')
+  direction=next(row for row in result['records'] if row['station']=='NWCL1-NDBC' and row['variable']=='wind_direction' and row['time']=='2024-02-01T00:00:00Z')
+  self.assertAlmostEqual(direction['value'],0.0,places=1)
+
  def test_hourly_month_keeps_empty_hours_missing(self):
   raw=[{'schema_version':'3A.1','station':'MAUL1','month_start':'2024-01-01T00:00:00Z','month_end_exclusive':'2024-03-01T00:00:00Z','rows':[
    {'time':'2024-01-31T23:00:00Z','station':'MAUL1','variable':'stage','value':1.0,'unit':'ft','datum':'gage height'},
@@ -89,6 +99,14 @@ class TestHistoryValidation(unittest.TestCase):
   findings=history_validate.validate_rows(rows)
   kinds={item['kind'] for item in findings}
   self.assertTrue({'duplicate_timestamp','unit_change','datum_change','suspicious_jump'} <= kinds)
+
+ def test_wind_direction_wraparound_is_not_a_linear_quality_jump(self):
+  rows=[
+   {'time':'2024-02-01T00:00:00Z','station':'NWCL1','variable':'wind_direction','value':359,'unit':'degrees from','datum':'none'},
+   {'time':'2024-02-01T01:00:00Z','station':'NWCL1','variable':'wind_direction','value':1,'unit':'degrees from','datum':'none'},
+  ]
+  findings=history_validate.validate_rows(rows)
+  self.assertFalse(any(item['kind']=='suspicious_jump' for item in findings))
 
  def test_wind_comparison_handles_direction_wraparound_without_averaging_sources(self):
   primary=[{'time':'2024-02-01T00:00:00Z','variable':'wind','value':10,'unit':'knots','source':'CO-OPS'}, {'time':'2024-02-01T00:00:00Z','variable':'wind_direction','value':359,'unit':'degrees from','source':'CO-OPS'}]
