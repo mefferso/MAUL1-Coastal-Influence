@@ -1,6 +1,7 @@
 import pathlib
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import sys
 sys.path.insert(0,'scripts')
@@ -33,6 +34,17 @@ class TestSourceAdapters(unittest.TestCase):
   self.assertEqual(result['status'],'retrieval_error')
   self.assertEqual(result['rows'],[])
   self.assertEqual(result['error'],'HTTP 403')
+
+ def test_ndbc_archive_download_is_cached_once_per_year(self):
+  history_sources._NDBC_RAW_BY_YEAR.clear()
+  payload=b'#YY MM DD hh mm WDIR WSPD GST\n2024 02 01 00 00 180 5.0 7.0\n'
+  with patch.object(history_sources,'_request',return_value=(payload,'fixture')) as request:
+   first=history_sources.fetch_ndbc_month('2024-01')
+   second=history_sources.fetch_ndbc_month('2024-02')
+  self.assertEqual(request.call_count,1)
+  self.assertEqual(first['status'],'retrieved')
+  self.assertEqual(second['status'],'retrieved')
+  self.assertEqual(second['rows'][0]['time'],'2024-02-01T00:00:00Z')
 
  def test_usace_sources_keep_actual_station_identity(self):
   result=history_sources.parse_usace_payload({'time':'2024-02-01T00:00:00Z','value':'2.5'},'85420LA','2024-02')
