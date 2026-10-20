@@ -1018,12 +1018,13 @@ def build_response_control_windows(index, response_events, minimum_fraction=0.9,
         reasons = [f'{key}: valid coverage below {minimum_fraction:.0%}' for key, item in metrics.items()
                    if item['valid_fraction'] is None or item['valid_fraction'] < minimum_fraction]
         categories = []
+        rise72 = 0.0
         if stage_range is not None:
-            if stage_range <= 0.25:
+            if stage_range <= 0.75:
                 categories.append('quiet_low_variation')
             if stage_median >= q75 and stage_range < 1.0:
                 categories.append('elevated_lake_without_qualifying_response')
-            if 0.25 < stage_range < 1.0:
+            if 0.75 < stage_range < 1.0:
                 categories.append('routine_variability_without_qualifying_response')
             discharge_left = bisect.bisect_left(discharge_times, cursor)
             discharge_right = bisect.bisect_left(discharge_times, end)
@@ -1053,6 +1054,7 @@ def build_response_control_windows(index, response_events, minimum_fraction=0.9,
                            'stage_median_native_gage_height': round(stage_median, 4) if stage_median is not None else None,
                            'calibration_2016_2022_native_stage_75th_percentile': round(q75, 4) if q75 is not None else None,
                            'categories': categories, 'coverage': metrics,
+                           'maximum_DENL1_72h_rise_cfs': round(rise72, 3),
                            'status': 'excluded' if reasons else 'eligible_control_candidate',
                            'exclusion_reasons': reasons})
         cursor += step
@@ -1067,6 +1069,11 @@ def build_response_control_windows(index, response_events, minimum_fraction=0.9,
             row['exclusion_reasons'] = ['required_series_coverage_below_threshold'] + row['exclusion_reasons']
     eligible = [row for row in candidates if row['status'] == 'eligible_control_candidate']
     counts = Counter(category for row in eligible for category in row.get('categories', []))
+    for category in ('quiet_low_variation','elevated_lake_without_qualifying_response',
+                     'DENL1_increase_without_qualifying_MAUL1_response',
+                     'routine_variability_without_qualifying_response','no_qualifying_MAUL1_response_other'):
+        counts.setdefault(category, 0)
+    maximum_control_discharge_rise = max((row['maximum_DENL1_72h_rise_cfs'] for row in eligible), default=0.0)
     split_counts = Counter(row['temporal_subset'] for row in candidates if row['status'] == 'eligible_control_candidate')
     return {'rule': 'Fixed, non-overlapping 7-day windows stepped weekly. Require >=90% valid hourly coverage in native MAUL1 stage, DENL1 discharge, same-datum NWCL1 residual, and MDLL1 stage. Exclude any window overlapping a response, its 72-hour antecedent, or observed recovery plus 48 hours. Apply the fixed 2023-01-01 calibration/holdout split with a 72-hour seam embargo. Controls are observational nonresponse samples, not forecast opportunities.',
             'minimum_valid_coverage': minimum_fraction, 'window_hours': int(width.total_seconds()/3600),
@@ -1075,7 +1082,9 @@ def build_response_control_windows(index, response_events, minimum_fraction=0.9,
             'eligible_control_count': len(eligible),
             'excluded_candidate_count': len(candidates)-len(eligible),
             'eligible_control_counts_by_fixed_subset': dict(split_counts),
-            'counts_by_category': dict(counts)}
+            'counts_by_category': dict(counts),
+            'maximum_DENL1_72h_rise_in_eligible_controls_cfs': maximum_control_discharge_rise,
+            'DENL1_increase_category_threshold_cfs_in_72h': 50000}
 
 
 def match_maul1_responses(response_events, predictor_episodes, index):
@@ -1207,6 +1216,7 @@ def _render_revised_report(result, cases):
         lines.append('')
     lines += ['## Scientific limits and files', '',
               'No POD, false-alarm ratio, CSI, causal percentages, or forecast probabilities are calculated: the archive lacks independent forcing labels and issue-time forecast opportunities. A predictor signal before onset is a timing relationship only. No DENL1 rise cannot exclude tributary runoff; positive NWCL1 residual cannot alone establish coastal forcing. MCHL1, USACE 85420, and USACE 85420LA remain separate. Missing observations are not interpolated.', '',
+              'Acquisition gaps remain explicit in the archive manifest/coverage report: MCHL1 has 84 retrieval-error months (including 2016-01 through 2022-11 except 2022-12, and 2025-03); MDLL1 has four queried-unavailable early-2016 months; NWCL1-NDBC has eight retrieval-error and two queried-unavailable months; both USACE sources were not queried. These are unresolved acquisition states, not evidence that historical observations did not exist.', '',
               'The original Phase 3B findings remain in `validation.json`, `summary.json`, `events.csv`, `matches.csv`, and `report.md`; immutable `legacy-validation.json.gz`, `legacy-report.md`, `legacy-summary.json`, `legacy-cases.json`, `legacy-events.csv`, and `legacy-matches.csv` snapshots preserve the prior analysis. This revision adds `response-events.csv`, `response-matches.csv`, `control-windows.csv`, and `event-diagnostics.json`.', '',
               'The revised method improves interpretability by defining MAUL1 rises independently of predictor activity and sampling observed nonresponse windows. It does not establish reproducible useful advance warning. Phase 4 operational forecasting is not scientifically justified by these retrospective samples alone.']
     return '\n'.join(lines)+'\n'
@@ -1346,6 +1356,8 @@ def run(root='site/data/history', output=None):
                 case_status = 'response_peak_in_72h_antecedent'
             elif onset < actual_start <= peak < actual_end:
                 case_status = 'response_began_before_case_peak_inside'
+            elif actual_start <= onset < actual_end and not event['onset_known']:
+                case_status = 'response_onset_inside_case_but_uncertain'
             elif actual_start <= onset < actual_end:
                 case_status = 'response_onset_inside_case'
             else:
