@@ -1,0 +1,50 @@
+name: Phase 3B historical validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/phase3b.yml'
+      - 'scripts/validate_phase3b.py'
+      - 'scripts/analyze.py'
+      - 'scripts/discover.py'
+      - 'scripts/history_validate.py'
+      - 'tests/test_validate_phase3b.py'
+      - 'site/data/history/manifest.json'
+      - 'site/data/history/coverage.json'
+      - 'site/data/history/hourly/**'
+      - 'site/data/verification.json'
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate archived history integrity
+        run: python scripts/history_validate.py --root site/data/history
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Generate Phase 3B validation from archived observations
+        run: python scripts/validate_phase3b.py --root site/data/history --output site/data/history/phase3b
+      - name: Validate generated reports
+        run: |
+          for report in validation.json summary.json cases.json coverage.json; do
+            python -m json.tool "site/data/history/phase3b/$report" > /dev/null
+          done
+          test -s site/data/history/phase3b/report.md
+          test -s site/data/history/phase3b/events.csv
+          test -s site/data/history/phase3b/matches.csv
+          test -s site/data/history/phase3b/exclusions.csv
+      - name: Commit Phase 3B reports
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/history/phase3b
+          git diff --cached --quiet || (git commit -m 'data: publish Phase 3B historical validation' && git push)
