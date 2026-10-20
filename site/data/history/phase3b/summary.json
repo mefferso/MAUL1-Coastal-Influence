@@ -306,6 +306,169 @@
       "strictly_positive_advance_matches": 4
     }
   },
+  "maul1_first_analysis": {
+    "candidate_precursor_period_count": 143,
+    "coverage_qualified_lead_time_distributions_hours": {
+      "DENL1": {
+        "max_hours": 71.0,
+        "median_hours": 42.0,
+        "min_hours": 1.0,
+        "n_event_group_matches": 59,
+        "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+        "p25_hours": 22.5,
+        "p75_hours": 56.5,
+        "strictly_positive_advance_matches": 59
+      },
+      "MDLL1": {
+        "max_hours": 13.0,
+        "median_hours": 5.0,
+        "min_hours": 2.0,
+        "n_event_group_matches": 42,
+        "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+        "p25_hours": 3.0,
+        "p75_hours": 7.0,
+        "strictly_positive_advance_matches": 42
+      },
+      "NWCL1": {
+        "max_hours": 16.0,
+        "median_hours": 5.5,
+        "min_hours": 1.0,
+        "n_event_group_matches": 22,
+        "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+        "p25_hours": 3.0,
+        "p75_hours": 8.5,
+        "strictly_positive_advance_matches": 22
+      }
+    },
+    "eligible_negative_control_count": 63,
+    "events_with_pre_onset_timing_match": 103,
+    "events_without_pre_onset_timing_match": 76,
+    "exploratory_smaller_response_count": 114,
+    "lead_time_distributions_hours": {
+      "DENL1": {
+        "max_hours": 71.0,
+        "median_hours": 44.0,
+        "min_hours": 1.0,
+        "n_event_group_matches": 61,
+        "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+        "p25_hours": 23.0,
+        "p75_hours": 58.0,
+        "strictly_positive_advance_matches": 61
+      },
+      "MDLL1": {
+        "max_hours": 13.0,
+        "median_hours": 5.0,
+        "min_hours": 2.0,
+        "n_event_group_matches": 43,
+        "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+        "p25_hours": 3.0,
+        "p75_hours": 7.0,
+        "strictly_positive_advance_matches": 43
+      },
+      "NWCL1": {
+        "max_hours": 16.0,
+        "median_hours": 5.5,
+        "min_hours": 1.0,
+        "n_event_group_matches": 22,
+        "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+        "p25_hours": 3.0,
+        "p75_hours": 8.5,
+        "strictly_positive_advance_matches": 22
+      }
+    },
+    "negative_control_category_counts": {
+      "DENL1_increase_without_qualifying_MAUL1_response": 0,
+      "elevated_lake_without_qualifying_response": 9,
+      "no_qualifying_MAUL1_response_other": 20,
+      "quiet_low_variation": 13,
+      "routine_variability_without_qualifying_response": 30
+    },
+    "onset_known_count": 179,
+    "onset_uncertain_count": 10,
+    "post_target_signal_count": 926,
+    "predeclared_primary_rule": "Centered 3-hour median of native MAUL1 gage height; trough-to-peak rise >=1.0 native foot; next response starts only after 24 consecutive valid hourly observations retrace at least half of the preceding excursion below its peak (with a 0.25-ft floor). Missing hours and datum transitions split segments; onset at a segment boundary is censored. The <1.0-ft responses at >=0.5 ft are retained as a separate exploratory tier. The rule is selected without predictor outcomes.",
+    "predictor_only_period_count": 895,
+    "recovery_observed_count": 152,
+    "response_event_count": 189,
+    "sensitivity": {
+      "0.50ft_recovery12h": {
+        "left_censored_count": 22,
+        "median_rise_native_feet": 1.05,
+        "onset_known_count": 352,
+        "response_event_count": 374
+      },
+      "0.50ft_recovery24h": {
+        "left_censored_count": 28,
+        "median_rise_native_feet": 1.165,
+        "onset_known_count": 275,
+        "response_event_count": 303
+      },
+      "0.50ft_recovery48h": {
+        "left_censored_count": 29,
+        "median_rise_native_feet": 1.285,
+        "onset_known_count": 221,
+        "response_event_count": 250
+      },
+      "1.00ft_recovery12h": {
+        "left_censored_count": 9,
+        "median_rise_native_feet": 1.5225,
+        "onset_known_count": 193,
+        "response_event_count": 202
+      },
+      "1.00ft_recovery24h": {
+        "left_censored_count": 10,
+        "median_rise_native_feet": 1.595,
+        "onset_known_count": 179,
+        "response_event_count": 189
+      },
+      "1.00ft_recovery48h": {
+        "left_censored_count": 11,
+        "median_rise_native_feet": 1.595,
+        "onset_known_count": 163,
+        "response_event_count": 174
+      },
+      "1.50ft_recovery12h": {
+        "left_censored_count": 3,
+        "median_rise_native_feet": 1.9375,
+        "onset_known_count": 105,
+        "response_event_count": 108
+      },
+      "1.50ft_recovery24h": {
+        "left_censored_count": 4,
+        "median_rise_native_feet": 1.9875,
+        "onset_known_count": 102,
+        "response_event_count": 106
+      },
+      "1.50ft_recovery48h": {
+        "left_censored_count": 6,
+        "median_rise_native_feet": 2.02,
+        "onset_known_count": 97,
+        "response_event_count": 103
+      },
+      "2.00ft_recovery12h": {
+        "left_censored_count": 2,
+        "median_rise_native_feet": 2.3975,
+        "onset_known_count": 49,
+        "response_event_count": 51
+      },
+      "2.00ft_recovery24h": {
+        "left_censored_count": 3,
+        "median_rise_native_feet": 2.3975,
+        "onset_known_count": 50,
+        "response_event_count": 53
+      },
+      "2.00ft_recovery48h": {
+        "left_censored_count": 4,
+        "median_rise_native_feet": 2.49,
+        "onset_known_count": 49,
+        "response_event_count": 53
+      }
+    },
+    "statistical_skill_metrics": {
+      "reason": "These historical retrospective signals are not forecasts issued at defined opportunities, and no independent event/forcing labels establish outcomes.",
+      "status": "unavailable"
+    }
+  },
   "negative_control_selection": {
     "excluded_month_count": 130,
     "quiet_control_count": 0
