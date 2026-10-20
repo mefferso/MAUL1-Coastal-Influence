@@ -73,19 +73,23 @@ These controls describe observed periods without a defined MAUL1 response. Predi
 ## Priority case reviews
 
 ### August 2016 Louisiana flood
-MAUL1-first events: maul1-response-0007. Revised timing: no detected pre-onset timing match. MAUL1 archive coverage in the case is 65.8% (221/336 hours).
+MAUL1-first events: maul1-response-0007 (response_onset_inside_case; onset 2016-08-14T00:00:00Z; peak 2016-08-17T17:00:00Z; rise 3.25 ft native). Revised timing: no detected pre-onset timing match. MAUL1 archive coverage in the case is 65.8% (221/336 hours).
+Supporting context: winds NWCL1 3.604 kt from 207.5°, direction persistence 0.342, 336/336 h; NWCL1-NDBC 3.623 kt from 207.9°, direction persistence 0.337, 335/336 h; MCHL1 0/336 valid h, 0 detected support episode(s). These observations provide context only; no causal label is inferred.
 The archive begins during the August flood window; any response whose trough/onset lies at a segment boundary is left-censored. Observed rise/peak times do not recover an unobserved start, and DENL1 or MDLL1 timing does not establish cause. MCHL1 retrieval coverage is incomplete.
 
 ### Tropical Storm Beta
-MAUL1-first events: maul1-response-0080, maul1-response-0081. Revised timing: NWCL1 6.0 h. MAUL1 archive coverage in the case is 100.0% (264/264 hours).
+MAUL1-first events: maul1-response-0080 (prior_response_recovery_overlaps_case; onset 2020-09-03T02:00:00Z; peak 2020-09-16T10:00:00Z; rise 2.255 ft native); maul1-response-0081 (response_onset_inside_case; onset 2020-09-19T06:00:00Z; peak 2020-09-22T23:00:00Z; rise 2.425 ft native). Revised timing: maul1-response-0081: NWCL1 6.0 h before that event’s MAUL1 onset. MAUL1 archive coverage in the case is 100.0% (264/264 hours).
+Supporting context: winds NWCL1 10.872 kt from 59.8°, direction persistence 0.529, 264/264 h; NWCL1-NDBC 10.862 kt from 59.8°, direction persistence 0.529, 264/264 h; MCHL1 0/264 valid h, 0 detected support episode(s). These observations provide context only; no causal label is inferred.
 Events are formed from MAUL1 stage only, without using the storm name. Predictor comparison is possible only for observed onset and adequate coverage. NCEI NAVD88 context is external documentary information, not a direct archived USGS 63160 observation or datum conversion.
 
 ### November 2024 coastal-advisory window
-MAUL1-first events: maul1-response-0154, maul1-response-0155. Revised timing: MDLL1 8.0 h. MAUL1 archive coverage in the case is 100.0% (264/264 hours).
+MAUL1-first events: maul1-response-0154 (prior_response_recovery_overlaps_case; onset 2024-10-24T16:00:00Z; peak 2024-11-13T15:00:00Z; rise 2.14 ft native); maul1-response-0155 (response_onset_inside_case; onset 2024-11-23T14:00:00Z; peak 2024-11-30T19:00:00Z; rise 1.23 ft native). Revised timing: maul1-response-0155: MDLL1 8.0 h before that event’s MAUL1 onset. MAUL1 archive coverage in the case is 100.0% (264/264 hours).
+Supporting context: winds NWCL1 7.079 kt from 17.4°, direction persistence 0.266, 264/264 h; NWCL1-NDBC 7.08 kt from 17.4°, direction persistence 0.266, 264/264 h; MCHL1 264/264 valid h, 4 detected support episode(s). These observations provide context only; no causal label is inferred.
 Revised onset and peak come from native MAUL1 stage alone. NOAA storm-event records are reported-impact context, not response ground truth; timing is not causal attribution.
 
 ### April 2025 southeast-wind window
-MAUL1-first events: maul1-response-0167. Revised timing: no detected pre-onset timing match. MAUL1 archive coverage in the case is 100.0% (264/264 hours).
+MAUL1-first events: maul1-response-0167 (response_began_before_case_peak_inside; onset 2025-03-21T06:00:00Z; peak 2025-04-05T13:00:00Z; rise 3.065 ft native). Revised timing: no detected pre-onset timing match. MAUL1 archive coverage in the case is 100.0% (264/264 hours).
+Supporting context: winds NWCL1 7.371 kt from 176.8°, direction persistence 0.186, 264/264 h; NWCL1-NDBC 7.396 kt from 180.7°, direction persistence 0.148, 249/264 h; MCHL1 84/264 valid h, 2 detected support episode(s). These observations provide context only; no causal label is inferred.
 The event is defined without wind or predictor activity. Wind and incomplete MCHL1 observations remain context; no local NCEI event row does not establish absence of local forcing.
 
 ## Scientific limits and files
