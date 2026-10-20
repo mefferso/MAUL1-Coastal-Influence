@@ -156,7 +156,7 @@ def fetch_ndbc_month(month):
   return parse_ndbc_payload(_NDBC_RAW_BY_YEAR[year],month,url)
  archive_error=_NDBC_ARCHIVE_ERRORS_BY_YEAR.get(year,'Historical archive download failed')
  if year==dt.datetime.now(dt.timezone.utc).year and '404' in archive_error:
-  realtime_url='https://www.ndbc.noaa.gov/data/realtime2/nwcl1.txt'
+  realtime_url='https://www.ndbc.noaa.gov/data/realtime2/NWCL1.txt'
   if _NDBC_REALTIME_RAW is None and _NDBC_REALTIME_ERROR is None:
    try: _NDBC_REALTIME_RAW=_request(realtime_url)[0]
    except Exception as error: _NDBC_REALTIME_ERROR=str(error)
