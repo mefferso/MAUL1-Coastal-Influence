@@ -100,9 +100,13 @@ def acquire_month(month,stations,root=None,refresh=False,fetchers=None):
    month_record[station]=result; results[station]=result; continue
   fetcher=fetchers[station]
   result=fetcher(month)
-  record={'status':result.get('status'),'row_count':len(result.get('rows',[])),'request':result.get('request'),
+  rows=result.get('rows') or []
+  status=result.get('status')
+  if status=='retrieved' and not rows: status='queried_unavailable'
+  record={'status':status,'row_count':len(rows),'request':result.get('request'),
    'source':result.get('source'),'error':result.get('error'),'observed_start':result.get('observed_start'),'observed_end':result.get('observed_end')}
-  if result.get('rows') and result.get('status')=='retrieved':
+  if result.get('components'): record['components']=result['components']
+  if rows and status in {'retrieved','partially_retrieved'}:
    payload={'schema_version':SCHEMA_VERSION,'station':station,'month_start':f'{month}-01T00:00:00Z',
     'month_end_exclusive':_month_end(month).strftime('%Y-%m-%dT%H:%M:%SZ'),'rows':result['rows'],'retrieval':record}
    write_partition(path,payload,overwrite=True)
@@ -192,18 +196,44 @@ def hourly_month(raw_partitions,month):
  return {'schema_version':SCHEMA_VERSION,'month_start':f'{month}-01T00:00:00Z','month_end_exclusive':_month_end(month).strftime('%Y-%m-%dT%H:%M:%SZ'),'records':records}
 
 def coverage_report(manifest,hourly):
- months=[]; stations=defaultdict(lambda:{'valid_months':0,'retrieval_errors':0,'queried_unavailable':0,'rows':0})
- for month,source_map in sorted(manifest.get('months',{}).items()):
-  months.append({'month':month,'sources':source_map})
-  for station,record in source_map.items():
-   if record.get('status') in {'retrieved','skipped'}: stations[station]['valid_months']+=1
-   if record.get('status')=='retrieval_error': stations[station]['retrieval_errors']+=1
-   if record.get('status')=='queried_unavailable' or record.get('status')=='not_queried': stations[station]['queried_unavailable']+=1
-   stations[station]['rows']+=record.get('row_count',0) or 0
- variables=defaultdict(int)
+ monthly=defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:{'valid_hours':0,'reported_hours':0})))
+ totals=defaultdict(lambda:{'valid_hours':0,'reported_hours':0})
  for row in hourly.get('records',[]):
-  if row.get('value') is not None: variables[f"{row.get('station')}:{row.get('variable')}"]+=1
- return {'schema_version':SCHEMA_VERSION,'months':months,'stations':dict(sorted(stations.items())),'hourly_valid_records':dict(sorted(variables.items()))}
+  if not row.get('time') or not row.get('station') or not row.get('variable'): continue
+  month=_month_stamp(row['time']).strftime('%Y-%m')
+  station=row['station']; variable=row['variable']
+  bucket=monthly[month][station][variable]
+  bucket['reported_hours']+=1
+  totals[f'{station}:{variable}']['reported_hours']+=1
+  if row.get('value') is not None:
+   bucket['valid_hours']+=1
+   totals[f'{station}:{variable}']['valid_hours']+=1
+ months=[]
+ stations=defaultdict(lambda:{'valid_months':0,'retrieval_errors':0,'queried_unavailable':0,'partial_months':0,'rows':0})
+ for month,source_map in sorted(manifest.get('months',{}).items()):
+  expected_hours=int((_month_end(month)-_month_start(month)).total_seconds()//3600)
+  hourly_coverage={}
+  for station,variables in sorted(monthly.get(month,{}).items()):
+   hourly_coverage[station]={}
+   for variable,counts in sorted(variables.items()):
+    valid=counts['valid_hours']
+    hourly_coverage[station][variable]={
+     'valid_hours':valid,'expected_hours':expected_hours,
+     'missing_hours':max(0,expected_hours-valid),
+     'reported_hours':counts['reported_hours']}
+  months.append({'month':month,'expected_hours':expected_hours,'sources':source_map,'hourly_coverage':hourly_coverage})
+  for station,record in source_map.items():
+   status=record.get('status')
+   if status in {'retrieved','skipped','partially_retrieved'}: stations[station]['valid_months']+=1
+   if status=='partially_retrieved': stations[station]['partial_months']+=1
+   if status=='retrieval_error': stations[station]['retrieval_errors']+=1
+   if status in {'queried_unavailable','not_queried'}: stations[station]['queried_unavailable']+=1
+   stations[station]['rows']+=record.get('row_count',0) or 0
+ for bucket in totals.values():
+  bucket['missing_hours']=max(0,bucket['reported_hours']-bucket['valid_hours'])
+ return {'schema_version':SCHEMA_VERSION,'months':months,'stations':dict(sorted(stations.items())),
+  'hourly_valid_records':dict(sorted((key,value['valid_hours']) for key,value in totals.items())),
+  'hourly_variable_coverage':dict(sorted(totals.items()))}
 
 def _write_json(path,payload):
  path=pathlib.Path(path); path.parent.mkdir(parents=True,exist_ok=True)
@@ -213,9 +243,13 @@ def rebuild_hourly_reports(root=None):
  root=pathlib.Path(root or pathlib.Path(__file__).resolve().parents[1]/'site/data/history')
  manifest=_read_manifest(root); all_records=[]
  for month in sorted(manifest.get('months',{})):
-  partitions=[]
-  for station,record in manifest['months'][month].items():
-   if record.get('path') and (root/record['path']).exists(): partitions.append(load_partition(root/record['path']))
+  partitions=[]; seen_paths=set()
+  context_month=(_month_start(month)-dt.timedelta(days=1)).strftime('%Y-%m')
+  for source_month in (context_month,month):
+   for station,record in manifest.get('months',{}).get(source_month,{}).items():
+    relative=record.get('path')
+    if relative and relative not in seen_paths and (root/relative).exists():
+     partitions.append(load_partition(root/relative)); seen_paths.add(relative)
   hourly=hourly_month(partitions,month)
   path=hourly_path(root,month); path.parent.mkdir(parents=True,exist_ok=True)
   path.write_bytes(gzip.compress(json.dumps(hourly,sort_keys=True,separators=(',',':')).encode(),mtime=0))
