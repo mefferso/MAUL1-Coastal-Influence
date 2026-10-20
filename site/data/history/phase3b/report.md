@@ -24,7 +24,7 @@ The analysis used 130 UTC months (2016-01 through 2026-10) and retained source-l
 | NWCL1-NDBC | wind_u | 86048 | 3558 | 274 | 89880 |
 | NWCL1-NDBC | wind_v | 86048 | 3558 | 274 | 89880 |
 | NWCL1 | prediction | 94968 | 0 | 0 | 94968 |
-| NWCL1 | residual | 94501 | 193 | 0 | 94694 |
+| NWCL1 | residual | 94501 | 193 | 274 | 94968 |
 | NWCL1 | water | 94501 | 193 | 274 | 94968 |
 | NWCL1 | wind | 94018 | 676 | 274 | 94968 |
 | NWCL1 | wind_direction | 94018 | 676 | 274 | 94968 |
@@ -59,7 +59,7 @@ These are retrospective onset differences conditional on the detector finding a 
 
 ## Nonresponse, missed events, and metrics
 
-The event table retains 0 detected MAUL1 groups without a qualifying earlier signal, 5 predictor-only groups, 11 groups with detected predictors only after target onset, 0 coincident groups with no positive lead, and 0 groups with uncertain target onset. The 0.9-coverage screen leaves 31 target groups for descriptive network-availability summaries.
+The event table retains 11 detected MAUL1 groups without a qualifying earlier signal, 5 predictor-only groups, 11 groups with detected predictors only after target onset, 0 coincident groups with no positive lead, and 0 groups with uncertain target onset. The 0.9-coverage screen leaves 31 target groups for descriptive network-availability summaries.
 
 The control audit retained 0 well-observed quiet month(s) under a 90% coverage screen for MAUL1 stage, DENL1 discharge, NWCL1 residual, and MDLL1 stage; 130 months are retained with source/coverage/signal exclusion reasons. Quiet means no detector candidate in those series, not no forcing.
 
