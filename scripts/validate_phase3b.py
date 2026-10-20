@@ -454,7 +454,7 @@ def temporal_split(groups, boundary='2023-01-01T00:00:00Z', embargo_hours=72):
     return output
 
 
-def negative_control_months(monthly_coverage, manifest_months, episodes, minimum_fraction=.9):
+def negative_control_months(monthly_coverage, manifest_months, episodes, minimum_fraction=.9, index=None):
     """Select observable months without any detector candidate as quiet controls."""
     required = [TARGET, *((station, variable) for station, variable, _, _, _ in PREDICTORS)]
     controls = []
@@ -478,6 +478,19 @@ def negative_control_months(monthly_coverage, manifest_months, episodes, minimum
         metrics = {}
         for station, variable in required:
             entry = month_record.get('hourly_coverage',{}).get(station,{}).get(variable)
+            if station == 'NWCL1' and variable == 'residual' and entry is None and index is not None:
+                nwc = month_record.get('hourly_coverage',{}).get('NWCL1',{})
+                water = nwc.get('water')
+                prediction = nwc.get('prediction')
+                if water and prediction:
+                    reporting = min(water.get('reporting_hours',water.get('expected_hours',0)),
+                                    prediction.get('reporting_hours',prediction.get('expected_hours',0)))
+                    year, number = map(int, month.split('-'))
+                    month_start = dt.datetime(year,number,1,tzinfo=UTC)
+                    valid_hours = sum(valid(index.get(('NWCL1','residual'),{}).get(
+                        month_start+dt.timedelta(hours=hour))) for hour in range(reporting))
+                    entry = {'valid_hours':valid_hours,'reporting_hours':reporting,
+                             'expected_hours':reporting,'missing_hours':reporting-valid_hours}
             key = f'{station}:{variable}'
             if not entry:
                 reasons.append(f'{key}: no monthly hourly denominator/source unavailable')
@@ -832,7 +845,7 @@ def run(root='site/data/history', output=None):
     lead_matches = [match for group in groups for match in group['matches']]
     target_groups = [g for g in groups if g['detected_target_episode_count']]
     outcomes = Counter(g['status'] for g in target_groups)
-    controls = negative_control_months(monthly_coverage,manifest.get('months',{}),primary_episodes)
+    controls = negative_control_months(monthly_coverage,manifest.get('months',{}),primary_episodes,index=index)
     split = temporal_split(groups)
     split_counts = Counter(row['subset'] for row in split)
 
