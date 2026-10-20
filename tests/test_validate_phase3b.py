@@ -124,6 +124,24 @@ class TestPhase3BValidation(unittest.TestCase):
             self.assertEqual(audit['hourly_variables']['MCHL1:stage']['monthly_source_states'],
                              {'retrieval_error':1})
 
+    def test_derived_residual_coverage_keeps_partial_month_expected_hours(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            (root/'coverage.json').write_text(json.dumps({'months':[{
+                'month':'2026-10','hourly_coverage':{'NWCL1':{
+                    'water':{'expected_hours':3,'reporting_hours':2},
+                    'prediction':{'expected_hours':3,'reporting_hours':2}}}}]}))
+            index = {('NWCL1','residual'):{
+                dt.datetime(2026,10,1,tzinfo=dt.timezone.utc):{'value':0.1,'coverage':1,'datum':'MLLW'},
+                dt.datetime(2026,10,1,1,tzinfo=dt.timezone.utc):{'value':None,'coverage':0,'datum':'MLLW'}}}
+            audit = phase3b.coverage_audit(root,{}, {'months':{}}, index)
+            residual = audit['hourly_variables']['NWCL1:residual']
+            self.assertEqual(residual['expected_hours'],3)
+            self.assertEqual(residual['reported_hours'],2)
+            self.assertEqual(residual['valid_hours'],1)
+            self.assertEqual(residual['missing_hours'],1)
+            self.assertEqual(residual['not_yet_observed_hours'],1)
+
     def test_match_lead_distribution_is_event_level_and_explicit(self):
         report = phase3b.lead_summaries([{'predictor_station':'DENL1','lead_hours':6},
                                         {'predictor_station':'DENL1','lead_hours':12}])

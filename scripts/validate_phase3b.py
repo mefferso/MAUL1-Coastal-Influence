@@ -177,7 +177,8 @@ def coverage_audit(root, hourly_coverage, manifest, index):
                     prediction.get('reporting_hours', prediction.get('expected_hours', 0)))
         year, mon = map(int, month['month'].split('-'))
         begin = dt.datetime(year, mon, 1, tzinfo=UTC)
-        residual_expected += count
+        residual_expected += min(water.get('expected_hours', count),
+                                  prediction.get('expected_hours', count))
         residual_reported += count
         residual_valid += sum(valid(index.get(('NWCL1', 'residual'), {}).get(begin + dt.timedelta(hours=i)))
                               for i in range(count))
@@ -185,7 +186,7 @@ def coverage_audit(root, hourly_coverage, manifest, index):
         hourly_coverage = dict(hourly_coverage)
         hourly_coverage['NWCL1:residual'] = {
             'valid_hours': residual_valid, 'missing_hours': residual_reported - residual_valid,
-            'not_yet_observed_hours': 0, 'expected_hours': residual_expected,
+            'not_yet_observed_hours': residual_expected - residual_reported, 'expected_hours': residual_expected,
             'reported_hours': residual_reported}
     for key, values in sorted(hourly_coverage.items()):
         station, variable = key.split(':', 1)
@@ -957,7 +958,9 @@ def run(root='site/data/history', output=None):
       'lead_time_distributions_hours': lead_summaries(lead_matches),
       'lead_time_distributions_hours_coverage_qualified': lead_summaries([
           match for group in groups if group.get('coverage_screen',{}).get('0.9') for match in group['matches']]),
-      'outcomes': {'target_without_qualifying_advance_signal': outcomes.get('target_without_detected_advance_signal', 0),
+      'outcomes': {'target_without_qualifying_advance_signal': sum(
+                       g['detected_target_episode_count'] > 0 and
+                       g['status'] != 'target_with_advance_timing_signals' for g in groups),
                    'predictor_only_groups': sum(g['detected_predictor_episode_count']>0 and not g['detected_target_episode_count'] for g in groups),
                    'MCHL1_support_only_groups': sum(g['detected_support_episode_count']>0 and not g['detected_predictor_episode_count'] and not g['detected_target_episode_count'] for g in groups),
                    'post_target_only_groups': outcomes.get('predictors_detected_after_target_onset', 0),
