@@ -4,6 +4,7 @@ import io
 import json
 import pathlib
 import sys,unittest
+from unittest.mock import patch
 sys.path.insert(0,'scripts')
 import analyze
 class TestLag(unittest.TestCase):
@@ -141,6 +142,16 @@ class TestIndependentEpisodes(unittest.TestCase):
   episodes=analyze.detect_episodes(self._series(values),station='MAUL1',variable='stage',min_rise=0.25)
   self.assertTrue(any(episode['status']=='no_signal' for episode in episodes))
   self.assertFalse(any(episode['status']=='detected' for episode in episodes))
+
+ def test_episode_context_is_computed_once_for_many_events(self):
+  values=[100.0]
+  for hour in range(1,1001):
+   delta=0.10 if hour % 100 in (50,51,52,53) else (0.001 if hour % 2 else -0.001)
+   values.append(values[-1]+delta)
+  with patch.object(analyze,'coverage_summary',wraps=analyze.coverage_summary) as summary:
+   episodes=analyze.detect_episodes(self._series(values),station='MAUL1',variable='stage',min_rise=0.25)
+  self.assertGreater(len([item for item in episodes if item['status']=='detected']),1)
+  self.assertEqual(summary.call_count,1)
 
  def test_falling_or_short_changes_do_not_create_response_episode(self):
   values=[10.0]

@@ -2,7 +2,7 @@
 import json
 import gzip
 import math
-from bisect import bisect_left
+from bisect import bisect_left,bisect_right
 import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
@@ -71,29 +71,36 @@ def _datum_status(station,variable,datum):
   return 'native_unverified',False
  return 'source_native',False
 
+def _episode_context(rows,min_coverage):
+ datum=next((row.get('datum') for row in rows if row.get('datum') is not None),None)
+ valid=[row for row in rows if _usable(row,min_coverage)]
+ valid_by_time={_dt(row['time']):row for row in valid}
+ return {'datum':datum,'valid':valid,'valid_by_time':valid_by_time,
+  'valid_times':sorted(valid_by_time),'coverage':coverage_summary(rows,min_coverage)}
+
 def _episode_record(status,station,variable,rows,onset=None,end=None,peak=None,
                     baseline=None,baseline_status='available',signal_threshold=None,
-                    min_coverage=1,**extra):
- datum=next((row.get('datum') for row in rows if row.get('datum') is not None),None)
+                    min_coverage=1,_prepared=None,**extra):
+ prepared=_episode_context(rows,min_coverage) if _prepared is None else _prepared
+ datum=prepared['datum']
  datum_status,navd88_eligible=_datum_status(station,variable,datum)
- valid=[row for row in rows if _usable(row,min_coverage)]
+ valid=prepared['valid']; by_time=prepared['valid_by_time']
  record={'onset_utc':onset.strftime('%Y-%m-%dT%H:%M:%SZ') if onset else None,
   'onset_known':onset is not None,'peak_utc':peak.strftime('%Y-%m-%dT%H:%M:%SZ') if peak else None,
   'duration_hours':None,'rise':None,'max_hourly_rise':None,'status':status,
   'station':station,'variable':variable,'datum':datum,'datum_status':datum_status,
-  'navd88_threshold_eligible':navd88_eligible,'coverage':coverage_summary(rows,min_coverage),
+  'navd88_threshold_eligible':navd88_eligible,'coverage':prepared['coverage'],
   'baseline_status':baseline_status,'baseline_hours':72,'minimum_baseline_points':48,
   'sigma_threshold':signal_threshold,'signal_type':'positive_consecutive_hourly_rise'}
  if onset and end:
   record['duration_hours']=int((end-onset).total_seconds()/3600)+1
  if onset and peak and valid:
-  before=[row for row in valid if _dt(row['time']) < onset]
-  start_value=before[-1]['value'] if before else None
-  peak_row=next((row for row in valid if _dt(row['time']) == peak),None)
+  before_index=bisect_left(prepared['valid_times'],onset)
+  start_value=valid[before_index-1]['value'] if before_index else None
+  peak_row=by_time.get(peak)
   if start_value is not None and peak_row is not None:
    record['rise']=round(peak_row['value']-start_value,6)
   changes=[]
-  by_time={_dt(row['time']):row for row in valid}
   cursor=onset
   while cursor <= end:
    current=by_time.get(cursor); previous=by_time.get(cursor-timedelta(hours=1))
@@ -116,10 +123,12 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
  below-coverage hours break both baseline support and episode persistence.
  """
  ordered=sorted(series,key=lambda row:row['time'])
+ prepared=_episode_context(ordered,min_coverage)
  if not ordered:
   return [_episode_record('unavailable_baseline',station,variable,ordered,
-   baseline_status='unavailable',signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+   baseline_status='unavailable',signal_threshold=sigma_threshold,min_coverage=min_coverage,_prepared=prepared)]
  by_time={_dt(row['time']):row for row in ordered}
+ ordered_times=sorted(by_time)
  changes={}
  for stamp,row in by_time.items():
   previous=by_time.get(stamp-timedelta(hours=1))
@@ -130,7 +139,7 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
  if not positive:
   return [_episode_record('unavailable_baseline',station,variable,ordered,
    baseline_status='unavailable' if len(changes) < min_baseline_points else 'available',
-   signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+   signal_threshold=sigma_threshold,min_coverage=min_coverage,_prepared=prepared)]
 
  episodes=[]; blocked_until=None; baseline_seen=False; uncertain_seen=False
  for candidate in positive:
@@ -151,7 +160,7 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
      peak=end
      episodes.append(_episode_record('already_underway',station,variable,ordered,
       end=end,peak=peak,baseline_status='unavailable',signal_threshold=sigma_threshold,
-      min_coverage=min_coverage,reason='archive begins during a sustained positive rise'))
+      min_coverage=min_coverage,_prepared=prepared,reason='archive begins during a sustained positive rise'))
      blocked_until=end+timedelta(hours=reset_hours)
     else:
      # Short positive noise before the first usable baseline is not enough
@@ -171,12 +180,13 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
    end += timedelta(hours=1)
   duration=int((end-candidate).total_seconds()/3600)+1
   gap_after_run=(end+timedelta(hours=1) in by_time and end+timedelta(hours=1) not in changes)
-  peak=max((stamp for stamp in by_time if candidate <= stamp <= end),
-   key=lambda stamp: by_time[stamp]['value'])
+  peak_start=bisect_left(ordered_times,candidate)
+  peak_end=bisect_right(ordered_times,end)
+  peak=max(ordered_times[peak_start:peak_end],key=lambda stamp:by_time[stamp]['value'])
   record=_episode_record('gap' if gap_after_run else ('detected' if duration >= min_duration_hours else 'uncertain'),
    station,variable,ordered,onset=candidate,end=end,peak=peak,
    baseline=(center,scale),baseline_status='available',signal_threshold=cutoff,
-   min_coverage=min_coverage,minimum_rise=min_rise)
+   min_coverage=min_coverage,_prepared=prepared,minimum_rise=min_rise)
   if gap_after_run:
    record['reason']='missing or below-coverage hour broke positive persistence'
   elif record['rise'] is None or record['rise'] < min_rise or (record['max_hourly_rise'] or 0) <= 0:
@@ -188,12 +198,12 @@ def detect_episodes(series,station,variable,min_rise=0.0,min_duration_hours=3,
  if uncertain_seen:
   return [_episode_record('uncertain',station,variable,ordered,baseline_status='available',
    signal_threshold=sigma_threshold,min_coverage=min_coverage,
-   reason='robust baseline scale was zero or near zero')]
+   _prepared=prepared,reason='robust baseline scale was zero or near zero')]
  if baseline_seen:
   return [_episode_record('no_signal',station,variable,ordered,baseline_status='available',
-   signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+   signal_threshold=sigma_threshold,min_coverage=min_coverage,_prepared=prepared)]
  return [_episode_record('unavailable_baseline',station,variable,ordered,
-  baseline_status='unavailable',signal_threshold=sigma_threshold,min_coverage=min_coverage)]
+  baseline_status='unavailable',signal_threshold=sigma_threshold,min_coverage=min_coverage,_prepared=prepared)]
 
 def _result(status,threshold,baseline_hours,min_baseline_points,persistence,**extra):
  result=dict(onset_time=None,threshold_sigma=threshold,baseline_hours=baseline_hours,
