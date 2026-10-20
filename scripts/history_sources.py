@@ -13,6 +13,9 @@ import history
 
 USER_AGENT='MAUL1-research/3A (public historical archive)'
 _NDBC_RAW_BY_YEAR={}
+_NDBC_ARCHIVE_ERRORS_BY_YEAR={}
+_NDBC_REALTIME_RAW=None
+_NDBC_REALTIME_ERROR=None
 
 def _bounds(month):
  start=history._month_start(month); end=history._month_end(month)
@@ -34,8 +37,10 @@ def _result(rows,source,request,month,status='retrieved',error=None):
  return {'rows':rows,'source':source,'request':request,'status':status,'error':error,
   'observed_start':rows[0]['time'] if rows else None,'observed_end':rows[-1]['time'] if rows else None}
 
-def failure_result(station,month,request,error,status='retrieval_error'):
- return {'rows':[],'source':station,'request':request,'status':status,'error':error,'observed_start':None,'observed_end':None}
+def failure_result(station,month,request,error,status='retrieval_error',availability=None):
+ result={'rows':[],'source':station,'request':request,'status':status,'error':error,'observed_start':None,'observed_end':None}
+ if availability: result['availability']=availability
+ return result
 
 def _request(url,timeout=60):
  for attempt in range(3):
@@ -139,11 +144,36 @@ def fetch_hads_month(month):
  except Exception as error: return failure_result('MCHL1',month,url,str(error))
 
 def fetch_ndbc_month(month):
+ global _NDBC_REALTIME_RAW, _NDBC_REALTIME_ERROR
  start,end=_bounds(month); year=start.year; url=f'https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h{year}.txt.gz'
- try:
-  if year not in _NDBC_RAW_BY_YEAR: _NDBC_RAW_BY_YEAR[year]=_request(url)[0]
+ if year not in _NDBC_RAW_BY_YEAR and year not in _NDBC_ARCHIVE_ERRORS_BY_YEAR:
+  try: _NDBC_RAW_BY_YEAR[year]=_request(url)[0]
+  except urllib.error.HTTPError as error:
+   if error.code==404: _NDBC_ARCHIVE_ERRORS_BY_YEAR[year]=str(error)
+   else: return failure_result('NWCL1-NDBC',month,url,str(error))
+  except Exception as error: return failure_result('NWCL1-NDBC',month,url,str(error))
+ if year in _NDBC_RAW_BY_YEAR:
   return parse_ndbc_payload(_NDBC_RAW_BY_YEAR[year],month,url)
- except Exception as error: return failure_result('NWCL1-NDBC',month,url,str(error))
+ archive_error=_NDBC_ARCHIVE_ERRORS_BY_YEAR.get(year,'Historical archive download failed')
+ if year==dt.datetime.now(dt.timezone.utc).year and '404' in archive_error:
+  realtime_url='https://www.ndbc.noaa.gov/data/realtime2/nwcl1.txt'
+  if _NDBC_REALTIME_RAW is None and _NDBC_REALTIME_ERROR is None:
+   try: _NDBC_REALTIME_RAW=_request(realtime_url)[0]
+   except Exception as error: _NDBC_REALTIME_ERROR=str(error)
+  if _NDBC_REALTIME_RAW is not None:
+   result=parse_ndbc_payload(_NDBC_REALTIME_RAW,month,realtime_url)
+   if result.get('rows'):
+    result['source']='NDBC recent real-time standard meteorological file'
+    result['request']=realtime_url
+    result['availability']='realtime_45_day_feed'
+    return result
+   realtime_error='real-time feed has no rows for requested month'
+  else:
+   realtime_error=f'real-time feed request failed: {_NDBC_REALTIME_ERROR}'
+  return failure_result('NWCL1-NDBC',month,url,
+   f'{archive_error}; archive for the active year is not yet published and {realtime_error}',
+   availability='archive_not_yet_published')
+ return failure_result('NWCL1-NDBC',month,url,archive_error)
 
 def fetch_usace_month(source_id,month):
  request=f'https://rivergages.mvr.army.mil/WaterControl/stationinfo2.cfm?sid={source_id}'

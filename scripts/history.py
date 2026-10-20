@@ -105,7 +105,7 @@ def acquire_month(month,stations,root=None,refresh=False,fetchers=None):
   status=result.get('status')
   if status=='retrieved' and not rows: status='queried_unavailable'
   record={'status':status,'row_count':len(rows),'request':result.get('request'),
-   'source':result.get('source'),'error':result.get('error'),'observed_start':result.get('observed_start'),'observed_end':result.get('observed_end')}
+   'source':result.get('source'),'error':result.get('error'),'availability':result.get('availability'),'observed_start':result.get('observed_start'),'observed_end':result.get('observed_end')}
   if result.get('components'): record['components']=result['components']
   if rows and status in {'retrieved','partially_retrieved'}:
    payload={'schema_version':SCHEMA_VERSION,'station':station,'month_start':f'{month}-01T00:00:00Z',

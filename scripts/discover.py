@@ -172,10 +172,18 @@ def context_for_interval(start_utc, end_utc):
 
 
 def _load_hourly(root):
+    """Load only the hourly series used by continuous discovery.
+
+    Retaining every derived variable from every station in memory is unnecessary:
+    event detection uses these four native series, and controls use MAUL1 stage.
+    """
+    needed = {(station, variable) for station, variable, *_ in PREDICTORS}
+    needed.add(('MAUL1', 'stage'))
     records = []
     for path in sorted((pathlib.Path(root) / 'hourly').glob('*.json.gz')):
         with gzip.open(path, 'rt', encoding='utf-8') as stream:
-            records.extend(json.load(stream).get('records', []))
+            records.extend(row for row in json.load(stream).get('records', [])
+                           if (row.get('station'), row.get('variable')) in needed)
     return records
 
 

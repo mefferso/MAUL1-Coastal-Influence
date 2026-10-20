@@ -1,6 +1,8 @@
 import pathlib
 import tempfile
 import unittest
+import datetime as dt
+import urllib.error
 from unittest.mock import patch
 
 import sys
@@ -28,6 +30,23 @@ class TestSourceAdapters(unittest.TestCase):
   result=history_sources.parse_hads_payload('station,utc_valid,HGIRGZZ\nMCHL1,2024-02-01 00:00:00,1.25\n','2024-02')
   self.assertEqual(result['rows'][0]['station'],'MCHL1')
   self.assertEqual(result['rows'][0]['datum'],'HADS native gage height (unverified)')
+
+ def test_ndbc_current_year_404_uses_recent_feed_without_fabricating_older_months(self):
+  history_sources._NDBC_RAW_BY_YEAR.clear()
+  history_sources._NDBC_ARCHIVE_ERRORS_BY_YEAR.clear()
+  history_sources._NDBC_REALTIME_RAW=None
+  history_sources._NDBC_REALTIME_ERROR=None
+  now=dt.datetime.now(dt.timezone.utc)
+  month=f"{now.year:04d}-{now.month:02d}"
+  payload=(f"#YY MM DD hh mm WDIR WSPD GST\n{now.year} {now.month:02d} 01 00 00 180 5.0 7.0\n").encode()
+  archive_url=f"https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h{now.year}.txt.gz"
+  error=urllib.error.HTTPError(archive_url,404,'Not Found',{},None)
+  with patch.object(history_sources,'_request',side_effect=[error,(payload,'realtime')]) as request:
+   result=history_sources.fetch_ndbc_month(month)
+  self.assertEqual(request.call_count,2)
+  self.assertEqual(result['status'],'retrieved')
+  self.assertEqual(result['availability'],'realtime_45_day_feed')
+  self.assertEqual(result['rows'][0]['station'],'NWCL1-NDBC')
 
  def test_ndbc_access_failure_is_not_fabricated_data(self):
   result=history_sources.failure_result('NDBC-NWCL1','2024-02','https://example.invalid','HTTP 403')
