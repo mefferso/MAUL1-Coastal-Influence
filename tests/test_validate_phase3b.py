@@ -17,6 +17,25 @@ def episode(identifier, station, variable, role, onset, duration=1, status='dete
 
 
 class TestPhase3BValidation(unittest.TestCase):
+    def test_new_canal_residual_is_derived_only_from_same_datum_hourly_pairs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            import gzip
+            (root/'hourly').mkdir()
+            rows = [
+                {'time':'2020-09-01T00:00:00Z','station':'NWCL1','variable':'water','value':1.5,'coverage':4,'datum':'MLLW'},
+                {'time':'2020-09-01T00:00:00Z','station':'NWCL1','variable':'prediction','value':0.5,'coverage':4,'datum':'MLLW'},
+                {'time':'2020-09-01T01:00:00Z','station':'NWCL1','variable':'water','value':1.7,'coverage':4,'datum':'MLLW'},
+                {'time':'2020-09-01T01:00:00Z','station':'NWCL1','variable':'prediction','value':0.6,'coverage':4,'datum':'NAVD88'},
+            ]
+            with gzip.open(root/'hourly'/'2020-09.json.gz','wt',encoding='utf-8') as stream:
+                json.dump({'records':rows},stream)
+            residuals = [r for r in phase3b.load_hourly(root) if r['variable']=='residual']
+            self.assertEqual(residuals[0]['value'],1.0)
+            self.assertEqual(residuals[0]['datum'],'MLLW')
+            self.assertIsNone(residuals[1]['value'])
+            self.assertTrue(residuals[1]['missing'])
+
     def test_overlapping_cross_station_episodes_share_one_independence_group(self):
         events = [episode('target-1','MAUL1','stage','target','2020-09-20T12:00:00Z',4),
                   episode('target-2','MAUL1','stage','target','2020-09-22T00:00:00Z',3),
@@ -131,6 +150,20 @@ class TestPhase3BValidation(unittest.TestCase):
         excluded = phase3b.negative_control_months([coverage],manifest,[signal])
         self.assertEqual(excluded['quiet_control_count'],0)
         self.assertIn('candidate',excluded['excluded_months'][0]['candidate_episode_ids'])
+
+    def test_quiet_control_coverage_uses_derived_new_canal_residual(self):
+        coverage = {'month':'2024-01','hourly_coverage':{'NWCL1':{
+            'water':{'expected_hours':2,'reporting_hours':2,'valid_hours':2},
+            'prediction':{'expected_hours':2,'reporting_hours':2,'valid_hours':2}}}}
+        for station,variable in [('MAUL1','stage'),('DENL1','discharge'),('MDLL1','stage')]:
+            coverage['hourly_coverage'].setdefault(station,{})[variable] = {
+                'expected_hours':2,'reporting_hours':2,'valid_hours':2}
+        index = {('NWCL1','residual'):{
+            dt.datetime(2024,1,1,tzinfo=dt.timezone.utc):{'value':0.1,'coverage':1,'datum':'MLLW'},
+            dt.datetime(2024,1,1,1,tzinfo=dt.timezone.utc):{'value':0.2,'coverage':1,'datum':'MLLW'}}}
+        quiet = phase3b.negative_control_months([coverage],{'2024-01':{}},[],index=index)
+        self.assertEqual(quiet['quiet_control_count'],1)
+        self.assertEqual(quiet['quiet_control_months'][0]['coverage']['NWCL1:residual']['valid_hours'],2)
 
 
 if __name__ == '__main__':

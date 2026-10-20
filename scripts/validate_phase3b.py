@@ -101,6 +101,29 @@ def load_hourly(root):
             month = json.load(stream)
         records.extend(row for row in month.get('records', [])
                        if (row.get('station'), row.get('variable')) in NEEDED)
+    # The archive stores the two native New Canal products (observed water
+    # level and astronomical prediction) separately. Derive the non-tidal
+    # residual only for coincident, valid observations on the same datum.
+    # Keep explicit hourly rows, including unavailable pairs, so coverage and
+    # gaps remain auditable rather than disappearing from the denominator.
+    by_key = {(row.get('station'), row.get('variable'), parse_time(row['time'])): row
+              for row in records if row.get('time')}
+    residuals = []
+    water_times = sorted(stamp for station, variable, stamp in by_key
+                         if station == 'NWCL1' and variable == 'water')
+    for stamp in water_times:
+        water = by_key[('NWCL1', 'water', stamp)]
+        prediction = by_key.get(('NWCL1', 'prediction', stamp))
+        same_datum = bool(prediction and water.get('datum') and
+                          water.get('datum') == prediction.get('datum'))
+        both_valid = valid(water) and valid(prediction) and same_datum
+        residuals.append({'time': iso(stamp), 'station': 'NWCL1', 'variable': 'residual',
+                          'value': round(water['value'] - prediction['value'], 6) if both_valid else None,
+                          'coverage': min(water.get('coverage', 0), prediction.get('coverage', 0)) if prediction else 0,
+                          'missing': not both_valid, 'unit': water.get('unit'),
+                          'datum': water.get('datum') if same_datum else None,
+                          'source': 'derived same-time observed water minus astronomical prediction'})
+    records.extend(residuals)
     return records
 
 
@@ -139,6 +162,31 @@ def coverage_audit(root, hourly_coverage, manifest, index):
     result = {}
     gap_intervals = {}
     source_states = {}
+    coverage_report = json.loads((pathlib.Path(root) / 'coverage.json').read_text())
+    # The Phase 3A hourly coverage report counts the native water and tide
+    # predictions separately. Add their same-datum intersection as the
+    # derived NWCL1 residual denominator used by this validation.
+    residual_expected = residual_valid = residual_reported = 0
+    for month in coverage_report.get('months', []):
+        hourly = month.get('hourly_coverage', {}).get('NWCL1', {})
+        water = hourly.get('water')
+        prediction = hourly.get('prediction')
+        if not water or not prediction:
+            continue
+        count = min(water.get('reporting_hours', water.get('expected_hours', 0)),
+                    prediction.get('reporting_hours', prediction.get('expected_hours', 0)))
+        year, mon = map(int, month['month'].split('-'))
+        begin = dt.datetime(year, mon, 1, tzinfo=UTC)
+        residual_expected += count
+        residual_reported += count
+        residual_valid += sum(valid(index.get(('NWCL1', 'residual'), {}).get(begin + dt.timedelta(hours=i)))
+                              for i in range(count))
+    if residual_reported:
+        hourly_coverage = dict(hourly_coverage)
+        hourly_coverage['NWCL1:residual'] = {
+            'valid_hours': residual_valid, 'missing_hours': residual_reported - residual_valid,
+            'not_yet_observed_hours': 0, 'expected_hours': residual_expected,
+            'reported_hours': residual_reported}
     for key, values in sorted(hourly_coverage.items()):
         station, variable = key.split(':', 1)
         if (station, variable) not in NEEDED or '_change_' in variable or variable == 'wind_vector_trailing':
@@ -163,8 +211,15 @@ def coverage_audit(root, hourly_coverage, manifest, index):
         # are not recast as zero-observation periods.
         missing = []
         interval_months = []
-        for month in json.loads((pathlib.Path(root) / 'coverage.json').read_text()).get('months', []):
+        for month in coverage_report.get('months', []):
             monthly = month.get('hourly_coverage', {}).get(station, {}).get(variable)
+            if station == 'NWCL1' and variable == 'residual':
+                water_cov = month.get('hourly_coverage', {}).get('NWCL1', {}).get('water')
+                pred_cov = month.get('hourly_coverage', {}).get('NWCL1', {}).get('prediction')
+                if not water_cov or not pred_cov:
+                    continue
+                monthly = {'reporting_hours': min(water_cov.get('reporting_hours', water_cov.get('expected_hours', 0)),
+                                                  pred_cov.get('reporting_hours', pred_cov.get('expected_hours', 0)))}
             if not monthly:
                 continue
             interval_months.append(month['month'])
@@ -399,7 +454,7 @@ def temporal_split(groups, boundary='2023-01-01T00:00:00Z', embargo_hours=72):
     return output
 
 
-def negative_control_months(monthly_coverage, manifest_months, episodes, minimum_fraction=.9):
+def negative_control_months(monthly_coverage, manifest_months, episodes, minimum_fraction=.9, index=None):
     """Select observable months without any detector candidate as quiet controls."""
     required = [TARGET, *((station, variable) for station, variable, _, _, _ in PREDICTORS)]
     controls = []
@@ -423,6 +478,19 @@ def negative_control_months(monthly_coverage, manifest_months, episodes, minimum
         metrics = {}
         for station, variable in required:
             entry = month_record.get('hourly_coverage',{}).get(station,{}).get(variable)
+            if station == 'NWCL1' and variable == 'residual' and entry is None and index is not None:
+                nwc = month_record.get('hourly_coverage',{}).get('NWCL1',{})
+                water = nwc.get('water')
+                prediction = nwc.get('prediction')
+                if water and prediction:
+                    reporting = min(water.get('reporting_hours',water.get('expected_hours',0)),
+                                    prediction.get('reporting_hours',prediction.get('expected_hours',0)))
+                    year, number = map(int, month.split('-'))
+                    month_start = dt.datetime(year,number,1,tzinfo=UTC)
+                    valid_hours = sum(valid(index.get(('NWCL1','residual'),{}).get(
+                        month_start+dt.timedelta(hours=hour))) for hour in range(reporting))
+                    entry = {'valid_hours':valid_hours,'reporting_hours':reporting,
+                             'expected_hours':reporting,'missing_hours':reporting-valid_hours}
             key = f'{station}:{variable}'
             if not entry:
                 reasons.append(f'{key}: no monthly hourly denominator/source unavailable')
@@ -777,7 +845,7 @@ def run(root='site/data/history', output=None):
     lead_matches = [match for group in groups for match in group['matches']]
     target_groups = [g for g in groups if g['detected_target_episode_count']]
     outcomes = Counter(g['status'] for g in target_groups)
-    controls = negative_control_months(monthly_coverage,manifest.get('months',{}),primary_episodes)
+    controls = negative_control_months(monthly_coverage,manifest.get('months',{}),primary_episodes,index=index)
     split = temporal_split(groups)
     split_counts = Counter(row['subset'] for row in split)
 
