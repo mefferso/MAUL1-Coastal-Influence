@@ -38,7 +38,7 @@ class TestSourceAdapters(unittest.TestCase):
   history_sources._NDBC_REALTIME_ERROR=None
   now=dt.datetime.now(dt.timezone.utc)
   month=f"{now.year:04d}-{now.month:02d}"
-  payload=(f"#YY MM DD hh mm WDIR WSPD GST\\n{now.year} {now.month:02d} 01 00 00 180 5.0 7.0\\n").encode()
+  payload=(f"#YY MM DD hh mm WDIR WSPD GST\n{now.year} {now.month:02d} 01 00 00 180 5.0 7.0\n").encode()
   archive_url=f"https://www.ndbc.noaa.gov/data/historical/stdmet/nwcl1h{now.year}.txt.gz"
   error=urllib.error.HTTPError(archive_url,404,'Not Found',{},None)
   with patch.object(history_sources,'_request',side_effect=[error,(payload,'realtime')]) as request:
