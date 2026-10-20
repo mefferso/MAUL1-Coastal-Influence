@@ -1,0 +1,336 @@
+{
+  "archive": {
+    "first_month": "2016-01",
+    "hourly_records_loaded": 1523634,
+    "last_month": "2026-10",
+    "month_count": 130,
+    "source_month_status_counts": {
+      "DENL1": {
+        "skipped": 130
+      },
+      "MAUL1": {
+        "skipped": 130
+      },
+      "MCHL1": {
+        "retrieval_error": 84,
+        "skipped": 46
+      },
+      "MDLL1": {
+        "queried_unavailable": 4,
+        "skipped": 126
+      },
+      "NWCL1": {
+        "skipped": 130
+      },
+      "NWCL1-NDBC": {
+        "queried_unavailable": 2,
+        "retrieval_error": 8,
+        "skipped": 120
+      },
+      "USACE-85420": {
+        "not_queried": 130
+      },
+      "USACE-85420LA": {
+        "not_queried": 130
+      }
+    }
+  },
+  "cases": [
+    {
+      "event_id": "flood-2016",
+      "name": "August 2016 Louisiana flood",
+      "target_coverage": {
+        "coverage_fraction": 0.6577,
+        "datum": "gage height",
+        "expected_hours": 336,
+        "first": {
+          "time_utc": "2016-08-13T19:00:00Z",
+          "value": 2.52
+        },
+        "largest_6h_rise": {
+          "change": 0.365,
+          "time_utc": "2016-08-15T02:00:00Z"
+        },
+        "last": {
+          "time_utc": "2016-08-22T23:00:00Z",
+          "value": 3.415
+        },
+        "maximum": {
+          "time_utc": "2016-08-17T22:00:00Z",
+          "unit": "ft",
+          "value": 5.8
+        },
+        "minimum": {
+          "time_utc": "2016-08-13T19:00:00Z",
+          "unit": "ft",
+          "value": 2.52
+        },
+        "valid_hours": 221
+      },
+      "target_episode_count": 1,
+      "timing_matches": 0
+    },
+    {
+      "event_id": "beta-2020",
+      "name": "Tropical Storm Beta",
+      "target_coverage": {
+        "coverage_fraction": 1.0,
+        "datum": "gage height",
+        "expected_hours": 264,
+        "first": {
+          "time_utc": "2020-09-18T00:00:00Z",
+          "value": 3.18
+        },
+        "largest_6h_rise": {
+          "change": 0.24,
+          "time_utc": "2020-09-20T18:00:00Z"
+        },
+        "last": {
+          "time_utc": "2020-09-28T23:00:00Z",
+          "value": 3.055
+        },
+        "maximum": {
+          "time_utc": "2020-09-23T00:00:00Z",
+          "unit": "ft",
+          "value": 5.285
+        },
+        "minimum": {
+          "time_utc": "2020-09-18T22:00:00Z",
+          "unit": "ft",
+          "value": 2.855
+        },
+        "valid_hours": 264
+      },
+      "target_episode_count": 1,
+      "timing_matches": 0
+    },
+    {
+      "event_id": "front-2024-11",
+      "name": "November 2024 coastal-advisory window",
+      "target_coverage": {
+        "coverage_fraction": 1.0,
+        "datum": "gage height",
+        "expected_hours": 264,
+        "first": {
+          "time_utc": "2024-11-14T00:00:00Z",
+          "value": 4.125
+        },
+        "largest_6h_rise": {
+          "change": 0.33,
+          "time_utc": "2024-11-23T20:00:00Z"
+        },
+        "last": {
+          "time_utc": "2024-11-24T23:00:00Z",
+          "value": 1.845
+        },
+        "maximum": {
+          "time_utc": "2024-11-14T00:00:00Z",
+          "unit": "ft",
+          "value": 4.125
+        },
+        "minimum": {
+          "time_utc": "2024-11-23T11:00:00Z",
+          "unit": "ft",
+          "value": 1.16
+        },
+        "valid_hours": 264
+      },
+      "target_episode_count": 2,
+      "timing_matches": 1
+    },
+    {
+      "event_id": "front-2025-04",
+      "name": "April 2025 southeast-wind window",
+      "target_coverage": {
+        "coverage_fraction": 1.0,
+        "datum": "gage height",
+        "expected_hours": 264,
+        "first": {
+          "time_utc": "2025-04-01T00:00:00Z",
+          "value": 2.675
+        },
+        "largest_6h_rise": {
+          "change": 0.26,
+          "time_utc": "2025-04-02T04:00:00Z"
+        },
+        "last": {
+          "time_utc": "2025-04-11T23:00:00Z",
+          "value": 0.485
+        },
+        "maximum": {
+          "time_utc": "2025-04-05T13:00:00Z",
+          "unit": "ft",
+          "value": 3.42
+        },
+        "minimum": {
+          "time_utc": "2025-04-11T22:00:00Z",
+          "unit": "ft",
+          "value": 0.48
+        },
+        "valid_hours": 264
+      },
+      "target_episode_count": 1,
+      "timing_matches": 0
+    }
+  ],
+  "conclusion": "Current archive supports retrospective timing associations, but not demonstrated actionable forecast utility or causal classification.",
+  "detector": {
+    "MCHL1_role": "supporting propagation observations only; no predeclared matching lead window and no causal classification.",
+    "baseline_hours": 72,
+    "maul1_detected_episode_count": 593,
+    "maul1_episodes_in_prior_discovery": 593,
+    "method": "positive consecutive hourly change; fixed preceding 72-hour baseline; at least 48 valid one-hour changes; minimum 3-hour rise; minimum station-specific rise; sigma 2.0 primary; 6-hour reset; no interpolation.",
+    "minimum_baseline_changes": 48,
+    "minimum_persistence_hours": 3,
+    "minimum_rise": {
+      "DENL1": "50 cfs",
+      "MAUL1": "0.25 native gage-height ft",
+      "MDLL1:stage": "0.05 native ft",
+      "NWCL1:residual": "0.05 ft"
+    },
+    "predictor_detector_status_counts": {
+      "DENL1:detected": 724,
+      "DENL1:gap": 8,
+      "DENL1:no_signal": 838,
+      "DENL1:uncertain": 224,
+      "MCHL1:detected": 282,
+      "MCHL1:gap": 5,
+      "MCHL1:no_signal": 4,
+      "MCHL1:uncertain": 362,
+      "MDLL1:detected": 639,
+      "MDLL1:gap": 2,
+      "MDLL1:no_signal": 3,
+      "MDLL1:uncertain": 466,
+      "NWCL1:detected": 601,
+      "NWCL1:no_signal": 121,
+      "NWCL1:uncertain": 2450
+    },
+    "reset_hours": 6,
+    "sigma": 2.0,
+    "sigma_sensitivity_prespecified": [
+      1.5,
+      2.0,
+      2.5
+    ],
+    "target_detector_status_counts": {
+      "detected": 593,
+      "gap": 11,
+      "no_signal": 403,
+      "uncertain": 403
+    },
+    "target_variable": "MAUL1 native 00065 stage; gage height, not NAVD88."
+  },
+  "independence": {
+    "coverage_qualified_target_groups": {
+      "0.8": 31,
+      "0.9": 31,
+      "1.0": 31
+    },
+    "coverage_screen_rule": "A detected target group is coverage-qualified when its target detector had at least 48 valid 72-hour baseline changes and all three core predictor windows (72 h DENL1; 18 h NWCL1/MDLL1) have the stated fraction of valid hourly rows. This is an observation-sufficiency screen, not evidence of true event independence or skill.",
+    "known_dependence": "Named Sally and Beta 2020 event windows are retained in their existing shared independence group; priority case names are not used as ground-truth labels.",
+    "primary_all_group_count": 39,
+    "primary_multi_target_group_count": 31,
+    "primary_separation_hours": 72,
+    "primary_target_group_count": 33,
+    "rule": "Transitive grouping of overlapping active episode intervals and intervals separated by no more than 72 hours, across all five observation stations. This is a conservative time-separation heuristic, not a claim of scientifically independent storm events."
+  },
+  "lead_time_distributions_hours": {
+    "DENL1": {
+      "max_hours": 63.0,
+      "median_hours": 33.5,
+      "min_hours": 3.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 27.0,
+      "p75_hours": 49.0,
+      "strictly_positive_advance_matches": 12
+    },
+    "MDLL1": {
+      "max_hours": 8.0,
+      "median_hours": 3.5,
+      "min_hours": 1.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 2.0,
+      "p75_hours": 5.5,
+      "strictly_positive_advance_matches": 12
+    },
+    "NWCL1": {
+      "max_hours": 8.0,
+      "median_hours": 4.0,
+      "min_hours": 1.0,
+      "n_event_group_matches": 5,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 1.0,
+      "p75_hours": 6.0,
+      "strictly_positive_advance_matches": 5
+    }
+  },
+  "lead_time_distributions_hours_coverage_qualified": {
+    "DENL1": {
+      "max_hours": 63.0,
+      "median_hours": 33.5,
+      "min_hours": 3.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 27.0,
+      "p75_hours": 49.0,
+      "strictly_positive_advance_matches": 12
+    },
+    "MDLL1": {
+      "max_hours": 8.0,
+      "median_hours": 3.5,
+      "min_hours": 1.0,
+      "n_event_group_matches": 12,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 2.0,
+      "p75_hours": 5.5,
+      "strictly_positive_advance_matches": 12
+    },
+    "NWCL1": {
+      "max_hours": 6.0,
+      "median_hours": 2.5,
+      "min_hours": 1.0,
+      "n_event_group_matches": 4,
+      "note": "Descriptive onset difference conditional on detected signal and MAUL1 episode; not actionable forecast lead.",
+      "p25_hours": 1.0,
+      "p75_hours": 4.5,
+      "strictly_positive_advance_matches": 4
+    }
+  },
+  "negative_control_selection": {
+    "excluded_month_count": 130,
+    "quiet_control_count": 0
+  },
+  "outcomes": {
+    "MCHL1_support_only_groups": 0,
+    "coincident_without_advance_groups": 0,
+    "onset_uncertain_groups": 0,
+    "post_target_only_groups": 11,
+    "predictor_only_groups": 5,
+    "status_counts": {
+      "predictors_detected_after_target_onset": 11,
+      "target_with_advance_timing_signals": 22
+    },
+    "target_groups_with_advance_timing_signals": 22,
+    "target_without_qualifying_advance_signal": 11
+  },
+  "schema_version": "3B.1",
+  "verification_metrics": {
+    "critical_success_index": {
+      "reason": "Event independence and binary forecast opportunity/outcome labels are not established.",
+      "status": "unavailable",
+      "value": null
+    },
+    "false_alarm_ratio": {
+      "reason": "Predictor episodes are retrospective signals, not issued forecasts; predictor-only groups are descriptive nonresponses.",
+      "status": "unavailable",
+      "value": null
+    },
+    "probability_of_detection": {
+      "reason": "No independent response/forcing ground truth and no defined forecast issuance opportunities.",
+      "status": "unavailable",
+      "value": null
+    }
+  }
+}

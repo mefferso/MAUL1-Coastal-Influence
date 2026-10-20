@@ -202,6 +202,67 @@
         }
       },
       "predictor_signals_in_extended_window": 18,
+      "revised_method_interpretation": "Event candidates are identified from MAUL1 native stage alone; timing associations are evaluated afterward. Unknown onset or missing coverage limits precursor interpretation. External storm context is not ground truth.",
+      "revised_response_event_ids": [
+        "maul1-response-0007"
+      ],
+      "revised_response_events": [
+        {
+          "case_window_status": "response_onset_inside_case_but_uncertain",
+          "datum": "gage height",
+          "datum_segment": 33,
+          "event_duration_hours": 94.0,
+          "event_id": "maul1-response-0007",
+          "interpretation": "MAUL1 native gage-height response only; no datum conversion or causal label.",
+          "minimum_rise_native_feet": 1.0,
+          "onset_inside_case_window": true,
+          "onset_known": false,
+          "onset_utc": "2016-08-14T00:00:00Z",
+          "peak_inside_case_window": true,
+          "peak_native_gage_height": 5.775,
+          "peak_utc": "2016-08-17T17:00:00Z",
+          "recovery_end_utc": "2016-08-22T14:00:00Z",
+          "recovery_rule": "at least 1.625 ft below peak (half the excursion, 0.25-ft floor) for 24 consecutive hourly observations",
+          "rise_duration_hours": 89.0,
+          "rise_native_gage_height": 3.25,
+          "status": "left_censored",
+          "trough_native_gage_height": 2.525,
+          "trough_utc": "2016-08-13T19:00:00Z",
+          "uncertainty_flags": [
+            "left_boundary_onset_uncertain",
+            "observation_gap_or_datum_transition"
+          ]
+        }
+      ],
+      "revised_response_matches": [],
+      "revised_wind_and_support_context": {
+        "MCHL1_expected_hours": 336,
+        "MCHL1_source_status": "unavailable_in_case_window",
+        "MCHL1_support_episode_count": 0,
+        "MCHL1_valid_hours": 0,
+        "observed_wind_summaries": [
+          {
+            "coverage_fraction": 1.0,
+            "directional_persistence": 0.342,
+            "expected_hours": 336,
+            "mean_from_direction_degrees": 207.5,
+            "mean_speed_knots": 3.604,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1",
+            "valid_vector_hours": 336
+          },
+          {
+            "coverage_fraction": 0.997,
+            "directional_persistence": 0.337,
+            "expected_hours": 336,
+            "mean_from_direction_degrees": 207.9,
+            "mean_speed_knots": 3.623,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1-NDBC",
+            "valid_vector_hours": 335
+          }
+        ]
+      },
       "start_utc": "2016-08-09T00:00:00Z",
       "timeline_utc": [
         {
@@ -594,6 +655,105 @@
         }
       },
       "predictor_signals_in_extended_window": 13,
+      "revised_method_interpretation": "Event candidates are identified from MAUL1 native stage alone; timing associations are evaluated afterward. Unknown onset or missing coverage limits precursor interpretation. External storm context is not ground truth.",
+      "revised_response_event_ids": [
+        "maul1-response-0080",
+        "maul1-response-0081"
+      ],
+      "revised_response_events": [
+        {
+          "case_window_status": "prior_response_recovery_overlaps_case",
+          "datum": "gage height",
+          "datum_segment": 186,
+          "event_duration_hours": 325.0,
+          "event_id": "maul1-response-0080",
+          "interpretation": "MAUL1 native gage-height response only; no datum conversion or causal label.",
+          "minimum_rise_native_feet": 1.0,
+          "onset_inside_case_window": false,
+          "onset_known": true,
+          "onset_utc": "2020-09-03T02:00:00Z",
+          "peak_inside_case_window": false,
+          "peak_native_gage_height": 4.25,
+          "peak_utc": "2020-09-16T10:00:00Z",
+          "recovery_end_utc": "2020-09-19T06:00:00Z",
+          "recovery_rule": "at least 1.127 ft below peak (half the excursion, 0.25-ft floor) for 24 consecutive hourly observations",
+          "rise_duration_hours": 320.0,
+          "rise_native_gage_height": 2.255,
+          "status": "observed_response",
+          "trough_native_gage_height": 1.995,
+          "trough_utc": "2020-09-02T21:00:00Z",
+          "uncertainty_flags": [
+            "observation_gap_or_datum_transition"
+          ]
+        },
+        {
+          "case_window_status": "response_onset_inside_case",
+          "datum": "gage height",
+          "datum_segment": 186,
+          "event_duration_hours": 97.0,
+          "event_id": "maul1-response-0081",
+          "interpretation": "MAUL1 native gage-height response only; no datum conversion or causal label.",
+          "minimum_rise_native_feet": 1.0,
+          "onset_inside_case_window": true,
+          "onset_known": true,
+          "onset_utc": "2020-09-19T06:00:00Z",
+          "peak_inside_case_window": true,
+          "peak_native_gage_height": 5.28,
+          "peak_utc": "2020-09-22T23:00:00Z",
+          "recovery_end_utc": "2020-09-26T13:00:00Z",
+          "recovery_rule": "at least 1.213 ft below peak (half the excursion, 0.25-ft floor) for 24 consecutive hourly observations",
+          "rise_duration_hours": 89.0,
+          "rise_native_gage_height": 2.425,
+          "status": "observed_response",
+          "trough_native_gage_height": 2.855,
+          "trough_utc": "2020-09-18T22:00:00Z",
+          "uncertainty_flags": [
+            "observation_gap_or_datum_transition"
+          ]
+        }
+      ],
+      "revised_response_matches": [
+        {
+          "forecast_utility_validated": false,
+          "lead_hours": 6.0,
+          "maximum_window_hours": 18,
+          "predictor_episode_id": "nwcl1-residual-d01-1391",
+          "predictor_station": "NWCL1",
+          "predictor_variable": "residual",
+          "response_event_id": "maul1-response-0081",
+          "status": "descriptive_pre_onset_timing_only",
+          "target_onset_utc": "2020-09-19T06:00:00Z",
+          "timing_evidence": "lake_residual_timing"
+        }
+      ],
+      "revised_wind_and_support_context": {
+        "MCHL1_expected_hours": 264,
+        "MCHL1_source_status": "unavailable_in_case_window",
+        "MCHL1_support_episode_count": 0,
+        "MCHL1_valid_hours": 0,
+        "observed_wind_summaries": [
+          {
+            "coverage_fraction": 1.0,
+            "directional_persistence": 0.529,
+            "expected_hours": 264,
+            "mean_from_direction_degrees": 59.8,
+            "mean_speed_knots": 10.872,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1",
+            "valid_vector_hours": 264
+          },
+          {
+            "coverage_fraction": 1.0,
+            "directional_persistence": 0.529,
+            "expected_hours": 264,
+            "mean_from_direction_degrees": 59.8,
+            "mean_speed_knots": 10.862,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1-NDBC",
+            "valid_vector_hours": 264
+          }
+        ]
+      },
       "start_utc": "2020-09-18T00:00:00Z",
       "timeline_utc": [
         {
@@ -1152,6 +1312,106 @@
         }
       },
       "predictor_signals_in_extended_window": 7,
+      "revised_method_interpretation": "Event candidates are identified from MAUL1 native stage alone; timing associations are evaluated afterward. Unknown onset or missing coverage limits precursor interpretation. External storm context is not ground truth.",
+      "revised_response_event_ids": [
+        "maul1-response-0154",
+        "maul1-response-0155"
+      ],
+      "revised_response_events": [
+        {
+          "case_window_status": "prior_response_recovery_overlaps_case",
+          "datum": "gage height",
+          "datum_segment": 206,
+          "event_duration_hours": 484.0,
+          "event_id": "maul1-response-0154",
+          "interpretation": "MAUL1 native gage-height response only; no datum conversion or causal label.",
+          "minimum_rise_native_feet": 1.0,
+          "onset_inside_case_window": false,
+          "onset_known": true,
+          "onset_utc": "2024-10-24T16:00:00Z",
+          "peak_inside_case_window": false,
+          "peak_native_gage_height": 4.28,
+          "peak_utc": "2024-11-13T15:00:00Z",
+          "recovery_end_utc": "2024-11-21T17:00:00Z",
+          "recovery_rule": "at least 1.070 ft below peak (half the excursion, 0.25-ft floor) for 24 consecutive hourly observations",
+          "rise_duration_hours": 479.0,
+          "rise_native_gage_height": 2.14,
+          "status": "observed_response",
+          "trough_native_gage_height": 2.14,
+          "trough_utc": "2024-10-24T11:00:00Z",
+          "uncertainty_flags": [
+            "observation_gap_or_datum_transition"
+          ]
+        },
+        {
+          "case_window_status": "response_onset_inside_case",
+          "datum": "gage height",
+          "datum_segment": 206,
+          "event_duration_hours": 177.0,
+          "event_id": "maul1-response-0155",
+          "interpretation": "MAUL1 native gage-height response only; no datum conversion or causal label.",
+          "minimum_rise_native_feet": 1.0,
+          "onset_inside_case_window": true,
+          "onset_known": true,
+          "onset_utc": "2024-11-23T14:00:00Z",
+          "peak_inside_case_window": false,
+          "peak_native_gage_height": 2.395,
+          "peak_utc": "2024-11-30T19:00:00Z",
+          "recovery_end_utc": null,
+          "recovery_rule": "at least 0.615 ft below peak (half the excursion, 0.25-ft floor) for 24 consecutive hourly observations",
+          "rise_duration_hours": 173.0,
+          "rise_native_gage_height": 1.23,
+          "status": "recovery_right_censored",
+          "trough_native_gage_height": 1.165,
+          "trough_utc": "2024-11-23T10:00:00Z",
+          "uncertainty_flags": [
+            "observation_gap_or_datum_transition",
+            "recovery_not_observed_before_segment_end"
+          ]
+        }
+      ],
+      "revised_response_matches": [
+        {
+          "forecast_utility_validated": false,
+          "lead_hours": 8.0,
+          "maximum_window_hours": 18,
+          "predictor_episode_id": "mdll1-stage-d01-0925",
+          "predictor_station": "MDLL1",
+          "predictor_variable": "stage",
+          "response_event_id": "maul1-response-0155",
+          "status": "descriptive_pre_onset_timing_only",
+          "target_onset_utc": "2024-11-23T14:00:00Z",
+          "timing_evidence": "independent_lake_timing"
+        }
+      ],
+      "revised_wind_and_support_context": {
+        "MCHL1_expected_hours": 264,
+        "MCHL1_source_status": "observed_support",
+        "MCHL1_support_episode_count": 4,
+        "MCHL1_valid_hours": 264,
+        "observed_wind_summaries": [
+          {
+            "coverage_fraction": 1.0,
+            "directional_persistence": 0.266,
+            "expected_hours": 264,
+            "mean_from_direction_degrees": 17.4,
+            "mean_speed_knots": 7.079,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1",
+            "valid_vector_hours": 264
+          },
+          {
+            "coverage_fraction": 1.0,
+            "directional_persistence": 0.266,
+            "expected_hours": 264,
+            "mean_from_direction_degrees": 17.4,
+            "mean_speed_knots": 7.08,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1-NDBC",
+            "valid_vector_hours": 264
+          }
+        ]
+      },
       "start_utc": "2024-11-14T00:00:00Z",
       "timeline_utc": [
         {
@@ -1747,6 +2007,66 @@
         }
       },
       "predictor_signals_in_extended_window": 11,
+      "revised_method_interpretation": "Event candidates are identified from MAUL1 native stage alone; timing associations are evaluated afterward. Unknown onset or missing coverage limits precursor interpretation. External storm context is not ground truth.",
+      "revised_response_event_ids": [
+        "maul1-response-0167"
+      ],
+      "revised_response_events": [
+        {
+          "case_window_status": "response_began_before_case_peak_inside",
+          "datum": "gage height",
+          "datum_segment": 210,
+          "event_duration_hours": 374.0,
+          "event_id": "maul1-response-0167",
+          "interpretation": "MAUL1 native gage-height response only; no datum conversion or causal label.",
+          "minimum_rise_native_feet": 1.0,
+          "onset_inside_case_window": false,
+          "onset_known": true,
+          "onset_utc": "2025-03-21T06:00:00Z",
+          "peak_inside_case_window": true,
+          "peak_native_gage_height": 3.42,
+          "peak_utc": "2025-04-05T13:00:00Z",
+          "recovery_end_utc": "2025-04-09T12:00:00Z",
+          "recovery_rule": "at least 1.532 ft below peak (half the excursion, 0.25-ft floor) for 24 consecutive hourly observations",
+          "rise_duration_hours": 367.0,
+          "rise_native_gage_height": 3.065,
+          "status": "observed_response",
+          "trough_native_gage_height": 0.355,
+          "trough_utc": "2025-03-20T23:00:00Z",
+          "uncertainty_flags": [
+            "observation_gap_or_datum_transition"
+          ]
+        }
+      ],
+      "revised_response_matches": [],
+      "revised_wind_and_support_context": {
+        "MCHL1_expected_hours": 264,
+        "MCHL1_source_status": "observed_support",
+        "MCHL1_support_episode_count": 2,
+        "MCHL1_valid_hours": 84,
+        "observed_wind_summaries": [
+          {
+            "coverage_fraction": 1.0,
+            "directional_persistence": 0.186,
+            "expected_hours": 264,
+            "mean_from_direction_degrees": 176.8,
+            "mean_speed_knots": 7.371,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1",
+            "valid_vector_hours": 264
+          },
+          {
+            "coverage_fraction": 0.9432,
+            "directional_persistence": 0.148,
+            "expected_hours": 264,
+            "mean_from_direction_degrees": 180.7,
+            "mean_speed_knots": 7.396,
+            "note": "Meteorological direction is descriptive only; no favorable-wind cutoff was selected.",
+            "station": "NWCL1-NDBC",
+            "valid_vector_hours": 249
+          }
+        ]
+      },
       "start_utc": "2025-04-01T00:00:00Z",
       "timeline_utc": [
         {
