@@ -1186,12 +1186,16 @@ def _render_revised_report(result, cases):
               f"The archive yields **{controls['eligible_control_count']} eligible, independent seven-day nonresponse windows** and {controls['excluded_candidate_count']} excluded candidates under the stated 90% coverage and event-buffer rules. Eligible category memberships: {controls['counts_by_category'] or 'none'}.", '', controls['rule'], '',
               'These controls describe observed periods without a defined MAUL1 response. Predictor activity within a control is not a false alarm because no forecast opportunity was defined. Missing/failed retrieval periods do not qualify as observed nonresponses.', '', '## Priority case reviews', '']
     for case in cases:
-        ids = ', '.join(case.get('revised_response_event_ids', [])) or 'no revised event overlaps the case window'
+        event_text = '; '.join(f"{e['event_id']} ({e['case_window_status']}; onset {e['onset_utc']}; peak {e['peak_utc']}; rise {e['rise_native_gage_height']} ft native)" for e in case.get('revised_response_events', [])) or 'no revised event overlaps the extended case review window'
         matches = case.get('revised_response_matches', [])
-        match_text = '; '.join(f"{m['predictor_station']} {m['lead_hours']} h" for m in matches) or 'no detected pre-onset timing match'
+        match_text = '; '.join(f"{m['response_event_id']}: {m['predictor_station']} {m['lead_hours']} h before that event’s MAUL1 onset" for m in matches) or 'no detected pre-onset timing match'
         lines.append(f"### {case['name']}")
         coverage = case['observed_series_summaries']['MAUL1:stage']
-        lines.append(f"MAUL1-first events: {ids}. Revised timing: {match_text}. MAUL1 archive coverage in the case is {coverage['coverage_fraction']:.1%} ({coverage['valid_hours']}/{coverage['expected_hours']} hours).")
+        lines.append(f"MAUL1-first events: {event_text}. Revised timing: {match_text}. MAUL1 archive coverage in the case is {coverage['coverage_fraction']:.1%} ({coverage['valid_hours']}/{coverage['expected_hours']} hours).")
+        winds = case['wind_context']
+        wind_text = '; '.join(f"{wind['station']} {wind['mean_speed_knots']} kt from {wind['mean_from_direction_degrees']}°, direction persistence {wind['directional_persistence']}, {wind['valid_vector_hours']}/{wind['expected_hours']} h" for wind in winds if wind.get('mean_speed_knots') is not None) or 'wind summary unavailable'
+        mch = case['revised_wind_and_support_context']
+        lines.append(f"Supporting context: winds {wind_text}; MCHL1 {mch['MCHL1_valid_hours']}/{mch['MCHL1_expected_hours']} valid h, {mch['MCHL1_support_episode_count']} detected support episode(s). These observations provide context only; no causal label is inferred.")
         if case['event_id'] == 'flood-2016':
             lines.append('The archive begins during the August flood window; any response whose trough/onset lies at a segment boundary is left-censored. Observed rise/peak times do not recover an unobserved start, and DENL1 or MDLL1 timing does not establish cause. MCHL1 retrieval coverage is incomplete.')
         elif case['event_id'] == 'beta-2020':
@@ -1329,8 +1333,35 @@ def run(root='site/data/history', output=None):
                            parse_time(event['onset_utc']) <= case_end and
                            parse_time(event['peak_utc']) >= case_start)]
         case['revised_response_event_ids'] = [event['event_id'] for event in case_events]
+        case['revised_response_events'] = []
+        actual_start = parse_time(case['start_utc'])
+        actual_end = parse_time(case['end_utc_exclusive'])
+        for event in case_events:
+            onset = parse_time(event['onset_utc'])
+            peak = parse_time(event['peak_utc'])
+            recovery = parse_time(event['recovery_end_utc']) if event.get('recovery_end_utc') else None
+            if onset < actual_start and peak < actual_start and recovery and recovery >= actual_start:
+                case_status = 'prior_response_recovery_overlaps_case'
+            elif onset < actual_start and peak < actual_start:
+                case_status = 'response_peak_in_72h_antecedent'
+            elif onset < actual_start <= peak < actual_end:
+                case_status = 'response_began_before_case_peak_inside'
+            elif actual_start <= onset < actual_end:
+                case_status = 'response_onset_inside_case'
+            else:
+                case_status = 'response_spans_case_window'
+            case['revised_response_events'].append({**event,
+                'case_window_status':case_status,
+                'onset_inside_case_window':actual_start <= onset < actual_end,
+                'peak_inside_case_window':actual_start <= peak < actual_end})
         case['revised_response_matches'] = [match for match in revised_matches
                                             if match['response_event_id'] in case['revised_response_event_ids']]
+        case['revised_wind_and_support_context'] = {
+            'observed_wind_summaries':case['wind_context'],
+            'MCHL1_valid_hours':case['observed_series_summaries']['MCHL1:stage']['valid_hours'],
+            'MCHL1_expected_hours':case['observed_series_summaries']['MCHL1:stage']['expected_hours'],
+            'MCHL1_support_episode_count':case.get('MCHL1_support_episodes_in_extended_window',0),
+            'MCHL1_source_status':'observed_support' if case['observed_series_summaries']['MCHL1:stage']['valid_hours'] else 'unavailable_in_case_window'}
         case['revised_method_interpretation'] = ('Event candidates are identified from MAUL1 native stage alone; timing associations are evaluated afterward. Unknown onset or missing coverage limits precursor interpretation. External storm context is not ground truth.')
     coverage_result = coverage_audit(root, coverage.get('hourly_variable_coverage', {}), manifest, index)
     # Quality flags are retained as review candidates; flags are not automatic

@@ -277,5 +277,21 @@ class TestPhase3BValidation(unittest.TestCase):
             phase3b.parse_time('2023-01-12T00:00:00Z')),'holdout_2023_2026')
 
 
+    def test_response_threshold_and_sustained_recovery_sensitivity_are_explicit(self):
+        start = dt.datetime(2022, 1, 1, tzinfo=dt.timezone.utc)
+        values = [0.0] * 3 + [0.2, 0.6, 1.2, 1.2, 1.2] + [0.6] * 15
+        values += [1.3, 1.3, 1.3] + [0.5] * 24
+        rows = {start + dt.timedelta(hours=i): {
+            'time': phase3b.iso(start + dt.timedelta(hours=i)), 'value': value,
+            'coverage': 1, 'datum': 'gage height'} for i, value in enumerate(values)}
+        index = {('MAUL1','stage'): rows}
+        separated = phase3b.maul1_response_events(index, minimum_rise=0.5, recovery_hours=12)
+        merged = phase3b.maul1_response_events(index, minimum_rise=0.5, recovery_hours=24)
+        larger_only = phase3b.maul1_response_events(index, minimum_rise=1.0, recovery_hours=12)
+        self.assertEqual(len(separated),2)
+        self.assertEqual(len(merged),1)
+        self.assertEqual(len(larger_only),1)
+
+
 if __name__ == '__main__':
     unittest.main()
