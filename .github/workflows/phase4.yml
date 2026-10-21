@@ -1,0 +1,52 @@
+name: Phase 4 evidence evaluation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, phase4-evidence]
+    paths:
+      - '.github/workflows/phase4.yml'
+      - 'scripts/evidence.py'
+      - 'scripts/phase4*.py'
+      - 'tests/test_evidence.py'
+      - 'tests/test_phase4.py'
+      - 'docs/phase4-methodology.md'
+      - 'site/data/history/hourly/**'
+      - 'site/data/history/quality.json'
+      - 'site/data/history/phase3b/validation.json'
+      - 'site/data/history/phase3b/cases.json'
+permissions:
+  contents: write
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression tests
+        run: python -m unittest discover -s tests -q
+      - name: Evaluate existing historical archive without downloads
+        run: python scripts/phase4.py
+      - name: Verify deterministic reproduction
+        run: |
+          python scripts/phase4.py --output work/phase4-repeat > /dev/null
+          diff -rq site/data/history/phase4 work/phase4-repeat
+      - name: Verify research site
+        run: |
+          node --check site/app.js
+          node tests/site-smoke.cjs
+      - name: Upload scientific results
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-evidence-${{ github.sha }}
+          path: site/data/history/phase4
+      - name: Commit generated scientific results
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/history/phase4
+          git diff --cached --quiet || (git commit -m 'data: publish Phase 4 evidence evaluation' && git push)
