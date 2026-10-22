@@ -81,6 +81,11 @@ def freeze_models(root):
             models[public][str(h)] = model
     artifact = {"schema":"phase6.frozen-models.v1","version":"phase5-frozen-2026-10-22",
         "primary_model":"phase5a_coastal","horizons_hours":list(HORIZONS),"models":models,
+        "calibration":{"archive_start_utc":phase5a.ARCHIVE_START.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "boundary_utc":phase5a.BOUNDARY.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "training_target_exclusive_utc":(phase5a.BOUNDARY-phase5a.dt.timedelta(hours=phase5a.EMBARGO_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "holdout_issue_start_inclusive_utc":(phase5a.BOUNDARY+phase5a.dt.timedelta(hours=phase5a.EMBARGO_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "embargo_hours":phase5a.EMBARGO_HOURS,"lookback_hours":phase5a.LOOKBACK_HOURS},
         "excluded":["gated_full","maul1_astro_retrospective"],
         "sources":{"phase5a_models_sha256":_sha(a_path),"phase5b_models_sha256":_sha(b_path),
                    "phase5a_code_sha256":_sha(root/"scripts/phase5a.py"),"phase5b_code_sha256":_sha(root/"scripts/phase5b.py")},
