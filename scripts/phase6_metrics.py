@@ -48,3 +48,59 @@ def compute_metrics(rows):
     out["rises"] = rises
     out["events"] = {"count": len(events), "status": "computed" if len(events) >= 5 else "insufficient_independent_events"}
     return out
+
+def summarize_qualifying_events(rows, threshold_ft=0.50, separation_hours=24):
+    """Group outcome-qualified 24-hour rise windows; descriptive, not onset detection.
+
+    Valid targets with >= threshold rise are merged when their target times are
+    no more than 24 hours apart. Lead times refer to the first qualifying
+    verification *target*, never to an independently observed threshold crossing.
+    """
+    import datetime as dt
+
+    def utc(value):
+        return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(dt.timezone.utc)
+
+    eligible = sorted(
+        (row for row in rows
+         if row.get("observed_change_ft") is not None
+         and row.get("valid_time_utc")
+         and row.get("actual_issue_time_utc")),
+        key=lambda row: utc(row["valid_time_utc"]),
+    )
+    qualifying = [row for row in eligible if float(row["observed_change_ft"]) >= threshold_ft]
+    groups = []
+    for row in qualifying:
+        valid = utc(row["valid_time_utc"])
+        if not groups or (valid - groups[-1][-1][0]).total_seconds() > separation_hours * 3600:
+            groups.append([])
+        groups[-1].append((valid, row))
+    events = []
+    for group in groups:
+        first_target = group[0][0]
+        # An alert must have been issued before the first qualifying target.
+        hits = [row for _, row in group
+                if row.get("forecast_change_ft") is not None
+                and float(row["forecast_change_ft"]) >= threshold_ft
+                and utc(row["actual_issue_time_utc"]) < first_target]
+        first_issuance = min((utc(row["actual_issue_time_utc"]) for row in hits), default=None)
+        events.append({
+            "first_qualifying_target_utc": first_target.isoformat().replace("+00:00", "Z"),
+            "last_qualifying_target_utc": group[-1][0].isoformat().replace("+00:00", "Z"),
+            "qualified_window_count": len(group),
+            "detected": bool(hits),
+            "lead_to_first_qualifying_target_hours": (
+                (first_target-first_issuance).total_seconds()/3600 if first_issuance else None
+            ),
+        })
+    result = {
+        "definition": "outcome-defined 24h rises of at least 0.50 ft; targets within 24h grouped",
+        "interpretation": "lead relative to first qualifying verification target, NOT observed rise onset",
+        "event_count": len(events),
+        "status": "computed" if len(events) >= 5 else "insufficient_independent_events",
+    }
+    if len(events) >= 5:
+        result["detected_events"] = sum(item["detected"] for item in events)
+        result["missed_events"] = len(events) - result["detected_events"]
+        result["events"] = events
+    return result
