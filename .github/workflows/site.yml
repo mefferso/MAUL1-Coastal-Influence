@@ -5,7 +5,7 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Historical archive backfill", "Phase 3B historical validation", "Phase 4 evidence evaluation", "Phase 5A hindcast evaluation", "Phase 5B tidal-aware robustness evaluation"]
+    workflows: ["Historical archive backfill", "Phase 3B historical validation", "Phase 4 evidence evaluation", "Phase 5A hindcast evaluation", "Phase 5B tidal-aware robustness evaluation", "Phase 6 prospective verification"]
     types: [completed]
     branches: [main]
 permissions:
