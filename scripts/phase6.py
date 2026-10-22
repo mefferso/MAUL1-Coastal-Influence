@@ -92,7 +92,11 @@ def mchl1_shadow_diagnostics(snapshot, issued):
         if o.get("qc")!="unverified" or o.get("datum")!="HADS native gage height (unverified)":
             continue
         # This is not a QC approval, only an isolated calculation.
-        if not __import__("math").isfinite(float(o["value"])):
+        try:
+            import math
+            if not math.isfinite(float(o["value"])):
+                continue
+        except (TypeError, ValueError):
             continue
         safe.append(dict(o,qc="P"))
     isolated={"observations":safe}
