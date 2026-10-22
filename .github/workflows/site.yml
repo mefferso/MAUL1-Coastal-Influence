@@ -5,7 +5,7 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Historical archive backfill", "Phase 3B historical validation", "Phase 4 evidence evaluation"]
+    workflows: ["Historical archive backfill", "Phase 3B historical validation", "Phase 4 evidence evaluation", "Phase 5A hindcast evaluation"]
     types: [completed]
     branches: [main]
 permissions:
@@ -23,6 +23,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python -m pip install -r requirements-phase5a.txt
       - run: python scripts/analyze.py > /dev/null
       - run: python scripts/analyze.py > /dev/null
       - run: python -m unittest discover -s tests -v

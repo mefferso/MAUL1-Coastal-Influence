@@ -1,0 +1,53 @@
+name: Phase 5A hindcast evaluation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, phase5a-hindcasts]
+    paths:
+      - '.github/workflows/phase5a.yml'
+      - 'requirements-phase5a.txt'
+      - 'scripts/phase5a.py'
+      - 'scripts/phase4.py'
+      - 'scripts/evidence.py'
+      - 'tests/test_phase5a.py'
+      - 'docs/phase5a-methodology.md'
+      - 'site/index.html'
+      - 'site/app.js'
+      - 'site/data/history/hourly/**'
+      - 'site/data/history/phase3b/validation.json'
+      - 'site/data/history/phase3b/cases.json'
+permissions:
+  contents: write
+jobs:
+  hindcast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-phase5a.txt
+      - name: Regression and causal contract tests
+        run: python -m unittest discover -s tests -v
+      - name: Generate calibration and holdout hindcasts from committed archive
+        run: python scripts/phase5a.py
+      - name: Validate report and deterministic core metrics
+        run: |
+          python -m json.tool site/data/history/phase5a/summary.json >/dev/null
+          python -m json.tool site/data/history/phase5a/cv.json >/dev/null
+          python -m json.tool site/data/history/phase5a/provenance.json >/dev/null
+          node --check site/app.js
+          node tests/site-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase5a-scientific-reports-${{ github.sha }}
+          path: site/data/history/phase5a
+      - name: Commit generated scientific reports
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/history/phase5a
+          git diff --cached --quiet || (git commit -m 'data: publish Phase 5A hindcast reports' && git push)
