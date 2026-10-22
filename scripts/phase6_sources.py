@@ -21,7 +21,7 @@ def fetch_snapshot(now_utc, fetcher=_get):
     specs=[("MAUL1","07380215","00065,63160"),("DENL1","07378500","00060,00065"),("MDLL1","301200090072400","00065")]
     sources=[]; observations=[]
     for station,site,params in specs:
-        url=_query("https://waterservices.usgs.gov/nwis/iv/",{"format":"json","sites":site,"parameterCd":params,"period":"P3D","siteStatus":"all"})
+        url=_query("https://waterservices.usgs.gov/nwis/iv/",{"format":"json","sites":site,"parameterCd":params,"period":"P4D","siteStatus":"all"})
         try:
             raw,date=fetcher(url); retrieved=dt.datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00","Z"); payload=json.loads(raw); rows=parse_usgs(payload,station); digest=hashlib.sha256(raw).hexdigest()
             observations += [_obs(r,retrieved,url,digest) for r in rows]
@@ -29,7 +29,7 @@ def fetch_snapshot(now_utc, fetcher=_get):
         except Exception as exc: sources.append({"station":station,"status":"error","retrieved_utc":retrieved,"url":url,"error":str(exc)})
     for product,datum in (("water_level","MLLW"),("predictions","MLLW"),("wind","")):
         base="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
-        params={"station":"8761927","begin_date":(now-dt.timedelta(days=3)).strftime("%Y%m%d"),"end_date":now.strftime("%Y%m%d"),"time_zone":"gmt","units":"english","format":"json","application":"MAUL1-research"}
+        params={"station":"8761927","begin_date":(now-dt.timedelta(days=4)).strftime("%Y%m%d"),"end_date":now.strftime("%Y%m%d"),"time_zone":"gmt","units":"english","format":"json","application":"MAUL1-research"}
         if product=="wind": params.update({"product":"wind"})
         else: params.update({"product":"water_level" if product=="water_level" else "predictions","datum":datum,"interval":"h"} if product=="water_level" else {"product":"predictions","datum":datum,"interval":"h"})
         url=_query(base,params)
