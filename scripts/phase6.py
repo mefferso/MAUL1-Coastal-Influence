@@ -7,9 +7,19 @@ import phase5a, phase5b
 UTC=dt.timezone.utc
 
 def quality_is_usable(value):
-    if value in (None,"", "P", "provisional", "0"): return True
-    if isinstance(value,list): return not value or set(value) <= {"P"}
-    return False
+    """Accept documented provisional/zero-valued quality codes, reject other flags.
+
+    CO-OPS returns comma-separated per-field quality flags (e.g. 0,0,0,0).
+    Retain source flags in the archived observations; normalize only for eligibility.
+    """
+    if value is None: return True
+    if isinstance(value, str):
+        flags = [part.strip() for part in value.split(",")]
+    elif isinstance(value, (list, tuple)):
+        flags = [str(part).strip() for part in value]
+    else:
+        return False
+    return all(flag in ("", "0", "P", "provisional") for flag in flags)
 
 def latest_snapshot(snapshot, issued):
     obs=snapshot["observations"]
