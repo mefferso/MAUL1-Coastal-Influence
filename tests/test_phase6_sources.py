@@ -27,6 +27,26 @@ class Phase6SourceTests(unittest.TestCase):
         features,_=phase6.feature_snapshot(snapshot,dt.datetime(2026,10,22,12,15,tzinfo=dt.timezone.utc))
         self.assertEqual(features["maul1_stage_native_ft"],2.4)
 
+    def test_mchl1_shadow_does_not_enter_forecast_features(self):
+        issue=dt.datetime(2026,10,22,16,30,tzinfo=dt.timezone.utc)
+        obs=[]
+        for hours,value in ((73,1.0),(25,1.2),(7,1.4),(1,1.8)):
+            valid=issue.replace(minute=0)-dt.timedelta(hours=hours)
+            obs.append({"station":"MCHL1","parameter":"stage","value":value,
+                        "units":"ft","datum":"HADS native gage height (unverified)",
+                        "qc":"unverified","valid_time_utc":valid.isoformat().replace("+00:00","Z"),
+                        "retrieved_utc":"2026-10-22T16:15:00Z",
+                        "eligible_completed_hour":True})
+        snap={"observations":obs}
+        issued,_=phase6.feature_snapshot(snap,issue)
+        self.assertIsNone(issued["mchl1_stage_change_6h_native_ft"])
+        shadow=phase6.mchl1_shadow_diagnostics(snap,issue)
+        self.assertFalse(shadow["forecast_eligible"])
+        self.assertTrue(shadow["latest_completed_bin_present"])
+        self.assertAlmostEqual(shadow["features"]["mchl1_stage_change_6h_native_ft"],.4)
+        self.assertAlmostEqual(shadow["features"]["mchl1_stage_change_24h_native_ft"],.6)
+        self.assertAlmostEqual(shadow["features"]["mchl1_stage_change_72h_native_ft"],.8)
+
     def test_coastal_source_can_be_recent_but_miss_model_hour(self):
         issued=dt.datetime(2026,10,22,15,54,tzinfo=dt.timezone.utc)
         hour=dt.datetime(2026,10,22,13,0,tzinfo=dt.timezone.utc)
