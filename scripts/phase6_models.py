@@ -92,6 +92,9 @@ def freeze_models(root):
         "sources":{"phase5a_models_git_blob":_git_blob_sha(a_path),"phase5b_models_git_blob":_git_blob_sha(b_path),
                    "phase5a_uncertainty_git_blob":_git_blob_sha(root/"site/data/history/phase5a/uncertainty.json"),
                    "phase5b_uncertainty_git_blob":_git_blob_sha(root/"site/data/history/phase5b/uncertainty.json"),
+                   "phase5a_feature_archive_git_blob":_git_blob_sha(root/"site/data/history/phase5a/features.csv.gz"),
+                   "phase5a_prediction_archive_git_blob":_git_blob_sha(root/"site/data/history/phase5a/predictions.csv.gz"),
+                   "phase5b_prediction_archive_git_blob":_git_blob_sha(root/"site/data/history/phase5b/predictions.csv.gz"),
                    "phase5a_code_git_blob":_git_blob_sha(root/"scripts/phase5a.py"),"phase5b_code_git_blob":_git_blob_sha(root/"scripts/phase5b.py")},
         "holdout_replay":replay,"tolerance_ft":1e-8}
     artifact["artifact_sha256"] = _canonical_sha(artifact)
