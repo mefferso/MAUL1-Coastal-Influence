@@ -23,6 +23,30 @@ class Phase6CoreTests(unittest.TestCase):
                 phase6_forecast.write_immutable(record, tmp)
             self.assertTrue(path.exists())
 
+    def test_v2_compact_evidence_round_trip_and_legacy_read(self):
+        source={"observations":[{"station":"NWCL1","valid_time_utc":"2026-10-22T15:00:00Z",
+                                 "datum":"MLLW","value":1.25}],"sources":[{"station":"NWCL1"}]}
+        record=phase6_forecast.make_record(
+            dt.datetime(2026,10,22,16,10,tzinfo=dt.timezone.utc),
+            dt.datetime(2026,10,22,16,tzinfo=dt.timezone.utc),
+            {"maul1_stage_native_ft":2.5,"source_snapshot":source,
+             "features":{"maul1_stage_native_ft":2.5},"availability":{}}, {})
+        with tempfile.TemporaryDirectory() as folder:
+            archive=Path(folder)
+            compact=phase6_forecast.compact_with_immutable_snapshot(record,archive)
+            self.assertNotIn("source_snapshot",compact["snapshot"])
+            self.assertEqual(compact["schema"],"phase6.forecast.v2")
+            self.assertEqual(phase6_forecast.recover_source_snapshot(compact,archive),source)
+            self.assertEqual(phase6_forecast.recover_source_snapshot(record,archive),source)
+            path=phase6_forecast.write_immutable(compact,archive)
+            with self.assertRaises(FileExistsError):
+                phase6_forecast.write_immutable(compact,archive)
+            saved=json.loads(path.read_text())
+            self.assertEqual(saved["issuance_id"],record["issuance_id"])
+            self.assertEqual(phase6_forecast.recover_source_snapshot(saved,archive),source)
+            self.assertEqual(list((archive/"snapshots").glob("*.json.gz")).__len__(),1)
+            self.assertLess(path.stat().st_size,10000)
+
     def test_off_hour_issuance_targets_model_grid_not_wall_clock(self):
         actual = dt.datetime(2026, 10, 22, 13, 53, 11, tzinfo=dt.timezone.utc)
         anchor = actual.replace(minute=0, second=0)
