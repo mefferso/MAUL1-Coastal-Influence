@@ -75,6 +75,39 @@ def feature_snapshot(snapshot, issued):
     features.update(phase5b.harmonic_features(issued))
     return features,index
 
+def feature_availability(features, index, issued):
+    """Explain eligible station data versus values actually available to frozen models."""
+    anchor = issued.replace(minute=0, second=0, microsecond=0)
+    expected = anchor - dt.timedelta(hours=1)
+    result = {"model_anchor_utc": phase6_forecast.stamp(anchor),
+              "expected_latest_bin_utc": phase6_forecast.stamp(expected),
+              "stations": {}, "missing_features": {}}
+    for station, variable, label in (
+        ("MAUL1", "stage", "MAUL1"), ("NWCL1", "water", "NWCL1"),
+        ("NWCL1", "residual", "NWCL1_residual"),
+        ("NWCL1", "wind_u", "NWCL1_wind_u"),
+        ("NWCL1", "wind_v", "NWCL1_wind_v"),
+        ("MDLL1", "stage", "MDLL1"), ("DENL1", "discharge", "DENL1")):
+        bins = index.get((station, variable), {})
+        available = sorted(bins)
+        last = available[-1] if available else None
+        result["stations"][label] = {
+            "expected_bin_present": expected in bins,
+            "latest_eligible_bin_utc": phase6_forecast.stamp(last) if last else None,
+            "lag_from_expected_hours": (expected-last).total_seconds()/3600 if last else None,
+        }
+    groups = {
+        "coastal": ("nwcl1_", "mdll1_"),
+        "river": ("denl1_", "mchl1_"),
+        "target": ("maul1_",),
+    }
+    for name, prefixes in groups.items():
+        missing = sorted(k for k,v in features.items()
+                         if k.startswith(prefixes) and v is None)
+        result["missing_features"][name] = missing
+    return result
+
+
 def issue(simulated=False,run_id="",scheduled=False):
     started=dt.datetime.now(UTC).replace(microsecond=0)
     nominal=started.replace(minute=17,second=0,microsecond=0) if scheduled else started
@@ -84,6 +117,7 @@ def issue(simulated=False,run_id="",scheduled=False):
     features,index=feature_snapshot(snap,actual)
     latest,status=latest_snapshot(snap,actual)
     status["MAUL1_00065"]["model_feature_available"]=features.get("maul1_stage_native_ft") is not None
+    feature_diagnostics=feature_availability(features,index,actual)
     artifact_path=ROOT/"site/data/prospective/model-artifacts.json"
     if not artifact_path.exists():
         artifact=phase6_models.freeze_models(ROOT); artifact_path.parent.mkdir(parents=True,exist_ok=True); artifact_path.write_text(json.dumps(artifact,indent=2)+"\n")
@@ -107,11 +141,11 @@ def issue(simulated=False,run_id="",scheduled=False):
                 byh[str(h)][name]={"status":"issued","predicted_stage_native_ft":stage,"predicted_change_ft":stage-features["maul1_stage_native_ft"],
                     "interval_lower_ft":stage-half,"interval_upper_ft":stage+half,"imputed_feature_count":missing,"artifact_sha256":artifacts["artifact_sha256"]}
             except Exception as exc: byh[str(h)][name]={"status":"error","reason":str(exc)}
-    record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id,model_anchor_time=actual.replace(minute=0,second=0,microsecond=0))
+    record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"feature_diagnostics":feature_diagnostics,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id,model_anchor_time=actual.replace(minute=0,second=0,microsecond=0))
     record["forecast_snapshot_sha256"]=hashlib.sha256(json.dumps(record["snapshot"],sort_keys=True).encode()).hexdigest()
     phase6_forecast.write_immutable(record,ROOT/"site/data/prospective/archive")
     attempts=ROOT/"site/data/prospective/attempts"; attempts.mkdir(parents=True,exist_ok=True)
-    (attempts/f"{record['issuance_id']}.json").write_text(json.dumps({"issuance_id":record["issuance_id"],"actual_issue_time_utc":phase6_forecast.stamp(actual),"sources":snap["sources"],"availability":status,"mode":record["mode"]},indent=2)+"\n")
+    (attempts/f"{record['issuance_id']}.json").write_text(json.dumps({"issuance_id":record["issuance_id"],"actual_issue_time_utc":phase6_forecast.stamp(actual),"sources":snap["sources"],"availability":status,"feature_diagnostics":feature_diagnostics,"mode":record["mode"]},indent=2)+"\n")
     return record
 
 def update_site():
@@ -145,6 +179,7 @@ def update_site():
     if latest:
         projection={key:latest[key] for key in ("schema","issuance_id","mode","nominal_issue_time_utc","actual_issue_time_utc","latest_maul1_native_stage_ft","forecasts") if key in latest}
         projection["snapshot"]={"availability":{key:{"status":value.get("status"),"age_hours":value.get("age_hours")} for key,value in latest.get("snapshot",{}).get("availability",{}).items()}}
+        projection["snapshot"]["feature_diagnostics"]=latest.get("snapshot",{}).get("feature_diagnostics",{})
         for key in ("model_anchor_time_utc","run_id"):
             if key in latest: projection[key]=latest[key]
     else: projection={"status":"no_authentic_issuance"}

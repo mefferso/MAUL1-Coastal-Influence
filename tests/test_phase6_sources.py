@@ -27,6 +27,25 @@ class Phase6SourceTests(unittest.TestCase):
         features,_=phase6.feature_snapshot(snapshot,dt.datetime(2026,10,22,12,15,tzinfo=dt.timezone.utc))
         self.assertEqual(features["maul1_stage_native_ft"],2.4)
 
+    def test_coastal_source_can_be_recent_but_miss_model_hour(self):
+        issued=dt.datetime(2026,10,22,15,54,tzinfo=dt.timezone.utc)
+        hour=dt.datetime(2026,10,22,13,0,tzinfo=dt.timezone.utc)
+        index={("NWCL1","water"):{hour:{"value":1.155,"datum":"MLLW","unit":"ft"}}}
+        diagnostic=phase6.feature_availability({"nwcl1_residual_mllw_ft":None},index,issued)
+        self.assertEqual(diagnostic["expected_latest_bin_utc"],"2026-10-22T14:00:00Z")
+        self.assertFalse(diagnostic["stations"]["NWCL1"]["expected_bin_present"])
+        self.assertEqual(diagnostic["stations"]["NWCL1"]["lag_from_expected_hours"],1)
+        self.assertEqual(diagnostic["missing_features"]["coastal"],["nwcl1_residual_mllw_ft"])
+
+    def test_completed_coastal_hour_is_distinct_from_residual_pair(self):
+        issued=dt.datetime(2026,10,22,15,54,tzinfo=dt.timezone.utc)
+        hour=dt.datetime(2026,10,22,14,0,tzinfo=dt.timezone.utc)
+        index={("NWCL1","water"):{hour:{"value":1.155}},
+               ("NWCL1","residual"):{}}
+        diagnostic=phase6.feature_availability({"nwcl1_residual_mllw_ft":None},index,issued)
+        self.assertTrue(diagnostic["stations"]["NWCL1"]["expected_bin_present"])
+        self.assertFalse(diagnostic["stations"]["NWCL1_residual"]["expected_bin_present"])
+
     def test_empty_source_responses_are_explicit(self):
         def empty(url):
             return (json.dumps({"value":{"timeSeries":[]}}).encode() if "waterservices" in url else json.dumps({"data":[]}).encode(),None)
