@@ -59,9 +59,11 @@ def feature_snapshot(snapshot, issued):
     features.update(phase5b.harmonic_features(issued))
     return features,index
 
-def issue(simulated=False,run_id=""):
-    nominal=dt.datetime.now(UTC).replace(minute=0,second=0,microsecond=0)
-    snap=phase6_sources.fetch_snapshot(nominal)
+def issue(simulated=False,run_id="",scheduled=False):
+    started=dt.datetime.now(UTC).replace(microsecond=0)
+    nominal=started.replace(minute=17,second=0,microsecond=0) if scheduled else started
+    if scheduled and nominal>started: nominal-=dt.timedelta(hours=1)
+    snap=phase6_sources.fetch_snapshot(started)
     actual=dt.datetime.now(UTC).replace(microsecond=0)
     features,index=feature_snapshot(snap,actual)
     latest,status=latest_snapshot(snap,actual)
@@ -75,7 +77,7 @@ def issue(simulated=False,run_id=""):
     for h in (6,12,24):
         byh[str(h)]={}
         if eligible:
-            byh[str(h)]["persistence"]={"status":"issued","predicted_stage_native_ft":features["maul1_stage_native_ft"],"predicted_change_ft":0.0,"interval_lower_ft":features["maul1_stage_native_ft"],"interval_upper_ft":features["maul1_stage_native_ft"]}
+            byh[str(h)]["persistence"]={"status":"issued","predicted_stage_native_ft":features["maul1_stage_native_ft"],"predicted_change_ft":0.0,"interval_lower_ft":None,"interval_upper_ft":None,"interval_status":"not_calibrated"}
         else: byh[str(h)]["persistence"]={"status":"abstained","reason":"MAUL1 00065 missing or older than 2 hours"}
         for name in phase6_models.FROZEN:
             model=artifacts["models"][name][str(h)]
@@ -142,6 +144,6 @@ def update_site():
     (base/"performance.json").write_text(json.dumps({"prospective_only":True,"model_horizon_metrics":summary,"verification_count":len(latest_v),"revision_count":len(all_v)},indent=2)+"\n")
 
 if __name__=="__main__":
-    parser=argparse.ArgumentParser(); parser.add_argument("--simulate",action="store_true"); parser.add_argument("--run-id",default="manual")
+    parser=argparse.ArgumentParser(); parser.add_argument("--simulate",action="store_true"); parser.add_argument("--run-id",default="manual"); parser.add_argument("--scheduled",action="store_true")
     args=parser.parse_args()
-    rec=issue(args.simulate,args.run_id); update_site(); print(json.dumps({"issuance_id":rec["issuance_id"],"mode":rec["mode"],"actual_issue_time_utc":rec["actual_issue_time_utc"]}))
+    rec=issue(args.simulate,args.run_id,args.scheduled); update_site(); print(json.dumps({"issuance_id":rec["issuance_id"],"mode":rec["mode"],"nominal_issue_time_utc":rec["nominal_issue_time_utc"],"actual_issue_time_utc":rec["actual_issue_time_utc"]}))

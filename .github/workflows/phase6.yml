@@ -53,6 +53,8 @@ jobs:
         run: |
           if [ "$EVENT_NAME" = workflow_dispatch ] && [ "$MODE" = simulation ]; then
             python scripts/phase6.py --simulate --run-id "$RUN_ID"
+          elif [ "$EVENT_NAME" = schedule ]; then
+            python scripts/phase6.py --scheduled --run-id "$RUN_ID"
           else
             python scripts/phase6.py --run-id "$RUN_ID"
           fi
