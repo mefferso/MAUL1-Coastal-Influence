@@ -143,6 +143,7 @@ def issue(simulated=False,run_id="",scheduled=False):
             except Exception as exc: byh[str(h)][name]={"status":"error","reason":str(exc)}
     record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"feature_diagnostics":feature_diagnostics,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id,model_anchor_time=actual.replace(minute=0,second=0,microsecond=0))
     record["forecast_snapshot_sha256"]=hashlib.sha256(json.dumps(record["snapshot"],sort_keys=True).encode()).hexdigest()
+    record=phase6_forecast.compact_with_immutable_snapshot(record,ROOT/"site/data/prospective/archive")
     phase6_forecast.write_immutable(record,ROOT/"site/data/prospective/archive")
     attempts=ROOT/"site/data/prospective/attempts"; attempts.mkdir(parents=True,exist_ok=True)
     (attempts/f"{record['issuance_id']}.json").write_text(json.dumps({"issuance_id":record["issuance_id"],"actual_issue_time_utc":phase6_forecast.stamp(actual),"sources":snap["sources"],"availability":status,"feature_diagnostics":feature_diagnostics,"mode":record["mode"]},indent=2)+"\n")
