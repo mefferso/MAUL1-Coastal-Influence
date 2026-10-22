@@ -23,6 +23,16 @@ class Phase6CoreTests(unittest.TestCase):
                 phase6_forecast.write_immutable(record, tmp)
             self.assertTrue(path.exists())
 
+    def test_off_hour_issuance_targets_model_grid_not_wall_clock(self):
+        actual = dt.datetime(2026, 10, 22, 13, 53, 11, tzinfo=dt.timezone.utc)
+        anchor = actual.replace(minute=0, second=0)
+        record = phase6_forecast.make_record(actual, anchor, {"maul1_stage_native_ft": 2.5}, {}, model_anchor_time=anchor)
+        self.assertEqual(record["model_anchor_time_utc"], "2026-10-22T13:00:00Z")
+        self.assertEqual(record["forecasts"]["6"]["valid_time_utc"], "2026-10-22T19:00:00Z")
+        self.assertAlmostEqual(record["forecasts"]["6"]["effective_lead_hours"], 5.113611, places=5)
+        with self.assertRaises(ValueError):
+            phase6_forecast.make_record(actual, anchor, {}, {}, model_anchor_time=actual + dt.timedelta(minutes=1))
+
     def test_future_observation_is_not_verified_and_revisions_append(self):
         issue = dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc)
         record = {"issuance_id": "x", "forecasts": {"6": {"valid_time_utc": "2026-01-01T06:00:00Z", "models": {"coastal": {"status": "issued", "predicted_stage_native_ft": 2.}}}}}
