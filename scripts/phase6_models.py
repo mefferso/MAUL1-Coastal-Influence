@@ -56,9 +56,17 @@ def freeze_models(root):
                 train_ix = [i for i,r in enumerate(table[h]) if r["split"] == "calibration" and r["actual"] is not None and r["target_time"] < phase5b.BOUNDARY-phase5a.dt.timedelta(hours=72) and r.get("maul1_stage_native_ft") is not None]
                 hold_ix = [i for i,r in enumerate(table[h]) if r["split"] == "holdout" and r["actual"] is not None and r.get("maul1_stage_native_ft") is not None]
                 _, _, reconstructed = phase5b._forecast_with_model(table[h], features, train_ix, hold_ix, spec["alpha"])
+                # Coefficients, medians, and clipping bounds are published Phase 5B
+                # state. Only the omitted normalization transforms are reconstructed.
+                reconstructed["coefficients"] = np.asarray(spec["coefficients"], dtype=float)
+                reconstructed["medians"] = np.asarray(spec["medians"], dtype=float)
+                reconstructed["target_low"], reconstructed["target_high"] = map(float, spec["target_clip_ft"])
                 model = {k:(v.tolist() if isinstance(v,np.ndarray) else v) for k,v in reconstructed.items()}
                 half = uncertainty_b[str(h)][key]["half_width_ft"]
-                preds, _, _ = phase5b._forecast_with_model(table[h], features, train_ix, hold_ix, spec["alpha"])
+                hold_rows=[table[h][i] for i in hold_ix]
+                matrix=np.asarray([[r.get(n) if r.get(n) is not None else np.nan for n in features] for r in hold_rows],dtype=float)
+                deltas,_=phase5a.predict_ridge(reconstructed,matrix)
+                preds=np.asarray([float(r["maul1_stage_native_ft"])+d for r,d in zip(hold_rows,deltas)])
                 max_error = 0.0
                 # The archived forecast column is the published holdout reference.
                 expected = []
@@ -94,6 +102,38 @@ def predict_frozen(artifact, model_name, horizon, features):
     stage = float(features["maul1_stage_native_ft"])
     return stage + float(np.clip(delta, model["target_low"], model["target_high"])), int((~observed).sum())
 
+def verify_saved_artifact(root, artifact):
+    """Replay the committed frozen state against every published eligible holdout row."""
+    root=Path(root); sys.path.insert(0,str(root/"scripts")); import phase5a,phase5b,csv,gzip
+    replay={}
+    with gzip.open(root/"site/data/history/phase5a/features.csv.gz","rt",encoding="utf-8") as stream:
+        feature_by_issue={r["issue_time_utc"]:r for r in csv.DictReader(stream)}
+    with gzip.open(root/"site/data/history/phase5a/predictions.csv.gz","rt",encoding="utf-8") as stream:
+        pa=[r for r in csv.DictReader(stream) if r["split"]=="holdout"]
+    table,_=phase5b._load_table(root)
+    with gzip.open(root/"site/data/history/phase5b/predictions.csv.gz","rt",encoding="utf-8") as stream:
+        phase5b_refs={(r["issue_time_utc"],int(r["horizon_hours"])):r for r in csv.DictReader(stream) if r["split"]=="holdout"}
+    for h in HORIZONS:
+        for model,col in (("phase5a_maul1_only","maul1_only_ft"),("phase5a_coastal","maul1_plus_coastal_ft")):
+            rows=[r for r in pa if int(r["horizon_hours"])==h and r.get(col) not in (None,"") and r.get("persistence_ft") not in (None,"")]
+            errors=[]
+            for r in rows:
+                f=feature_by_issue[r["issue_time_utc"]]
+                pred,_=predict_frozen(artifact,model,h,{k:(float(f[k]) if f.get(k) not in (None,"") else np.nan) for k in artifact["models"][model][str(h)]["feature_names"]} | {"maul1_stage_native_ft":float(r["persistence_ft"])})
+                errors.append(abs(pred-float(r[col])))
+            replay[f"{model}:{h}"]={"n":len(rows),"max_abs_error_ft":max(errors,default=0.0)}
+        for model,col in (("phase5b_coastal_tidal","maul1_coastal_tidal"),("phase5b_full_multivariable","full_multivariable")):
+            rows=[r for r in table[h] if r["split"]=="holdout" and r["actual"] is not None and r.get("maul1_stage_native_ft") is not None]
+            errors=[]
+            for r in rows:
+                pred,_=predict_frozen(artifact,model,h,r)
+                ref=phase5b_refs.get((r["issue_time"].strftime("%Y-%m-%dT%H:%M:%SZ"),h))
+                if ref and ref.get(col) not in (None,""): errors.append(abs(pred-float(ref[col])))
+            replay[f"{model}:{h}"]={"n":len(rows),"max_abs_error_ft":max(errors,default=0.0)}
+    failures={k:v for k,v in replay.items() if v["max_abs_error_ft"]>artifact["tolerance_ft"]}
+    if failures: raise ValueError(f"Frozen saved model holdout replay exceeds tolerance: {failures}")
+    return replay
+
 if __name__ == "__main__":
     import argparse
     parser=argparse.ArgumentParser(); parser.add_argument("--root",default="."); parser.add_argument("--output",default="site/data/prospective/model-artifacts.json"); parser.add_argument("--compare")
@@ -102,6 +142,8 @@ if __name__ == "__main__":
     artifact=freeze_models(root); output.write_text(json.dumps(artifact,indent=2)+"\n")
     if args.compare:
         expected=json.loads((root/args.compare).read_text())
-        if artifact["artifact_sha256"]!=expected.get("artifact_sha256") or artifact["models"]!=expected.get("models"):
-            raise SystemExit("Frozen model artifact differs from committed Phase 6 model state")
+        if expected.get("schema")!="phase6.frozen-models.v1": raise SystemExit("Unsupported committed frozen artifact schema")
+        if expected.get("sources")!=artifact.get("sources"): raise SystemExit("Frozen artifact sources/code versions differ from current Phase 5 inputs")
+        replay=verify_saved_artifact(root,expected)
+        print(json.dumps({"committed_artifact_sha256":expected.get("artifact_sha256"),"committed_artifact_replay":replay},indent=2))
     print(json.dumps({"artifact_sha256":artifact["artifact_sha256"],"holdout_replay":artifact["holdout_replay"]},indent=2))
