@@ -60,12 +60,52 @@ class Phase6SourceTests(unittest.TestCase):
         self.assertEqual(len(coops),3)
         self.assertTrue(all("begin_date=20261018" in url for url in coops))
 
+    def test_mchl1_source_is_captured_but_never_used_without_qc(self):
+        requested=[]
+        def candidate(url):
+            requested.append(url)
+            if "waterservices" in url:
+                return json.dumps({"value":{"timeSeries":[]}}).encode(),None
+            if "tidesandcurrents" in url:
+                return json.dumps({"data":[]}).encode(),None
+            if "hads.py" in url:
+                return (b"station,utc_valid,HGIRGZZ\\n"
+                        b"MCHL1,2026-10-22 14:00,1.25\\n"
+                        b"MCHL1,2026-10-22 14:15,1.30\\n"),None
+            raise AssertionError(url)
+        snap=phase6_sources.fetch_snapshot(dt.datetime(2026,10,22,16,tzinfo=dt.timezone.utc),candidate)
+        self.assertEqual(len([u for u in requested if "hads.py" in u]),1)
+        self.assertIn("stations=MCHL1",requested[-1])
+        self.assertIn("sts=2026-10-18T16",requested[-1])
+        source=next(x for x in snap["sources"] if x["station"]=="MCHL1")
+        self.assertEqual(source["status"],"retrieved_unverified")
+        self.assertFalse(source["forecast_eligible"])
+        obs=[o for o in snap["observations"] if o["station"]=="MCHL1"]
+        self.assertEqual(len(obs),2)
+        self.assertTrue(all(o["qc"]=="unverified" for o in obs))
+        self.assertTrue(all(o["datum"]=="HADS native gage height (unverified)" for o in obs))
+        self.assertTrue(all(o["response_sha256"]==source["response_sha256"] for o in obs))
+        self.assertFalse(phase6.quality_is_usable(obs[0]["qc"]))
+        features,_=phase6.feature_snapshot(snap,dt.datetime(2026,10,22,16,30,tzinfo=dt.timezone.utc))
+        self.assertIsNone(features.get("mchl1_stage_change_6h_native_ft"))
+
+    def test_wrong_mchl1_station_is_rejected_and_isolated(self):
+        def bad(url):
+            if "waterservices" in url:
+                return json.dumps({"value":{"timeSeries":[]}}).encode(),None
+            if "hads.py" in url:
+                return b"station,utc_valid,HGIRGZZ\\n85420LA,2026-10-22 14:00,1.25\\n",None
+            return json.dumps({"data":[]}).encode(),None
+        snap=phase6_sources.fetch_snapshot(dt.datetime(2026,10,22,16,tzinfo=dt.timezone.utc),bad)
+        self.assertEqual(next(x for x in snap["sources"] if x["station"]=="MCHL1")["status"],"error")
+        self.assertFalse(any(o["station"]=="MCHL1" for o in snap["observations"]))
+
     def test_empty_source_responses_are_explicit(self):
         def empty(url):
             return (json.dumps({"value":{"timeSeries":[]}}).encode() if "waterservices" in url else json.dumps({"data":[]}).encode(),None)
         result=phase6_sources.fetch_snapshot(dt.datetime(2026,10,22,12,tzinfo=dt.timezone.utc),empty)
         self.assertEqual(len(result["sources"]),7)
-        self.assertTrue(all(x["status"] in {"empty","unavailable"} for x in result["sources"]))
+        self.assertTrue(all(x["status"] in {"empty","error"} for x in result["sources"]))
         self.assertEqual(result["mchl1_substitution"],"prohibited; USACE 85420 excluded")
 
 if __name__ == "__main__": unittest.main()
