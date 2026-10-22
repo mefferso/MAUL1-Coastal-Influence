@@ -4,15 +4,12 @@ on:
   push:
     branches: [main, phase5a-hindcasts]
     paths:
-      - '.github/workflows/phase5a.yml'
       - 'requirements-phase5a.txt'
       - 'scripts/phase5a.py'
       - 'scripts/phase4.py'
       - 'scripts/evidence.py'
       - 'tests/test_phase5a.py'
       - 'docs/phase5a-methodology.md'
-      - 'site/index.html'
-      - 'site/app.js'
       - 'site/data/history/hourly/**'
       - 'site/data/history/phase3b/validation.json'
       - 'site/data/history/phase3b/cases.json'
@@ -50,4 +47,14 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add site/data/history/phase5a
-          git diff --cached --quiet || (git commit -m 'data: publish Phase 5A hindcast reports' && git push)
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: publish Phase 5A hindcast reports'
+          branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          for attempt in 1 2 3; do
+            git fetch origin "$branch"
+            git rebase "origin/$branch"
+            if git push origin "HEAD:$branch"; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          echo 'Could not publish report after three fetch/rebase retries' >&2
+          exit 1

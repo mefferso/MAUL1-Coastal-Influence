@@ -5,8 +5,6 @@ on:
   push:
     branches: [main, phase5b-tidal-robustness]
     paths:
-      - '.github/workflows/phase5b.yml'
-      - '.github/workflows/site.yml'
       - 'requirements-phase5a.txt'
       - 'scripts/phase5a.py'
       - 'scripts/phase5b.py'
@@ -14,8 +12,6 @@ on:
       - 'scripts/evidence.py'
       - 'tests/test_phase5b.py'
       - 'docs/phase5b-methodology.md'
-      - 'site/app.js'
-      - 'site/index.html'
       - 'site/data/history/phase5a/**'
       - 'site/data/history/hourly/**'
       - 'site/data/history/phase3b/validation.json'
@@ -47,8 +43,19 @@ jobs:
           name: phase5b-scientific-reports-${{ github.sha }}
           path: site/data/history/phase5b
       - name: Commit deterministic scientific reports
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add site/data/history/phase5b
-          git diff --cached --quiet || (git commit -m 'data: publish Phase 5B tidal robustness reports' && git push)
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: publish Phase 5B tidal robustness reports'
+          branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          for attempt in 1 2 3; do
+            git fetch origin "$branch"
+            git rebase "origin/$branch"
+            if git push origin "HEAD:$branch"; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          echo 'Could not publish report after three fetch/rebase retries' >&2
+          exit 1
