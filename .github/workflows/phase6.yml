@@ -31,7 +31,7 @@ jobs:
       - run: python -m pip install -r requirements-phase5a.txt
       - run: python -m unittest discover -s tests -v
       - name: Verify frozen model reproduction
-        run: python scripts/phase6_models.py --root . --output /tmp/model-artifacts.json
+        run: python scripts/phase6_models.py --root . --output /tmp/model-artifacts.json --compare site/data/prospective/model-artifacts.json
       - name: Live source check on hosted runner
         run: python -c "import sys; sys.path.insert(0,'scripts'); import phase6_sources; assert phase6_sources.live_smoke(), 'no live source responded'"
       - run: node --check site/phase6.js && node tests/site-smoke.cjs && node tests/phase6-site-smoke.cjs

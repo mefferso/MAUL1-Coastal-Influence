@@ -12,7 +12,12 @@ FROZEN = {"phase5a_maul1_only": ("phase5a", "maul1_only", "phase5a_maul1_only_ft
           "phase5b_full_multivariable": ("phase5b", "full_multivariable", "full_multivariable")}
 
 def _sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-def _canonical_sha(value): return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+def _canonical_sha(value):
+    # Replay diagnostics can differ at floating-point roundoff across BLAS builds.
+    # The artifact identity covers the frozen estimators, transforms, intervals,
+    # and source/code versions, while replay residuals remain separately recorded.
+    identity={k:v for k,v in value.items() if k not in {"holdout_replay","artifact_sha256"}}
+    return hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 def freeze_models(root):
     root = Path(root); sys.path.insert(0, str(root / "scripts"))
@@ -91,8 +96,12 @@ def predict_frozen(artifact, model_name, horizon, features):
 
 if __name__ == "__main__":
     import argparse
-    parser=argparse.ArgumentParser(); parser.add_argument("--root",default="."); parser.add_argument("--output",default="site/data/prospective/model-artifacts.json")
+    parser=argparse.ArgumentParser(); parser.add_argument("--root",default="."); parser.add_argument("--output",default="site/data/prospective/model-artifacts.json"); parser.add_argument("--compare")
     args=parser.parse_args(); root=Path(args.root); output=root/args.output
     output.parent.mkdir(parents=True,exist_ok=True)
     artifact=freeze_models(root); output.write_text(json.dumps(artifact,indent=2)+"\n")
+    if args.compare:
+        expected=json.loads((root/args.compare).read_text())
+        if artifact["artifact_sha256"]!=expected.get("artifact_sha256") or artifact["models"]!=expected.get("models"):
+            raise SystemExit("Frozen model artifact differs from committed Phase 6 model state")
     print(json.dumps({"artifact_sha256":artifact["artifact_sha256"],"holdout_replay":artifact["holdout_replay"]},indent=2))
