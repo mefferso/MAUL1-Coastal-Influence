@@ -7,9 +7,19 @@ import phase5a, phase5b
 UTC=dt.timezone.utc
 
 def quality_is_usable(value):
-    if value in (None,"", "P", "provisional", "0"): return True
-    if isinstance(value,list): return not value or set(value) <= {"P"}
-    return False
+    """Accept documented provisional/zero-valued quality codes, reject other flags.
+
+    CO-OPS returns comma-separated per-field quality flags (e.g. 0,0,0,0).
+    Retain source flags in the archived observations; normalize only for eligibility.
+    """
+    if value is None: return True
+    if isinstance(value, str):
+        flags = [part.strip() for part in value.split(",")]
+    elif isinstance(value, (list, tuple)):
+        flags = [str(part).strip() for part in value]
+    else:
+        return False
+    return all(flag in ("", "0", "P", "provisional") for flag in flags)
 
 def latest_snapshot(snapshot, issued):
     obs=snapshot["observations"]
@@ -97,7 +107,7 @@ def issue(simulated=False,run_id="",scheduled=False):
                 byh[str(h)][name]={"status":"issued","predicted_stage_native_ft":stage,"predicted_change_ft":stage-features["maul1_stage_native_ft"],
                     "interval_lower_ft":stage-half,"interval_upper_ft":stage+half,"imputed_feature_count":missing,"artifact_sha256":artifacts["artifact_sha256"]}
             except Exception as exc: byh[str(h)][name]={"status":"error","reason":str(exc)}
-    record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id)
+    record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id,model_anchor_time=actual.replace(minute=0,second=0,microsecond=0))
     record["forecast_snapshot_sha256"]=hashlib.sha256(json.dumps(record["snapshot"],sort_keys=True).encode()).hexdigest()
     phase6_forecast.write_immutable(record,ROOT/"site/data/prospective/archive")
     attempts=ROOT/"site/data/prospective/attempts"; attempts.mkdir(parents=True,exist_ok=True)
@@ -109,8 +119,14 @@ def update_site():
     observation_dir=base/"archive/observations"; observation_dir.mkdir(parents=True,exist_ok=True)
     verification_capture=phase6_sources.fetch_snapshot(dt.datetime.now(UTC))
     capture_name=phase6_forecast.stamp(dt.datetime.now(UTC)).replace(":","")
-    capture_path=observation_dir/f"{capture_name}.json"
-    if not capture_path.exists(): capture_path.write_text(json.dumps(verification_capture,indent=2)+"\n")
+    # Keep verification-source provenance, without committing another multi-MB plain JSON.
+    # Existing .json records remain untouched and fully readable.
+    import gzip
+    capture_path=observation_dir/f"{capture_name}.json.gz"
+    if not capture_path.exists():
+        payload=(json.dumps(verification_capture,sort_keys=True,separators=(",",":"))+"\n").encode("utf-8")
+        with capture_path.open("xb") as stream:
+            stream.write(gzip.compress(payload,compresslevel=9,mtime=0))
     observed=[{"valid_time_utc":x["valid_time_utc"],"ingested_utc":x["retrieved_utc"],"value_ft":float(x["value"])} for x in verification_capture["observations"] if x["station"]=="MAUL1" and x["parameter"]=="stage" and x["datum"]=="gage height"]
     forecasts=[json.loads(p.read_text()) for p in sorted(issues.glob("*.json"))]
     forecasts.sort(key=lambda x:x["actual_issue_time_utc"])
@@ -125,7 +141,14 @@ def update_site():
             path.write_text(json.dumps({"revisions":revisions},indent=2)+"\n")
         records.append(record)
     latest=records[-1] if records else None
-    (base/"latest.json").write_text(json.dumps(latest or {"status":"no_authentic_issuance"},indent=2)+"\n")
+    # Compact website projection: full source evidence remains immutable in archive/issues.
+    if latest:
+        projection={key:latest[key] for key in ("schema","issuance_id","mode","nominal_issue_time_utc","actual_issue_time_utc","latest_maul1_native_stage_ft","forecasts") if key in latest}
+        projection["snapshot"]={"availability":{key:{"status":value.get("status"),"age_hours":value.get("age_hours")} for key,value in latest.get("snapshot",{}).get("availability",{}).items()}}
+        for key in ("model_anchor_time_utc","run_id"):
+            if key in latest: projection[key]=latest[key]
+    else: projection={"status":"no_authentic_issuance"}
+    (base/"latest.json").write_text(json.dumps(projection,indent=2)+"\n")
     (base/"history/index.json").parent.mkdir(parents=True,exist_ok=True)
     all_v=[v for p in sorted(verdir.glob("*.json")) for v in json.loads(p.read_text()).get("revisions",[])]
     latest_v={}
@@ -137,12 +160,15 @@ def update_site():
         rec=next((r for r in records if r["issuance_id"]==v["issuance_id"]),None)
         if not rec or rec.get("latest_maul1_native_stage_ft") is None: continue
         group=f"{v['model']}:{v['horizon_hours']}h"
-        by_group.setdefault(group,[]).append({"forecast_change_ft":v["predicted_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
+        by_group.setdefault(group,[]).append({"valid_time_utc":v["forecast_valid_time_utc"],"actual_issue_time_utc":rec["actual_issue_time_utc"],"forecast_change_ft":v["predicted_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
             "observed_change_ft":v["observed_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
             "persistence_change_ft":0.0,
             "interval_lower_ft":v.get("interval_lower_ft"),"interval_upper_ft":v.get("interval_upper_ft"),
             "interval_covered":v.get("interval_covered"),"upper_bound_exceeded":v.get("upper_bound_exceeded")})
     summary={k:phase6_metrics.compute_metrics(v) for k,v in by_group.items()}
+    for key,rows in by_group.items():
+        if key.endswith(":24h"):
+            summary[key]["qualifying_24h_events"]=phase6_metrics.summarize_qualifying_events(rows)
     (base/"history/index.json").write_text(json.dumps([{"issuance_id":r["issuance_id"],"actual_issue_time_utc":r["actual_issue_time_utc"],"mode":r["mode"],
         "forecast_file":f"../archive/issues/{r['issuance_id']}.json",
         "verification_files":[f"../verification/{p.name}" for p in sorted(verdir.glob(r["issuance_id"]+"-*.json"))]}

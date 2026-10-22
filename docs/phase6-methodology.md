@@ -12,7 +12,7 @@ The artifact contains Phase 5A MAUL1-only and coastal models plus Phase 5B coast
 
 The scheduled UTC workflow records its nominal slot and actual execution and issue times independently. All source retrievals finish before the actual issue time. Hourly inputs use only completed UTC bins; no interpolation or implicit carry-forward is allowed. The maximum age is 2 hours for the latest MAUL1 stage and 3 hours for other station inputs. A forecast cycle is eligible when that MAUL1 requirement is met; otherwise each model abstains and the attempt is still recorded. Stale, absent, rejected, or partial inputs remain explicit. The issue archive stores the transformed feature vector and immutable source snapshot with valid times, retrieval times, QC, datum, units, source identity, and hashes.
 
-Each authentic issue is create-only and records all five model statuses at all three horizons, exact `valid_time = actual_issue_time + horizon`, frozen model version/hash, target stage and interval bounds, and issue-time features. A rerun creates a separate actual issuance or audit attempt; it cannot replace an earlier file. Dispatch simulations are isolated from the authentic archive.
+Each authentic issue is create-only and records all five model statuses at all three horizons, exact `valid_time = model_feature_anchor + horizon`; record actual issuance separately and calculate actual effective lead time, frozen model version/hash, target stage and interval bounds, and issue-time features. A rerun creates a separate actual issuance or audit attempt; it cannot replace an earlier file. Dispatch simulations are isolated from the authentic archive.
 
 ## Independent verification and metrics
 
@@ -29,3 +29,8 @@ A free GitHub Actions workflow issues forecasts hourly on a fixed UTC schedule a
 ## Limitations
 
 Source outages, provisional or delayed observations, the unverified MCHL1 datum, the existing models' hourly calibration target, and small prospective event counts can limit inference. The 80% intervals are frozen historical intervals, not calibrated flood probabilities. Every output remains research-only and does not imply equivalence to a NAVD88 flood threshold.
+
+
+### Phase 6.1 prospective timing clarification
+
+Phase 5 models construct features at an exact UTC hour and predict the corresponding grid target at anchor plus 6, 12, or 24 hours. For future Phase 6 issuances, archive this model feature anchor explicitly. Keep actual issuance time distinct: the effective available lead is the grid target minus the actual issuance, and may be less than the nominal horizon when a scheduled job runs late. Do not backdate issuance or alter previously archived forecast objects, including the first authentic Phase 6 issue. All event lead-time evaluations must use actual issuance timestamps.

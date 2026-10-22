@@ -12,6 +12,12 @@ class Phase6SourceTests(unittest.TestCase):
         self.assertTrue(phase6.quality_is_usable([]))
         self.assertTrue(phase6.quality_is_usable(["P"]))
         self.assertFalse(phase6.quality_is_usable(["R"]))
+        self.assertTrue(phase6.quality_is_usable("0,0,0,0"))
+        self.assertTrue(phase6.quality_is_usable("0,0"))
+        self.assertTrue(phase6.quality_is_usable("P,0"))
+        self.assertFalse(phase6.quality_is_usable("0,1,0"))
+        self.assertFalse(phase6.quality_is_usable("0,R,0"))
+        self.assertFalse(phase6.quality_is_usable("invalid"))
 
     def test_future_retrieval_cannot_enter_issue_features(self):
         base={"station":"MAUL1","source":"USGS","parameter":"stage","value":2.4,"units":"ft","datum":"gage height",
