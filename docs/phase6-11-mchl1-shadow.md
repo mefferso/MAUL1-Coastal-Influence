@@ -1,0 +1,7 @@
+## Phase 6.11 — MCHL1 shadow predictors
+
+Historical and current candidate MCHL1 observations are obtained using the same `build.parse_hads` parser and are labeled `HADS native gage height (unverified)` and `qc=unverified`. That shared code path supports syntactic/source compatibility, but **does not independently verify physical gauge datum, instrument continuity, or provider quality flags**.
+
+The Phase 6 issuance now computes separately labeled `feature_diagnostics.mchl1_shadow` 6-, 24- and 72-hour native-stage changes from a COPY of the candidate observations after checking finiteness and the expected native datum label. It uses the same completed-hour/causal feature-builder logic. This isolated shadow calculation temporarily labels copied records provisional *inside the diagnostic only*; archived source QC remains unverified. It does **not** change any issued-model input, frozen coefficients, forecast archives, readiness or source eligibility.
+
+Check successive authentic forecast attempts for candidate observation count, required completed hourly bin presence, and availability of all 6/24/72h changes. A scientifically defensible activation needs independent HADS gauge station/instrument/datum metadata and provider QC interpretation, and a decision on whether frozen historical training actually had the same reliable observations. Shadow completeness is necessary but not sufficient.
