@@ -15,6 +15,23 @@ def _obs(row, retrieved, request_url, raw_hash):
         "units":row["unit"],"datum":row["datum"],"valid_time_utc":row["time"],"retrieved_utc":retrieved,
         "original_source_time":row["time"],"qc":row.get("quality"),"provenance_url":request_url,"response_sha256":raw_hash}
 
+def mchl1_coverage(rows, retrieved):
+    """Diagnostic only: describe captured values without treating them as verified."""
+    times=sorted({dt.datetime.fromisoformat(row["time"].replace("Z","+00:00")).astimezone(UTC)
+                  for row in rows})
+    if not times:
+        return {"earliest_valid_utc":None,"latest_valid_utc":None,
+                "observation_span_hours":0,"latest_age_minutes":None,
+                "maximum_gap_minutes":None,"valid_timestamp_count":0}
+    now=dt.datetime.fromisoformat(retrieved.replace("Z","+00:00"))
+    return {"earliest_valid_utc":times[0].isoformat().replace("+00:00","Z"),
+            "latest_valid_utc":times[-1].isoformat().replace("+00:00","Z"),
+            "observation_span_hours":round((times[-1]-times[0]).total_seconds()/3600,3),
+            "latest_age_minutes":round((now-times[-1]).total_seconds()/60,2),
+            "maximum_gap_minutes":max(((y-x).total_seconds()/60 for x,y in zip(times,times[1:])),default=None),
+            "valid_timestamp_count":len(times)}
+
+
 def fetch_snapshot(now_utc, fetcher=_get):
     now=dt.datetime.fromisoformat(now_utc.replace("Z","+00:00")) if isinstance(now_utc,str) else now_utc
     now=now.astimezone(UTC); retrieved=now.replace(microsecond=0).isoformat().replace("+00:00","Z")
@@ -61,7 +78,7 @@ def fetch_snapshot(now_utc, fetcher=_get):
                         "retrieved_utc":retrieved,"url":hads_url,
                         "response_sha256":digest,"server_date":date,
                         "datum":"HADS native gage height (unverified)",
-                        "qc":"unverified"})
+                        "qc":"unverified","coverage":mchl1_coverage(rows,retrieved)})
     except Exception as exc:
         sources.append({"station":"MCHL1","status":"error",
                         "forecast_eligible":False,"retrieved_utc":retrieved,
