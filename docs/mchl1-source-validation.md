@@ -18,3 +18,9 @@ Sources:
 - https://mesonet.agron.iastate.edu/request/dcp/fe.phtml
 
 **Status:** source candidate only, not validated for live forecasting.
+
+## Additional independent evidence: LIX HADS SHEF products
+
+IEM's archived RRSLIX text products on 2026-08-06 at 14:40 and 15:40 UTC contain original MCHL1 SHEF `.E MCHL1 .../HGIRG/DIN15/...` reports, confirming that at least some 15-minute MCHL1 stage data were relayed through HADS (not just station metadata). Example pages: https://mesonet.agron.iastate.edu/wx/afos/p.php?e=202608061540&pil=RRSLIX and https://mesonet.agron.iastate.edu/wx/afos/p.php?e=202608061440&pil=RRSLIX. IEM LA_DCP station metadata independently lists MCHL1 and PEDTS HGIRG with first history entry 2022-12-20: https://mesonet.agron.iastate.edu/sites/networks.php?network=LA_DCP&station=NLGL1.
+
+These historical reports confirm an actual stage product and approximate reporting cadence, **not** a verified current feed, receipt-time availability, or datum. The data-source evaluation should compare IEM LA_DCP request output and the original RRSLIX product during a current issuance, verify identical observation valid times and sensible latency, and preserve product ingest/receipt times. Do not enable automatically based on historical product matches.
