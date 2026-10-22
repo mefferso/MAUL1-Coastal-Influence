@@ -75,6 +75,37 @@ def feature_snapshot(snapshot, issued):
     features.update(phase5b.harmonic_features(issued))
     return features,index
 
+def mchl1_shadow_diagnostics(snapshot, issued):
+    """Compute MCHL1-only candidate features without changing issued forecasts.
+
+    Provider QC remains 'unverified'. A separate copied snapshot is used only
+    to assess native-stage bin alignment; forecast feature_snapshot still
+    rejects unverified observations as before.
+    """
+    names=("mchl1_stage_change_6h_native_ft",
+           "mchl1_stage_change_24h_native_ft",
+           "mchl1_stage_change_72h_native_ft")
+    candidates=[o for o in snapshot["observations"]
+                if o["station"]=="MCHL1" and o["parameter"]=="stage"]
+    safe=[]
+    for o in candidates:
+        if o.get("qc")!="unverified" or o.get("datum")!="HADS native gage height (unverified)":
+            continue
+        # This is not a QC approval, only an isolated calculation.
+        if not __import__("math").isfinite(float(o["value"])):
+            continue
+        safe.append(dict(o,qc="P"))
+    isolated={"observations":safe}
+    features,index=feature_snapshot(isolated,issued)
+    expected=issued.replace(minute=0,second=0,microsecond=0)-dt.timedelta(hours=1)
+    bins=index.get(("MCHL1","stage"),{})
+    return {"forecast_eligible":False,"candidate_observation_count":len(safe),
+            "latest_completed_bin_present":expected in bins,
+            "latest_completed_bin_utc":phase6_forecast.stamp(expected),
+            "features":{name:features.get(name) for name in names},
+            "note":"Shadow-only native-stage changes, no source QC approval or model inference"}
+
+
 def feature_availability(features, index, issued):
     """Explain eligible station data versus values actually available to frozen models."""
     anchor = issued.replace(minute=0, second=0, microsecond=0)
@@ -118,6 +149,7 @@ def issue(simulated=False,run_id="",scheduled=False):
     latest,status=latest_snapshot(snap,actual)
     status["MAUL1_00065"]["model_feature_available"]=features.get("maul1_stage_native_ft") is not None
     feature_diagnostics=feature_availability(features,index,actual)
+    feature_diagnostics["mchl1_shadow"]=mchl1_shadow_diagnostics(snap,actual)
     artifact_path=ROOT/"site/data/prospective/model-artifacts.json"
     if not artifact_path.exists():
         artifact=phase6_models.freeze_models(ROOT); artifact_path.parent.mkdir(parents=True,exist_ok=True); artifact_path.write_text(json.dumps(artifact,indent=2)+"\n")
