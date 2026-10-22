@@ -135,7 +135,7 @@ def update_site():
             path.write_text(json.dumps({"revisions":revisions},indent=2)+"\n")
         records.append(record)
     latest=records[-1] if records else None
-    (base/"latest.json").write_text(json.dumps(latest or {"status":"no_authentic_issuance"},indent=2)+"\n")
+    # Compact website projection: full source evidence remains immutable in archive/issues.\n    if latest:\n        projection={key:latest[key] for key in ("schema","issuance_id","mode","nominal_issue_time_utc","actual_issue_time_utc","latest_maul1_native_stage_ft","forecasts") if key in latest}\n        projection["snapshot"]={"availability":{key:{"status":value.get("status"),"age_hours":value.get("age_hours")} for key,value in latest.get("snapshot",{}).get("availability",{}).items()}}\n        for key in ("model_anchor_time_utc","run_id"):\n            if key in latest: projection[key]=latest[key]\n    else: projection={"status":"no_authentic_issuance"}\n    (base/"latest.json").write_text(json.dumps(projection,indent=2)+"\n")
     (base/"history/index.json").parent.mkdir(parents=True,exist_ok=True)
     all_v=[v for p in sorted(verdir.glob("*.json")) for v in json.loads(p.read_text()).get("revisions",[])]
     latest_v={}
