@@ -1,0 +1,161 @@
+{
+  "issuance_id": "89499726cc230502",
+  "actual_issue_time_utc": "2026-10-22T15:54:15Z",
+  "sources": [
+    {
+      "station": "MAUL1",
+      "status": "retrieved",
+      "retrieved_utc": "2026-10-22T15:54:13Z",
+      "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07380215&parameterCd=00065%2C63160&period=P3D&siteStatus=all",
+      "response_sha256": "9b1b5e65e07dacfd0f2006c474a9bc4a2cb176c9a61b3769a9996af9dda820f2",
+      "server_date": "Thu, 22 Oct 2026 15:54:13 GMT"
+    },
+    {
+      "station": "DENL1",
+      "status": "retrieved",
+      "retrieved_utc": "2026-10-22T15:54:14Z",
+      "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07378500&parameterCd=00060%2C00065&period=P3D&siteStatus=all",
+      "response_sha256": "1e370e21cfad2fcf22600f82370094b60feeed546808c62f113fa0c89349d2a9",
+      "server_date": "Thu, 22 Oct 2026 15:54:13 GMT"
+    },
+    {
+      "station": "MDLL1",
+      "status": "retrieved",
+      "retrieved_utc": "2026-10-22T15:54:14Z",
+      "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=301200090072400&parameterCd=00065&period=P3D&siteStatus=all",
+      "response_sha256": "753755b31663f06a2fa41cb3cfc7fc5812e9a2c70896ce54c58b5110d231bc94",
+      "server_date": "Thu, 22 Oct 2026 15:54:14 GMT"
+    },
+    {
+      "station": "NWCL1",
+      "product": "water_level",
+      "status": "retrieved",
+      "retrieved_utc": "2026-10-22T15:54:14Z",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261019&end_date=20261022&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=water_level&datum=MLLW&interval=h",
+      "response_sha256": "b154165f2a142f67a5acbbddb1f05d328248c0781603212f8338105d2442e70f",
+      "server_date": "Thu, 22 Oct 2026 15:54:14 GMT"
+    },
+    {
+      "station": "NWCL1",
+      "product": "predictions",
+      "status": "retrieved",
+      "retrieved_utc": "2026-10-22T15:54:14Z",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261019&end_date=20261022&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=predictions&datum=MLLW&interval=h",
+      "response_sha256": "44f8a925b4bdbf5409e7ffc43e3aa528f6d5c935b2b887216d0137635f362efb",
+      "server_date": "Thu, 22 Oct 2026 15:54:14 GMT"
+    },
+    {
+      "station": "NWCL1",
+      "product": "wind",
+      "status": "retrieved",
+      "retrieved_utc": "2026-10-22T15:54:15Z",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261019&end_date=20261022&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=wind",
+      "response_sha256": "ac0d376395d6248d9e3af1aa95c145c67cf78088d918eca3aee47ea9ead5793a",
+      "server_date": "Thu, 22 Oct 2026 15:54:15 GMT"
+    },
+    {
+      "station": "MCHL1",
+      "status": "unavailable",
+      "source": "NWS HADS live endpoint not established",
+      "retrieved_utc": "2026-10-22T15:54:15Z"
+    }
+  ],
+  "availability": {
+    "MAUL1_00065": {
+      "status": "eligible",
+      "observation": {
+        "station": "MAUL1",
+        "source": "USGS NWIS IV",
+        "parameter": "stage",
+        "value": 2.53,
+        "units": "ft",
+        "datum": "gage height",
+        "valid_time_utc": "2026-10-22T14:45:00Z",
+        "retrieved_utc": "2026-10-22T15:54:13Z",
+        "original_source_time": "2026-10-22T14:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07380215&parameterCd=00065%2C63160&period=P3D&siteStatus=all",
+        "response_sha256": "9b1b5e65e07dacfd0f2006c474a9bc4a2cb176c9a61b3769a9996af9dda820f2",
+        "age_seconds_at_retrieval": 4153.0,
+        "eligible_completed_hour": true
+      },
+      "age_hours": 1.1541666666666666,
+      "model_feature_available": true
+    },
+    "NWCL1": {
+      "status": "eligible",
+      "observation": {
+        "station": "NWCL1",
+        "source": "NOAA CO-OPS 8761927",
+        "parameter": "water_level",
+        "value": 1.155,
+        "units": "ft",
+        "datum": "MLLW",
+        "valid_time_utc": "2026-10-22T13:42:00Z",
+        "retrieved_utc": "2026-10-22T15:54:14Z",
+        "original_source_time": "2026-10-22T13:42:00Z",
+        "qc": "0,0,0,0",
+        "provenance_url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261019&end_date=20261022&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=water_level&datum=MLLW&interval=h",
+        "response_sha256": "b154165f2a142f67a5acbbddb1f05d328248c0781603212f8338105d2442e70f",
+        "age_seconds_at_retrieval": 7934.0,
+        "eligible_completed_hour": true
+      },
+      "maximum_age_hours": 3,
+      "age_hours": 2.2041666666666666
+    },
+    "DENL1": {
+      "status": "eligible",
+      "observation": {
+        "station": "DENL1",
+        "source": "USGS NWIS IV",
+        "parameter": "discharge",
+        "value": 323.0,
+        "units": "cfs",
+        "datum": "native",
+        "valid_time_utc": "2026-10-22T14:45:00Z",
+        "retrieved_utc": "2026-10-22T15:54:14Z",
+        "original_source_time": "2026-10-22T14:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07378500&parameterCd=00060%2C00065&period=P3D&siteStatus=all",
+        "response_sha256": "1e370e21cfad2fcf22600f82370094b60feeed546808c62f113fa0c89349d2a9",
+        "age_seconds_at_retrieval": 4154.0,
+        "eligible_completed_hour": true
+      },
+      "maximum_age_hours": 3,
+      "age_hours": 1.1541666666666666
+    },
+    "MDLL1": {
+      "status": "eligible",
+      "observation": {
+        "station": "MDLL1",
+        "source": "USGS NWIS IV",
+        "parameter": "stage",
+        "value": 0.83,
+        "units": "ft",
+        "datum": "gage height",
+        "valid_time_utc": "2026-10-22T14:45:00Z",
+        "retrieved_utc": "2026-10-22T15:54:14Z",
+        "original_source_time": "2026-10-22T14:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=301200090072400&parameterCd=00065&period=P3D&siteStatus=all",
+        "response_sha256": "753755b31663f06a2fa41cb3cfc7fc5812e9a2c70896ce54c58b5110d231bc94",
+        "age_seconds_at_retrieval": 4154.0,
+        "eligible_completed_hour": true
+      },
+      "maximum_age_hours": 3,
+      "age_hours": 1.1541666666666666
+    },
+    "MCHL1": {
+      "status": "missing",
+      "observation": null,
+      "maximum_age_hours": 3
+    }
+  },
+  "mode": "authentic"
+}
