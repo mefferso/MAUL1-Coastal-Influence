@@ -44,6 +44,11 @@ jobs:
         with:
           path: site
   deploy:
+    # Multiple push/workflow_run triggers may finish together. GitHub Pages
+    # accepts only one active deployment; queue rather than race them.
+    concurrency:
+      group: github-pages-production
+      cancel-in-progress: false
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     needs: verify
     environment:
