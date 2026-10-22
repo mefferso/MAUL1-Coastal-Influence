@@ -94,7 +94,10 @@ def main():
     except Exception as exc:
         report = {"status": "fetch_error", "approved_for_forecasting": False,
                   "error": str(exc)}
-    if report.get("latest_valid_utc"):\n        latest=dt.datetime.fromisoformat(report["latest_valid_utc"].replace("Z","+00:00"))\n        report["latest_observation_age_minutes_at_probe"]=round((dt.datetime.now(UTC)-latest).total_seconds()/60,2)\n    report.update({"station_identity": IDENTITY, "url": url,
+    if report.get("latest_valid_utc"):
+        latest=dt.datetime.fromisoformat(report["latest_valid_utc"].replace("Z","+00:00"))
+        report["latest_observation_age_minutes_at_probe"]=round((dt.datetime.now(UTC)-latest).total_seconds()/60,2)
+    report.update({"station_identity": IDENTITY, "url": url,
                    "retrieved_utc": dt.datetime.now(UTC).isoformat()})
     print(json.dumps(report, indent=2))
     if report["status"] == "fetch_error":
