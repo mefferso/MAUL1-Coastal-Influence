@@ -160,12 +160,15 @@ def update_site():
         rec=next((r for r in records if r["issuance_id"]==v["issuance_id"]),None)
         if not rec or rec.get("latest_maul1_native_stage_ft") is None: continue
         group=f"{v['model']}:{v['horizon_hours']}h"
-        by_group.setdefault(group,[]).append({"forecast_change_ft":v["predicted_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
+        by_group.setdefault(group,[]).append({"valid_time_utc":v["forecast_valid_time_utc"],"actual_issue_time_utc":rec["actual_issue_time_utc"],"forecast_change_ft":v["predicted_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
             "observed_change_ft":v["observed_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
             "persistence_change_ft":0.0,
             "interval_lower_ft":v.get("interval_lower_ft"),"interval_upper_ft":v.get("interval_upper_ft"),
             "interval_covered":v.get("interval_covered"),"upper_bound_exceeded":v.get("upper_bound_exceeded")})
     summary={k:phase6_metrics.compute_metrics(v) for k,v in by_group.items()}
+    for key,rows in by_group.items():
+        if key.endswith(":24h"):
+            summary[key]["qualifying_24h_events"]=phase6_metrics.summarize_qualifying_events(rows)
     (base/"history/index.json").write_text(json.dumps([{"issuance_id":r["issuance_id"],"actual_issue_time_utc":r["actual_issue_time_utc"],"mode":r["mode"],
         "forecast_file":f"../archive/issues/{r['issuance_id']}.json",
         "verification_files":[f"../verification/{p.name}" for p in sorted(verdir.glob(r["issuance_id"]+"-*.json"))]}
