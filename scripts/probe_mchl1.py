@@ -48,7 +48,9 @@ def assess_response(body):
             value = row.get(time_keys[0], "").strip()
             parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
             if parsed.tzinfo is None:
-                raise ValueError("naive observation time")
+                if time_keys[0].lower() != "utc_valid":
+                    raise ValueError("naive observation time without explicit UTC column")
+                parsed = parsed.replace(tzinfo=UTC)
             times.append(parsed.astimezone(UTC))
         except (ValueError, TypeError, AttributeError):
             invalid += 1
