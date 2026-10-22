@@ -119,8 +119,14 @@ def update_site():
     observation_dir=base/"archive/observations"; observation_dir.mkdir(parents=True,exist_ok=True)
     verification_capture=phase6_sources.fetch_snapshot(dt.datetime.now(UTC))
     capture_name=phase6_forecast.stamp(dt.datetime.now(UTC)).replace(":","")
-    capture_path=observation_dir/f"{capture_name}.json"
-    if not capture_path.exists(): capture_path.write_text(json.dumps(verification_capture,indent=2)+"\n")
+    # Keep verification-source provenance, without committing another multi-MB plain JSON.
+    # Existing .json records remain untouched and fully readable.
+    import gzip
+    capture_path=observation_dir/f"{capture_name}.json.gz"
+    if not capture_path.exists():
+        payload=(json.dumps(verification_capture,sort_keys=True,separators=(",",":"))+"\n").encode("utf-8")
+        with capture_path.open("xb") as stream:
+            stream.write(gzip.compress(payload,compresslevel=9,mtime=0))
     observed=[{"valid_time_utc":x["valid_time_utc"],"ingested_utc":x["retrieved_utc"],"value_ft":float(x["value"])} for x in verification_capture["observations"] if x["station"]=="MAUL1" and x["parameter"]=="stage" and x["datum"]=="gage height"]
     forecasts=[json.loads(p.read_text()) for p in sorted(issues.glob("*.json"))]
     forecasts.sort(key=lambda x:x["actual_issue_time_utc"])
