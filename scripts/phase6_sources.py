@@ -39,8 +39,33 @@ def fetch_snapshot(now_utc, fetcher=_get):
             observations += [_obs(r,retrieved,url,digest) for r in rows]
             sources.append({"station":"NWCL1","product":product,"status":"retrieved" if rows else "empty","retrieved_utc":retrieved,"url":url,"response_sha256":digest,"server_date":date})
         except Exception as exc: sources.append({"station":"NWCL1","product":product,"status":"error","retrieved_utc":retrieved,"url":url,"error":str(exc)})
-    # HADS archive is not treated as a live feed. Its live availability is explicitly unknown.
-    sources.append({"station":"MCHL1","status":"unavailable","source":"NWS HADS live endpoint not established","retrieved_utc":retrieved})
+    # Capture authentic station-specific HADS evidence, but do not yet admit
+    # values to frozen-model inference: provider datum/QC remain unverified.
+    hads_url=_query("https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py",{
+        "stations":"MCHL1",
+        "sts":(now-dt.timedelta(days=4)).strftime("%Y-%m-%dT%H:%MZ"),
+        "ets":now.strftime("%Y-%m-%dT%H:%MZ"),
+        "what":"txt","delim":"comma"})
+    try:
+        raw,date=fetcher(hads_url)
+        retrieved=dt.datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00","Z")
+        rows=parse_hads(raw.decode("utf-8-sig"))
+        digest=hashlib.sha256(raw).hexdigest()
+        # parse_hads rigorously rejects unknown station identities. Its
+        # "unverified" quality is deliberately preserved; Phase 6 cannot use
+        # such observations as predictors until an explicit QC review.
+        observations += [_obs(row,retrieved,hads_url,digest) for row in rows]
+        sources.append({"station":"MCHL1",
+                        "status":"retrieved_unverified" if rows else "empty",
+                        "forecast_eligible":False,"observation_count":len(rows),
+                        "retrieved_utc":retrieved,"url":hads_url,
+                        "response_sha256":digest,"server_date":date,
+                        "datum":"HADS native gage height (unverified)",
+                        "qc":"unverified"})
+    except Exception as exc:
+        sources.append({"station":"MCHL1","status":"error",
+                        "forecast_eligible":False,"retrieved_utc":retrieved,
+                        "url":hads_url,"error":str(exc)})
     acquired=dt.datetime.now(UTC)
     for observation in observations:
         valid=dt.datetime.fromisoformat(observation["valid_time_utc"].replace("Z","+00:00"))
