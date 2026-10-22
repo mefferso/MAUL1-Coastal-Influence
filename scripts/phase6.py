@@ -107,7 +107,7 @@ def issue(simulated=False,run_id="",scheduled=False):
                 byh[str(h)][name]={"status":"issued","predicted_stage_native_ft":stage,"predicted_change_ft":stage-features["maul1_stage_native_ft"],
                     "interval_lower_ft":stage-half,"interval_upper_ft":stage+half,"imputed_feature_count":missing,"artifact_sha256":artifacts["artifact_sha256"]}
             except Exception as exc: byh[str(h)][name]={"status":"error","reason":str(exc)}
-    record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id)
+    record=phase6_forecast.make_record(actual,nominal,{"maul1_stage_native_ft":features.get("maul1_stage_native_ft"),"features":features,"source_snapshot":snap,"availability":status,"model_artifact_sha256":artifacts["artifact_sha256"]},byh,simulated=simulated,run_id=run_id,model_anchor_time=actual.replace(minute=0,second=0,microsecond=0))
     record["forecast_snapshot_sha256"]=hashlib.sha256(json.dumps(record["snapshot"],sort_keys=True).encode()).hexdigest()
     phase6_forecast.write_immutable(record,ROOT/"site/data/prospective/archive")
     attempts=ROOT/"site/data/prospective/attempts"; attempts.mkdir(parents=True,exist_ok=True)
