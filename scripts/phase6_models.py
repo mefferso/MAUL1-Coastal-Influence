@@ -11,7 +11,9 @@ FROZEN = {"phase5a_maul1_only": ("phase5a", "maul1_only", "phase5a_maul1_only_ft
           "phase5b_coastal_tidal": ("phase5b", "maul1_coastal_tidal", "maul1_coastal_tidal"),
           "phase5b_full_multivariable": ("phase5b", "full_multivariable", "full_multivariable")}
 
-def _sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def _git_blob_sha(path):
+    data=Path(path).read_bytes()
+    return hashlib.sha1(f"blob {len(data)}\0".encode()+data).hexdigest()
 def _canonical_sha(value):
     # Replay diagnostics can differ at floating-point roundoff across BLAS builds.
     # The artifact identity covers the frozen estimators, transforms, intervals,
@@ -87,8 +89,10 @@ def freeze_models(root):
             "holdout_issue_start_inclusive_utc":(phase5a.BOUNDARY+phase5a.dt.timedelta(hours=phase5a.EMBARGO_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "embargo_hours":phase5a.EMBARGO_HOURS,"lookback_hours":phase5a.LOOKBACK_HOURS},
         "excluded":["gated_full","maul1_astro_retrospective"],
-        "sources":{"phase5a_models_sha256":_sha(a_path),"phase5b_models_sha256":_sha(b_path),
-                   "phase5a_code_sha256":_sha(root/"scripts/phase5a.py"),"phase5b_code_sha256":_sha(root/"scripts/phase5b.py")},
+        "sources":{"phase5a_models_git_blob":_git_blob_sha(a_path),"phase5b_models_git_blob":_git_blob_sha(b_path),
+                   "phase5a_uncertainty_git_blob":_git_blob_sha(root/"site/data/history/phase5a/uncertainty.json"),
+                   "phase5b_uncertainty_git_blob":_git_blob_sha(root/"site/data/history/phase5b/uncertainty.json"),
+                   "phase5a_code_git_blob":_git_blob_sha(root/"scripts/phase5a.py"),"phase5b_code_git_blob":_git_blob_sha(root/"scripts/phase5b.py")},
         "holdout_replay":replay,"tolerance_ft":1e-8}
     artifact["artifact_sha256"] = _canonical_sha(artifact)
     return artifact
