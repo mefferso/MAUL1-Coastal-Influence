@@ -46,6 +46,20 @@ class Phase6SourceTests(unittest.TestCase):
         self.assertTrue(diagnostic["stations"]["NWCL1"]["expected_bin_present"])
         self.assertFalse(diagnostic["stations"]["NWCL1_residual"]["expected_bin_present"])
 
+    def test_source_lookback_covers_72_hour_change_plus_completed_bin(self):
+        requested=[]
+        def empty(url):
+            requested.append(url)
+            return (json.dumps({"value":{"timeSeries":[]}}).encode()
+                    if "waterservices" in url else json.dumps({"data":[]}).encode(), None)
+        phase6_sources.fetch_snapshot(dt.datetime(2026,10,22,16,tzinfo=dt.timezone.utc), empty)
+        usgs=[url for url in requested if "waterservices" in url]
+        coops=[url for url in requested if "tidesandcurrents" in url]
+        self.assertEqual(len(usgs),3)
+        self.assertTrue(all("P4D" in url for url in usgs))
+        self.assertEqual(len(coops),3)
+        self.assertTrue(all("begin_date=20261018" in url for url in coops))
+
     def test_empty_source_responses_are_explicit(self):
         def empty(url):
             return (json.dumps({"value":{"timeSeries":[]}}).encode() if "waterservices" in url else json.dumps({"data":[]}).encode(),None)
