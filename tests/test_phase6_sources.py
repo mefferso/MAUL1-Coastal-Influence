@@ -69,9 +69,9 @@ class Phase6SourceTests(unittest.TestCase):
             if "tidesandcurrents" in url:
                 return json.dumps({"data":[]}).encode(),None
             if "hads.py" in url:
-                return (b"station,utc_valid,HGIRGZZ\\n"
-                        b"MCHL1,2026-10-22 14:00,1.25\\n"
-                        b"MCHL1,2026-10-22 14:15,1.30\\n"),None
+                return (b"station,utc_valid,HGIRGZZ\n"
+                        b"MCHL1,2026-10-22 14:00,1.25\n"
+                        b"MCHL1,2026-10-22 14:15,1.30\n"),None
             raise AssertionError(url)
         snap=phase6_sources.fetch_snapshot(dt.datetime(2026,10,22,16,tzinfo=dt.timezone.utc),candidate)
         self.assertEqual(len([u for u in requested if "hads.py" in u]),1)
@@ -94,7 +94,7 @@ class Phase6SourceTests(unittest.TestCase):
             if "waterservices" in url:
                 return json.dumps({"value":{"timeSeries":[]}}).encode(),None
             if "hads.py" in url:
-                return b"station,utc_valid,HGIRGZZ\\n85420LA,2026-10-22 14:00,1.25\\n",None
+                return b"station,utc_valid,HGIRGZZ\n85420LA,2026-10-22 14:00,1.25\n",None
             return json.dumps({"data":[]}).encode(),None
         snap=phase6_sources.fetch_snapshot(dt.datetime(2026,10,22,16,tzinfo=dt.timezone.utc),bad)
         self.assertEqual(next(x for x in snap["sources"] if x["station"]=="MCHL1")["status"],"error")
