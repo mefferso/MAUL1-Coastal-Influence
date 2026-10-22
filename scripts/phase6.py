@@ -6,13 +6,18 @@ import phase6_models, phase6_sources, phase6_forecast, phase6_verify, phase6_met
 import phase5a, phase5b
 UTC=dt.timezone.utc
 
+def quality_is_usable(value):
+    if value in (None,"", "P", "provisional", "0"): return True
+    if isinstance(value,list): return not value or set(value) <= {"P"}
+    return False
+
 def latest_snapshot(snapshot, issued):
     obs=snapshot["observations"]
     def latest(station,param,datum=None):
         rows=[o for o in obs if o["station"]==station and o["parameter"]==param and (datum is None or o["datum"]==datum)
               and o["eligible_completed_hour"] and dt.datetime.fromisoformat(o["retrieved_utc"].replace("Z","+00:00"))<=issued
               and dt.datetime.fromisoformat(o["valid_time_utc"].replace("Z","+00:00"))<=issued
-              and o["qc"] in (None,[],"", "P", "provisional")]
+              and quality_is_usable(o.get("qc"))]
         return max(rows,key=lambda x:x["valid_time_utc"]) if rows else None
     target=latest("MAUL1","stage","gage height")
     feature={"maul1_stage_native_ft":float(target["value"]) if target else None}; status={}
@@ -36,6 +41,7 @@ def feature_snapshot(snapshot, issued):
     groups=collections.defaultdict(list); predictions={}
     for o in snapshot["observations"]:
         if o["retrieved_utc"]>phase6_forecast.stamp(issued): continue
+        if not quality_is_usable(o.get("qc")): continue
         valid=dt.datetime.fromisoformat(o["valid_time_utc"].replace("Z","+00:00"))
         start=valid.replace(minute=0,second=0,microsecond=0)
         if start+dt.timedelta(hours=1)>issued.replace(minute=0,second=0,microsecond=0): continue

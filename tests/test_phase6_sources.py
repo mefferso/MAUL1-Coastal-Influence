@@ -8,6 +8,11 @@ import phase6
 import phase6_sources
 
 class Phase6SourceTests(unittest.TestCase):
+    def test_quality_flags_are_retained_but_rejected_from_features(self):
+        self.assertTrue(phase6.quality_is_usable([]))
+        self.assertTrue(phase6.quality_is_usable(["P"]))
+        self.assertFalse(phase6.quality_is_usable(["R"]))
+
     def test_future_retrieval_cannot_enter_issue_features(self):
         base={"station":"MAUL1","source":"USGS","parameter":"stage","value":2.4,"units":"ft","datum":"gage height",
               "valid_time_utc":"2026-10-22T11:30:00Z","retrieved_utc":"2026-10-22T11:45:00Z","qc":[],"eligible_completed_hour":True}
