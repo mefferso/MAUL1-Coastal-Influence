@@ -1,0 +1,29 @@
+name: MCHL1 USGS historical overlap probe
+on:
+  pull_request:
+    paths:
+      - scripts/probe_mchl1_usgs_overlap.py
+      - tests/test_mchl1_usgs_overlap.py
+      - .github/workflows/mchl1-usgs-overlap.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify offline parsing and causal differences
+        run: python -m unittest discover -s tests -p test_mchl1_usgs_overlap.py -v
+      - name: Query independent historical observations (diagnostic-only)
+        run: python scripts/probe_mchl1_usgs_overlap.py --start 2026-09-01 --end 2026-09-05 > mchl1-usgs-overlap.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mchl1-usgs-overlap
+          path: mchl1-usgs-overlap.json
+          retention-days: 21
