@@ -8,7 +8,7 @@
   "gates": {
     "12": {
       "advanced_method": "maul1_periodic",
-      "calibration_oof_mae_ft": 0.163090476962304,
+      "calibration_oof_mae_ft": 0.16309047696230403,
       "calibration_oof_n": 48827,
       "fitted_on": "blocked forward calibration-only out-of-fold predictions",
       "rule": "use persistence when absolute issue-time MAUL1 six-hour change is <= threshold; otherwise use advanced forecast",
@@ -35,54 +35,54 @@
   "holdout_results": {
     "12": {
       "full_multivariable": {
-        "bias_ft": 0.013241852811561948,
-        "mae_ft": 0.12230992734645108,
+        "bias_ft": 0.013241852811562396,
+        "mae_ft": 0.12230992734645085,
         "n": 32445,
-        "rmse_ft": 0.16080401150026785,
+        "rmse_ft": 0.1608040115002676,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.11717758989306373,
+          "lower_95": 0.11717758989306352,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.12717635168957545
+          "upper_95": 0.1271763516895749
         },
-        "skill_vs_persistence": 0.4935621643283896
+        "skill_vs_persistence": 0.4935621643283905
       },
       "gated_full": {
-        "bias_ft": 0.004925756089459946,
+        "bias_ft": 0.0049257560894599315,
         "mae_ft": 0.16330013894086812,
         "n": 32445,
         "rmse_ft": 0.21211172513185247,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.1564518199427567,
+          "lower_95": 0.15645181994275667,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.17042251630508745
+          "upper_95": 0.17042251630508748
         },
         "skill_vs_persistence": 0.32383764160181916
       },
       "maul1_astro_retrospective": {
         "availability_status": "retrospective_only_unverified_advance_availability",
-        "bias_ft": 0.0050591719687477395,
+        "bias_ft": 0.005059171968747732,
         "mae_ft": 0.15609547643111585,
         "n": 32445,
-        "rmse_ft": 0.20400872847342597,
+        "rmse_ft": 0.20400872847342594,
         "skill_vs_persistence": 0.3536693467409131
       },
       "maul1_coastal_tidal": {
-        "bias_ft": 0.0063990695076611955,
-        "mae_ft": 0.12186239971740924,
+        "bias_ft": 0.006399069507661823,
+        "mae_ft": 0.1218623997174091,
         "n": 32445,
-        "rmse_ft": 0.16042710233752566,
+        "rmse_ft": 0.16042710233752547,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.11677787748126427,
+          "lower_95": 0.11677787748126414,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.12716803624914627
+          "upper_95": 0.12716803624914613
         },
-        "skill_vs_persistence": 0.4954152021706345
+        "skill_vs_persistence": 0.49541520217063506
       },
       "maul1_only_ft": {
         "bias_ft": 0.005084383896290393,
@@ -99,18 +99,18 @@
         "skill_vs_persistence": 0.3253263632105652
       },
       "maul1_periodic": {
-        "bias_ft": 0.005055605668734007,
-        "mae_ft": 0.16269951459113208,
+        "bias_ft": 0.005055605668733993,
+        "mae_ft": 0.1626995145911321,
         "n": 32445,
         "rmse_ft": 0.21143465421129107,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.15527654739164515,
+          "lower_95": 0.15527654739164518,
           "replicates": 500,
           "status": "computed",
           "upper_95": 0.17010828206118947
         },
-        "skill_vs_persistence": 0.3263245934162077
+        "skill_vs_persistence": 0.32632459341620756
       },
       "maul1_plus_coastal_ft": {
         "bias_ft": 0.0008756140566802876,
@@ -157,21 +157,21 @@
     },
     "24": {
       "full_multivariable": {
-        "bias_ft": 0.002227761483368191,
-        "mae_ft": 0.1911301154375361,
+        "bias_ft": 0.002227761483367434,
+        "mae_ft": 0.19113011543753627,
         "n": 32406,
-        "rmse_ft": 0.25704735118991695,
+        "rmse_ft": 0.2570473511899171,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.18201431145438737,
+          "lower_95": 0.18201431145438765,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.2006128790285407
+          "upper_95": 0.2006128790285408
         },
-        "skill_vs_persistence": 0.20447860514234317
+        "skill_vs_persistence": 0.2044786051423425
       },
       "gated_full": {
-        "bias_ft": 0.01148096263756527,
+        "bias_ft": 0.01148096263756529,
         "mae_ft": 0.21562714453927528,
         "n": 32406,
         "rmse_ft": 0.29243164755741374,
@@ -186,25 +186,25 @@
       },
       "maul1_astro_retrospective": {
         "availability_status": "retrospective_only_unverified_advance_availability",
-        "bias_ft": 0.01174917879012632,
+        "bias_ft": 0.011749178790126318,
         "mae_ft": 0.21568384633613938,
         "n": 32406,
         "rmse_ft": 0.2921295880291926,
         "skill_vs_persistence": 0.10228111413627472
       },
       "maul1_coastal_tidal": {
-        "bias_ft": 0.017200001375296016,
-        "mae_ft": 0.19018142260842813,
+        "bias_ft": 0.017200001375295707,
+        "mae_ft": 0.1901814226084282,
         "n": 32406,
-        "rmse_ft": 0.25603081368883934,
+        "rmse_ft": 0.25603081368883945,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.1811300455375476,
+          "lower_95": 0.18113004553754763,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.2001613886989539
+          "upper_95": 0.20016138869895392
         },
-        "skill_vs_persistence": 0.20842725259110217
+        "skill_vs_persistence": 0.20842725259110184
       },
       "maul1_only_ft": {
         "bias_ft": 0.011535416302487557,
@@ -221,7 +221,7 @@
         "skill_vs_persistence": 0.10331272790312318
       },
       "maul1_periodic": {
-        "bias_ft": 0.011516442710626924,
+        "bias_ft": 0.011516442710626936,
         "mae_ft": 0.21538850930251693,
         "n": 32406,
         "rmse_ft": 0.29224189373159737,
@@ -279,43 +279,43 @@
     },
     "6": {
       "full_multivariable": {
-        "bias_ft": 0.01301025328003119,
-        "mae_ft": 0.06383015254251385,
+        "bias_ft": 0.013010253280031078,
+        "mae_ft": 0.06383015254251381,
         "n": 32475,
-        "rmse_ft": 0.08470975412993037,
+        "rmse_ft": 0.08470975412993036,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.06151476244401316,
+          "lower_95": 0.06151476244401313,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.06636727702766729
+          "upper_95": 0.06636727702766726
         },
-        "skill_vs_persistence": 0.6336514769074185
+        "skill_vs_persistence": 0.6336514769074187
       },
       "gated_full": {
-        "bias_ft": 0.0018578743088471376,
-        "mae_ft": 0.09396903187455638,
+        "bias_ft": 0.0018578743088471365,
+        "mae_ft": 0.09396903187455637,
         "n": 32475,
         "rmse_ft": 0.12241743258217762,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.09089084823957083,
+          "lower_95": 0.0908908482395708,
           "replicates": 500,
           "status": "computed",
           "upper_95": 0.0972080895039957
         },
-        "skill_vs_persistence": 0.46067156864846104
+        "skill_vs_persistence": 0.46067156864846115
       },
       "maul1_astro_retrospective": {
         "availability_status": "retrospective_only_unverified_advance_availability",
-        "bias_ft": 0.0018910962228934987,
-        "mae_ft": 0.0894351337160797,
+        "bias_ft": 0.001891096222893493,
+        "mae_ft": 0.08943513371607968,
         "n": 32475,
-        "rmse_ft": 0.11638731432592532,
-        "skill_vs_persistence": 0.48669354772964546
+        "rmse_ft": 0.11638731432592533,
+        "skill_vs_persistence": 0.48669354772964557
       },
       "maul1_coastal_tidal": {
-        "bias_ft": 0.0010025949041931135,
+        "bias_ft": 0.0010025949041930638,
         "mae_ft": 0.06262061226856765,
         "n": 32475,
         "rmse_ft": 0.08373504552092725,
@@ -346,13 +346,13 @@
         "bias_ft": 0.0019606717979093816,
         "mae_ft": 0.09314474562817725,
         "n": 32475,
-        "rmse_ft": 0.12121397470195201,
+        "rmse_ft": 0.12121397470195203,
         "skill_block_bootstrap_95": {
           "block_hours": 168,
-          "lower_95": 0.08987398104814097,
+          "lower_95": 0.08987398104814094,
           "replicates": 500,
           "status": "computed",
-          "upper_95": 0.09650958534921973
+          "upper_95": 0.09650958534921972
         },
         "skill_vs_persistence": 0.4654024996730327
       },
