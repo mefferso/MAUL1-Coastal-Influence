@@ -1,0 +1,419 @@
+{
+  "astronomical_prediction_availability": {
+    "reason": "archive lacks capture-time evidence proving predictions were available before issue",
+    "verified_advance_availability": false
+  },
+  "astronomical_prediction_valid_time_rows": 94968,
+  "calibration": "2016-01-01 through 2022-12-31, with 72-hour embargo",
+  "gates": {
+    "12": {
+      "advanced_method": "maul1_periodic",
+      "calibration_oof_mae_ft": 0.16309047696230403,
+      "calibration_oof_n": 48827,
+      "fitted_on": "blocked forward calibration-only out-of-fold predictions",
+      "rule": "use persistence when absolute issue-time MAUL1 six-hour change is <= threshold; otherwise use advanced forecast",
+      "threshold_ft": 0.0
+    },
+    "24": {
+      "advanced_method": "maul1_periodic",
+      "calibration_oof_mae_ft": 0.22289334517924753,
+      "calibration_oof_n": 48766,
+      "fitted_on": "blocked forward calibration-only out-of-fold predictions",
+      "rule": "use persistence when absolute issue-time MAUL1 six-hour change is <= threshold; otherwise use advanced forecast",
+      "threshold_ft": 0.0
+    },
+    "6": {
+      "advanced_method": "maul1_periodic",
+      "calibration_oof_mae_ft": 0.09372464727188075,
+      "calibration_oof_n": 48896,
+      "fitted_on": "blocked forward calibration-only out-of-fold predictions",
+      "rule": "use persistence when absolute issue-time MAUL1 six-hour change is <= threshold; otherwise use advanced forecast",
+      "threshold_ft": 0.0
+    }
+  },
+  "holdout": "2023 onward, reused historical benchmark; not pristine independent selection",
+  "holdout_results": {
+    "12": {
+      "full_multivariable": {
+        "bias_ft": 0.013241852811562396,
+        "mae_ft": 0.12230992734645085,
+        "n": 32445,
+        "rmse_ft": 0.1608040115002676,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.11717758989306352,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.1271763516895749
+        },
+        "skill_vs_persistence": 0.4935621643283905
+      },
+      "gated_full": {
+        "bias_ft": 0.0049257560894599315,
+        "mae_ft": 0.16330013894086812,
+        "n": 32445,
+        "rmse_ft": 0.21211172513185247,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.15645181994275667,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.17042251630508748
+        },
+        "skill_vs_persistence": 0.32383764160181916
+      },
+      "maul1_astro_retrospective": {
+        "availability_status": "retrospective_only_unverified_advance_availability",
+        "bias_ft": 0.005059171968747732,
+        "mae_ft": 0.15609547643111585,
+        "n": 32445,
+        "rmse_ft": 0.20400872847342594,
+        "skill_vs_persistence": 0.3536693467409131
+      },
+      "maul1_coastal_tidal": {
+        "bias_ft": 0.006399069507661823,
+        "mae_ft": 0.1218623997174091,
+        "n": 32445,
+        "rmse_ft": 0.16042710233752547,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.11677787748126414,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.12716803624914613
+        },
+        "skill_vs_persistence": 0.49541520217063506
+      },
+      "maul1_only_ft": {
+        "bias_ft": 0.005084383896290393,
+        "mae_ft": 0.16294059741576988,
+        "n": 32445,
+        "rmse_ft": 0.2116575610762756,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.15577160933889642,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.17013529096622726
+        },
+        "skill_vs_persistence": 0.3253263632105652
+      },
+      "maul1_periodic": {
+        "bias_ft": 0.005055605668733993,
+        "mae_ft": 0.1626995145911321,
+        "n": 32445,
+        "rmse_ft": 0.21143465421129107,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.15527654739164518,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.17010828206118947
+        },
+        "skill_vs_persistence": 0.32632459341620756
+      },
+      "maul1_plus_coastal_ft": {
+        "bias_ft": 0.0008756140566802876,
+        "mae_ft": 0.1217673030300948,
+        "n": 32445,
+        "rmse_ft": 0.16034962286120785,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.11664703305741336,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.1267355784101954
+        },
+        "skill_vs_persistence": 0.495808960564151
+      },
+      "maul1_plus_river_ft": {
+        "bias_ft": 0.01037164243815079,
+        "mae_ft": 0.16213518980924047,
+        "n": 32445,
+        "rmse_ft": 0.21046340021448096,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.154943195489971,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.16897435824825074
+        },
+        "skill_vs_persistence": 0.3286612428391732
+      },
+      "persistence_ft": {
+        "bias_ft": 0.00018893512097395573,
+        "mae_ft": 0.24151024811218988,
+        "n": 32445,
+        "rmse_ft": 0.2873382128685823,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.23508883109878256,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.24754882493450453
+        },
+        "skill_vs_persistence": 0.0
+      }
+    },
+    "24": {
+      "full_multivariable": {
+        "bias_ft": 0.002227761483367434,
+        "mae_ft": 0.19113011543753627,
+        "n": 32406,
+        "rmse_ft": 0.2570473511899171,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.18201431145438765,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.2006128790285408
+        },
+        "skill_vs_persistence": 0.2044786051423425
+      },
+      "gated_full": {
+        "bias_ft": 0.01148096263756529,
+        "mae_ft": 0.21562714453927528,
+        "n": 32406,
+        "rmse_ft": 0.29243164755741374,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.20344615617507938,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.22761214682630504
+        },
+        "skill_vs_persistence": 0.10251711824493659
+      },
+      "maul1_astro_retrospective": {
+        "availability_status": "retrospective_only_unverified_advance_availability",
+        "bias_ft": 0.011749178790126318,
+        "mae_ft": 0.21568384633613938,
+        "n": 32406,
+        "rmse_ft": 0.2921295880291926,
+        "skill_vs_persistence": 0.10228111413627472
+      },
+      "maul1_coastal_tidal": {
+        "bias_ft": 0.017200001375295707,
+        "mae_ft": 0.1901814226084282,
+        "n": 32406,
+        "rmse_ft": 0.25603081368883945,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.18113004553754763,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.20016138869895392
+        },
+        "skill_vs_persistence": 0.20842725259110184
+      },
+      "maul1_only_ft": {
+        "bias_ft": 0.011535416302487557,
+        "mae_ft": 0.21543599321789614,
+        "n": 32406,
+        "rmse_ft": 0.29229014702334305,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.203748194981358,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.228864702373796
+        },
+        "skill_vs_persistence": 0.10331272790312318
+      },
+      "maul1_periodic": {
+        "bias_ft": 0.011516442710626936,
+        "mae_ft": 0.21538850930251693,
+        "n": 32406,
+        "rmse_ft": 0.29224189373159737,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.20316754208643248,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.22775842810732747
+        },
+        "skill_vs_persistence": 0.10351036536339098
+      },
+      "maul1_plus_coastal_ft": {
+        "bias_ft": -0.017013142812020265,
+        "mae_ft": 0.1911400892442016,
+        "n": 32406,
+        "rmse_ft": 0.2579900878574129,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.18145387513856368,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.20096190800693903
+        },
+        "skill_vs_persistence": 0.20443709218363237
+      },
+      "maul1_plus_river_ft": {
+        "bias_ft": 0.021970789464539384,
+        "mae_ft": 0.21593000721892958,
+        "n": 32406,
+        "rmse_ft": 0.29070830277126974,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.2052495039886661,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.2280309335963072
+        },
+        "skill_vs_persistence": 0.10125654378853877
+      },
+      "persistence_ft": {
+        "bias_ft": 0.00011355921742887229,
+        "mae_ft": 0.24025766833302473,
+        "n": 32406,
+        "rmse_ft": 0.32099375152897347,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.22513117169659938,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.25641537061038083
+        },
+        "skill_vs_persistence": 0.0
+      }
+    },
+    "6": {
+      "full_multivariable": {
+        "bias_ft": 0.013010253280031078,
+        "mae_ft": 0.06383015254251381,
+        "n": 32475,
+        "rmse_ft": 0.08470975412993036,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.06151476244401313,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.06636727702766726
+        },
+        "skill_vs_persistence": 0.6336514769074187
+      },
+      "gated_full": {
+        "bias_ft": 0.0018578743088471365,
+        "mae_ft": 0.09396903187455637,
+        "n": 32475,
+        "rmse_ft": 0.12241743258217762,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.0908908482395708,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.0972080895039957
+        },
+        "skill_vs_persistence": 0.46067156864846115
+      },
+      "maul1_astro_retrospective": {
+        "availability_status": "retrospective_only_unverified_advance_availability",
+        "bias_ft": 0.001891096222893493,
+        "mae_ft": 0.08943513371607968,
+        "n": 32475,
+        "rmse_ft": 0.11638731432592533,
+        "skill_vs_persistence": 0.48669354772964557
+      },
+      "maul1_coastal_tidal": {
+        "bias_ft": 0.0010025949041930638,
+        "mae_ft": 0.06262061226856765,
+        "n": 32475,
+        "rmse_ft": 0.08373504552092725,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.06028058035565068,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.06499813035057307
+        },
+        "skill_vs_persistence": 0.640593545433513
+      },
+      "maul1_only_ft": {
+        "bias_ft": 0.0019857937658174472,
+        "mae_ft": 0.09335152397981779,
+        "n": 32475,
+        "rmse_ft": 0.12140114419775667,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.09034115378877472,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.09678728610523801
+        },
+        "skill_vs_persistence": 0.46421571034677234
+      },
+      "maul1_periodic": {
+        "bias_ft": 0.0019606717979093816,
+        "mae_ft": 0.09314474562817725,
+        "n": 32475,
+        "rmse_ft": 0.12121397470195203,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.08987398104814094,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.09650958534921972
+        },
+        "skill_vs_persistence": 0.4654024996730327
+      },
+      "maul1_plus_coastal_ft": {
+        "bias_ft": 0.005390644871560756,
+        "mae_ft": 0.06306666077633286,
+        "n": 32475,
+        "rmse_ft": 0.0840621801075439,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.06068072721621634,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.06541064887804797
+        },
+        "skill_vs_persistence": 0.6380334824297689
+      },
+      "maul1_plus_river_ft": {
+        "bias_ft": 0.0040890834485938716,
+        "mae_ft": 0.09314439053140226,
+        "n": 32475,
+        "rmse_ft": 0.12106088369256884,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.09017742958119862,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.09661378441197307
+        },
+        "skill_vs_persistence": 0.4654045377251741
+      },
+      "persistence_ft": {
+        "bias_ft": -3.0792917628945424e-05,
+        "mae_ft": 0.17423341031562742,
+        "n": 32475,
+        "rmse_ft": 0.20276015706568817,
+        "skill_block_bootstrap_95": {
+          "block_hours": 168,
+          "lower_95": 0.16973411085450346,
+          "replicates": 500,
+          "status": "computed",
+          "upper_95": 0.1783991570438799
+        },
+        "skill_vs_persistence": 0.0
+      }
+    }
+  },
+  "limitations": [
+    "Retrospective MAUL1 stage hindcasts, not operational forecasts.",
+    "NOAA prediction capture times and advance availability are unverified; target-valid-time results are a separate retrospective sensitivity.",
+    "NWCL1 astronomical/tidal phase is not assumed to transfer to MAUL1.",
+    "2023-onward holdout has already been inspected in Phase 5A.",
+    "Hourly overlapping forecasts are dependent; use blocked intervals and event groups.",
+    "No 4.0-ft NAVD88 threshold inference is made from native gage height."
+  ],
+  "schema_version": "5B.1",
+  "study": "Phase 5B experimental tidal-feature hindcasts; research-only",
+  "target": "MAUL1 native stage gage height in ft; no NAVD88 conversion",
+  "tidal_feature_definition": {
+    "diurnal": "UTC 24 h harmonic",
+    "semidiurnal": "UTC 12.42 h harmonic",
+    "spring_neap": "14.765 d calendar proxy; not a local astronomical prediction"
+  }
+}

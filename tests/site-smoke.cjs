@@ -9,12 +9,22 @@ assert.match(fs.readFileSync('site/index.html','utf8'),/Experimental event onset
 assert.match(fs.readFileSync('site/index.html','utf8'),/Independent Event Verification/);
 assert.match(fs.readFileSync('site/index.html','utf8'),/Phase 5A experimental hindcasts/);
 assert.match(fs.readFileSync('site/app.js','utf8'),/loadPhase5A/);
+assert.match(fs.readFileSync('site/index.html','utf8'),/Phase 5B tidal-aware robustness experiments/);
+assert.match(fs.readFileSync('site/app.js','utf8'),/loadPhase5B/);
 if(fs.existsSync('site/data/history/phase5a/summary.json')){
   const phase5a=JSON.parse(fs.readFileSync('site/data/history/phase5a/summary.json','utf8'));
   assert.equal(phase5a.schema_version,'5A.1');
   assert.ok(phase5a.holdout_results['6'].methods.persistence.n>0);
   assert.match(fs.readFileSync('site/data/history/phase5a/report.md','utf8'),/Holdout verification/);
   assert.ok(fs.statSync('site/data/history/phase5a/predictions.csv.gz').size>0);
+}
+if(fs.existsSync('site/data/history/phase5b/summary.json')){
+  const phase5b=JSON.parse(fs.readFileSync('site/data/history/phase5b/summary.json','utf8'));
+  assert.equal(phase5b.schema_version,'5B.1');
+  assert.equal(phase5b.astronomical_prediction_availability.verified_advance_availability,false);
+  assert.ok(phase5b.holdout_results['6'].full_multivariable.n>0);
+  assert.match(fs.readFileSync('site/data/history/phase5b/report.md','utf8'),/not operational forecasts/);
+  assert.ok(fs.statSync('site/data/history/phase5b/predictions.csv.gz').size>0);
 }
 const context=vm.createContext({DecompressionStream:global.DecompressionStream,window,document:{getElementById:element},fetch,Plotly,L,Date,Promise,Response,console});vm.runInContext(fs.readFileSync('site/app.js','utf8'),context);
 callbacks.load();

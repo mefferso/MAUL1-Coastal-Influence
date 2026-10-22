@@ -1,0 +1,54 @@
+name: Phase 5B tidal-aware robustness evaluation
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main, phase5b-tidal-robustness]
+    paths:
+      - '.github/workflows/phase5b.yml'
+      - '.github/workflows/site.yml'
+      - 'requirements-phase5a.txt'
+      - 'scripts/phase5a.py'
+      - 'scripts/phase5b.py'
+      - 'scripts/phase4.py'
+      - 'scripts/evidence.py'
+      - 'tests/test_phase5b.py'
+      - 'docs/phase5b-methodology.md'
+      - 'site/app.js'
+      - 'site/index.html'
+      - 'site/data/history/phase5a/**'
+      - 'site/data/history/hourly/**'
+      - 'site/data/history/phase3b/validation.json'
+permissions:
+  contents: write
+jobs:
+  evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-phase5a.txt
+      - name: Full regression suite
+        run: python -m unittest discover -s tests -v
+      - name: Generate Phase 5B reports from committed archive
+        run: python scripts/phase5b.py
+      - name: Validate generated reports and research site
+        run: |
+          for f in summary annual event-robustness rising-bias stratified uncertainty models case-studies provenance; do python -m json.tool "site/data/history/phase5b/$f.json" >/dev/null; done
+          node --check site/app.js
+          node tests/site-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase5b-scientific-reports-${{ github.sha }}
+          path: site/data/history/phase5b
+      - name: Commit deterministic scientific reports
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/history/phase5b
+          git diff --cached --quiet || (git commit -m 'data: publish Phase 5B tidal robustness reports' && git push)
