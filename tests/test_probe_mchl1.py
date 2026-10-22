@@ -34,6 +34,15 @@ class MCHL1ProbeTests(unittest.TestCase):
         self.assertEqual(report["latest_valid_utc"],"2026-10-22T12:45:00Z")
         self.assertFalse(report["approved_for_forecasting"])
 
+    def test_iem_utc_valid_column_accepts_naive_utc_clock(self):
+        result=probe_mchl1.assess_response(
+            b"station,utc_valid,HGIRGZZ\nMCHL1,2026-10-22 12:00,1.2\n"
+            b"MCHL1,2026-10-22 12:15,1.3\n")
+        self.assertEqual(result["valid_timestamp_count"],2)
+        self.assertEqual(result["invalid_timestamp_count"],0)
+        self.assertEqual(result["latest_valid_utc"],"2026-10-22T12:15:00Z")
+        self.assertFalse(result["approved_for_forecasting"])
+
     def test_empty_and_wrong_station_are_not_approved(self):
         self.assertFalse(probe_mchl1.assess_response(b"")["approved_for_forecasting"])
         result=probe_mchl1.assess_response(b"station,utc_valid,HGIRGZZ\n85420LA,2026-10-22T12:00:00Z,1.2\n")
