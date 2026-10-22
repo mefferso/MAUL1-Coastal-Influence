@@ -4,15 +4,12 @@ on:
   push:
     branches: [main, phase5a-hindcasts]
     paths:
-      - '.github/workflows/phase5a.yml'
       - 'requirements-phase5a.txt'
       - 'scripts/phase5a.py'
       - 'scripts/phase4.py'
       - 'scripts/evidence.py'
       - 'tests/test_phase5a.py'
       - 'docs/phase5a-methodology.md'
-      - 'site/index.html'
-      - 'site/app.js'
       - 'site/data/history/hourly/**'
       - 'site/data/history/phase3b/validation.json'
       - 'site/data/history/phase3b/cases.json'
