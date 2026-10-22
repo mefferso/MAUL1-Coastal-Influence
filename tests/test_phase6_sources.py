@@ -80,6 +80,10 @@ class Phase6SourceTests(unittest.TestCase):
         source=next(x for x in snap["sources"] if x["station"]=="MCHL1")
         self.assertEqual(source["status"],"retrieved_unverified")
         self.assertFalse(source["forecast_eligible"])
+        self.assertEqual(source["coverage"]["valid_timestamp_count"],2)
+        self.assertEqual(source["coverage"]["maximum_gap_minutes"],15)
+        self.assertEqual(source["coverage"]["latest_valid_utc"],"2026-10-22T14:15:00Z")
+        self.assertGreater(source["coverage"]["latest_age_minutes"],0)
         obs=[o for o in snap["observations"] if o["station"]=="MCHL1"]
         self.assertEqual(len(obs),2)
         self.assertTrue(all(o["qc"]=="unverified" for o in obs))
@@ -88,6 +92,16 @@ class Phase6SourceTests(unittest.TestCase):
         self.assertFalse(phase6.quality_is_usable(obs[0]["qc"]))
         features,_=phase6.feature_snapshot(snap,dt.datetime(2026,10,22,16,30,tzinfo=dt.timezone.utc))
         self.assertIsNone(features.get("mchl1_stage_change_6h_native_ft"))
+
+    def test_mchl1_coverage_empty_and_irregular(self):
+        self.assertEqual(phase6_sources.mchl1_coverage([],"2026-10-22T16:00:00Z")["valid_timestamp_count"],0)
+        rows=[{"time":"2026-10-22T14:00:00Z"},{"time":"2026-10-22T14:00:00Z"},
+              {"time":"2026-10-22T14:45:00Z"}]
+        result=phase6_sources.mchl1_coverage(rows,"2026-10-22T16:00:00Z")
+        self.assertEqual(result["valid_timestamp_count"],2)
+        self.assertEqual(result["maximum_gap_minutes"],45)
+        self.assertEqual(result["observation_span_hours"],.75)
+        self.assertEqual(result["latest_age_minutes"],75)
 
     def test_wrong_mchl1_station_is_rejected_and_isolated(self):
         def bad(url):
