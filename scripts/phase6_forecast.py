@@ -41,3 +41,56 @@ def write_immutable(record, archive_root):
     with path.open("x", encoding="utf-8") as handle:
         json.dump(record, handle, sort_keys=True, indent=2); handle.write("\n")
     return path
+
+def compact_with_immutable_snapshot(record, archive_root):
+    """Create immutable compressed evidence and a compact forecast record.
+
+    Legacy v1 issues remain readable without migration. The compact record
+    preserves the existing forecast schema, keeping verification/dashboard code
+    compatible, and exposes the exact separately archived source snapshot.
+    """
+    import gzip
+    import copy
+    root = Path(archive_root)
+    evidence = record.get("snapshot", {}).get("source_snapshot")
+    if evidence is None:
+        raise ValueError("source snapshot required for lossless archival")
+    raw = (json.dumps(evidence, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    digest = hashlib.sha256(raw).hexdigest()
+    store = root / "snapshots"
+    store.mkdir(parents=True, exist_ok=True)
+    source_path = store / f"{digest}.json.gz"
+    if not source_path.exists():
+        try:
+            with source_path.open("xb") as handle:
+                handle.write(gzip.compress(raw, compresslevel=9, mtime=0))
+        except FileExistsError:
+            pass
+    if gzip.decompress(source_path.read_bytes()) != raw:
+        raise ValueError("immutable source snapshot hash collision or corruption")
+    compact = copy.deepcopy(record)
+    compact["snapshot"].pop("source_snapshot")
+    compact["snapshot"]["source_snapshot_ref"] = {
+        "path": f"../snapshots/{digest}.json.gz",
+        "sha256": digest,
+        "encoding": "gzip+json",
+    }
+    compact["schema"] = "phase6.forecast.v2"
+    return compact
+
+
+def recover_source_snapshot(record, archive_root):
+    """Return v1 inline or v2 compressed source evidence with hash verification."""
+    import gzip
+    inline = record.get("snapshot", {}).get("source_snapshot")
+    if inline is not None:
+        return inline
+    ref = record["snapshot"]["source_snapshot_ref"]
+    digest = ref["sha256"]
+    if ref.get("encoding") != "gzip+json" or not isinstance(digest, str) or len(digest) != 64:
+        raise ValueError("invalid source snapshot reference")
+    path = Path(archive_root) / "snapshots" / f"{digest}.json.gz"
+    raw = gzip.decompress(path.read_bytes())
+    if hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError("archived source snapshot does not match hash")
+    return json.loads(raw)
