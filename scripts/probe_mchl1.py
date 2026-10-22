@@ -37,12 +37,44 @@ def assess_response(body):
     stage_keys = [key for key in fields if key and key.upper().startswith("HG")]
     time_keys = [key for key in fields if key and any(tag in key.lower() for tag in ("utc", "valid", "time"))]
     station_values = sorted({row.get(key, "").strip() for row in rows for key in station_keys if row.get(key)})
+    # Describe observation freshness without promoting any record to forecast input.
+    times = []
+    numeric = 0
+    invalid = 0
+    for row in rows:
+        try:
+            if len(time_keys) != 1:
+                raise ValueError("ambiguous time field")
+            value = row.get(time_keys[0], "").strip()
+            parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                raise ValueError("naive observation time")
+            times.append(parsed.astimezone(UTC))
+        except (ValueError, TypeError, AttributeError):
+            invalid += 1
+        for key in stage_keys:
+            try:
+                import math
+                if math.isfinite(float(row.get(key, ""))):
+                    numeric += 1
+            except (ValueError, TypeError):
+                pass
+    times.sort()
+    first = times[0].isoformat().replace("+00:00", "Z") if times else None
+    last = times[-1].isoformat().replace("+00:00", "Z") if times else None
+    spacing = [(right-left).total_seconds()/60 for left,right in zip(times,times[1:])]
     return {"status": "candidate_needs_manual_validation", "approved_for_forecasting": False,
             "fields": fields, "rows": len(rows), "station_values": station_values,
             "stage_fields": stage_keys, "time_fields": time_keys,
             "station_id_matches": bool(station_values) and station_values == [STATION],
             "has_stage_column": bool(stage_keys), "has_time_column": bool(time_keys),
-            "note": "No validated datum, reporting latency, SHEF type or source receipt-time contract"}
+            "earliest_valid_utc": first, "latest_valid_utc": last,
+            "valid_timestamp_count": len(times), "invalid_timestamp_count": invalid,
+            "finite_stage_cell_count": numeric,
+            "max_observed_gap_minutes": max(spacing) if spacing else None,
+            "observation_span_hours": round((times[-1]-times[0]).total_seconds()/3600, 3) if len(times)>1 else 0,
+            "note": "Source latency and native datum not validated; no forecasting approval"}
+
 
 
 def main():
@@ -62,7 +94,7 @@ def main():
     except Exception as exc:
         report = {"status": "fetch_error", "approved_for_forecasting": False,
                   "error": str(exc)}
-    report.update({"station_identity": IDENTITY, "url": url,
+    if report.get("latest_valid_utc"):\n        latest=dt.datetime.fromisoformat(report["latest_valid_utc"].replace("Z","+00:00"))\n        report["latest_observation_age_minutes_at_probe"]=round((dt.datetime.now(UTC)-latest).total_seconds()/60,2)\n    report.update({"station_identity": IDENTITY, "url": url,
                    "retrieved_utc": dt.datetime.now(UTC).isoformat()})
     print(json.dumps(report, indent=2))
     if report["status"] == "fetch_error":
