@@ -10,6 +10,8 @@ Base: `main` at `5a97ec743bd668c173b3373b8ea7868510048879` (Phase 8 merge).
 
 - `site/index.html`: create a focused Research Dashboard section above historical study panels; move the existing Phase 6 panel into it, retain all historical sections below.
 - `site/research-dashboard.js`: render source-stamped current conditions and five-station evidence availability from the latest authentic archive; never infer NAVD88 or causality.
+- `scripts/phase6.py`: publish direct 63160 elevation in a separate availability slot without adding it to model features.
+- `tests/test_phase6_sources.py`: assert native stage and direct NAVD88 remain separate, with stale elevation explicit.
 - `site/style.css`: responsive layout and accessible status/table styling for the new dashboard.
 - `tests/research-dashboard-smoke.cjs`: pure rendering regression checks for data, stale/missing inputs, unverified MCHL1 and datum gates.
 - `.github/workflows/site.yml`: syntax-check and run the new dashboard smoke test during existing PR validation.
@@ -18,8 +20,9 @@ Base: `main` at `5a97ec743bd668c173b3373b8ea7868510048879` (Phase 8 merge).
 
 ## Tasks
 
-1. Add failing rendering tests for freshness/stale values, native stage vs NAVD88, threshold hard gate, station status and missing inputs.
-2. Implement a pure dashboard renderer and browser bootstrap that hydrates only the latest authentic issue. Display explicit indeterminate evidence classification when screen inputs are incomplete; retain source/status/QC/valid-time/retrieval-time information.
-3. Add dashboard markup, responsive styles and relocate the existing Phase 6 panel without changing forecasts or archival behavior.
-4. Add CI checks and comprehensive release documentation using existing Phase 7/8 and Phase 6 results, not new model metrics.
-5. Run focused Node tests and available regression checks; open a PR against `main`, inspect workflow checks, resolve failures, request review, merge only when required checks pass, then verify Actions deployment and published page.
+1. Add failing rendering and source-contract tests for freshness/stale values, native stage vs NAVD88, threshold hard gate, station status and missing inputs.
+2. Add the separately keyed 63160 issue metadata and regression test; verify it never enters model features.
+3. Implement a pure dashboard renderer and browser bootstrap that hydrates only the latest authentic issue. Display explicit indeterminate evidence classification when screen inputs are incomplete; retain source/status/QC/valid-time/retrieval-time information.
+4. Add dashboard markup, responsive styles and relocate the existing Phase 6 panel without changing forecasts or archival behavior.
+5. Add CI checks and comprehensive release documentation using existing Phase 7/8 and Phase 6 results, not new model metrics.
+6. Run focused Node and Python tests and available regression checks; open a PR against `main`, inspect workflow checks, resolve failures, request review, merge only when required checks pass, then verify Actions deployment and published page.
