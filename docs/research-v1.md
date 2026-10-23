@@ -96,7 +96,7 @@ Metrics are descriptive of the captured cases. Small samples, short observation 
 
 ## Installation, data dependencies, and maintenance
 
-This is a static GitHub Pages application. To preview it locally, install Python 3.12 and the documented analysis dependencies, then run `python -m http.server 8000 --directory site` and open `http://localhost:8000/`. Run the Python unit suite and the Node smoke checks before proposing code changes. The analysis environment uses `requirements-phase5a.txt`; static preview itself needs no Python package installation.
+This is a static GitHub Pages application. To preview it locally, use Python 3.12's built-in server: run `python -m http.server 8000 --directory site` and open `http://localhost:8000/`. Static preview needs no package installation. For analysis and regression tests, install the dependencies in `requirements-phase5a.txt`, run the Python unit suite, and run the Node syntax and smoke checks before proposing code changes.
 
 Automated prospective inputs depend on public USGS NWIS IV, NOAA CO-OPS, and HADS through the Iowa Environmental Mesonet archive. Their products can be provisional, delayed, incomplete, or unavailable. The historical charts and map load Plotly and Leaflet from public CDNs; if those hosts are blocked, core forecast and research data may still be available while chart/map sections fail to render. GitHub Actions validates site code and upload/deployment, but no browser-driven smoke test is currently configured.
 
