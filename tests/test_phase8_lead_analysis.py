@@ -192,9 +192,10 @@ class Phase8LeadAnalysisTests(unittest.TestCase):
 
     def test_first_confirmed_pathway_selects_earliest_confirmation_not_closest_to_onset(self):
         signals = {
-            "coastal": {"timing": "before", "retrospective_lead_hours": 48},
-            "river": {"timing": "before", "retrospective_lead_hours": 6},
-            "residual": {"timing": "after", "retrospective_lead_hours": -2},
+            "coastal": {"unique_event_credit": True, "unique_event_credit_lead_hours": 48},
+            "river": {"unique_event_credit": True, "unique_event_credit_lead_hours": 6},
+            "residual": {"unique_event_credit": False, "unique_event_credit_lead_hours": None,
+                         "timing": "before", "retrospective_lead_hours": 70},
         }
 
         self.assertEqual(first_pathway_confirmation(signals), "coastal")
