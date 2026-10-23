@@ -22,7 +22,7 @@ The dashboard shows provider, source valid time, retrieval time, reported QC, re
 
 ## Datum safeguards
 
-The local 4.0 ft threshold is in NAVD88. **Never compare it to MAUL1 native parameter 00065.** Current Phase 6 issue snapshots carry a 00065 stage observation, not a certified conversion or direct 63160 value; therefore the v1.0 dashboard withholds the NAVD88 reference line and displays the datum limitation. A future dashboard can show the threshold only against direct, verified 63160 elevation or an independently certified, period-appropriate conversion with traceable documentation.
+The local 4.0 ft threshold is in NAVD88. **Never compare it to MAUL1 native parameter 00065.** Phase 6 queries MAUL1 parameters 00065 and 63160. The v1.0 issue snapshot now carries 63160 as a separate availability record when an eligible observation is returned; it never enters model features. The dashboard compares against the 4.0 ft line only when that separate record is eligible, is from USGS NWIS, identifies parameter code 63160 and elevation, has datum NAVD88 and feet units, and is still fresh. Older issue records without that separate record keep the line withheld. No cross-parameter conversion is applied.
 
 NWCL1 water and prediction can be subtracted only at matching valid times on MLLW. MDLL1 and MCHL1 gage heights are not cross-station elevations. Forecasts retain their native MAUL1 stage reference and must not be converted for presentation without an independent datum verification.
 
@@ -32,7 +32,7 @@ Historical archives retain source identifiers, units, datums, source and valid t
 
 Phase 6 records actual issue time separately from the nominal scheduled slot and model feature anchor. It captures source snapshots before issue time with source, parameter, datum, units, QC, valid time, retrieval time, provenance URL and response hash. Only completed hourly bins enter frozen model features; no interpolation or carry-forward is used. Input age and model-feature availability are separate checks. Failed, stale or missing required target data produce explicit abstention/diagnostic states rather than fabricated forecasts.
 
-The compact `latest.json` feeds the page, while its matching authentic issue file in the immutable history archive provides the raw observation and feature details. The dashboard hydrates that full record by issuance ID. If hydration fails, it displays the compact archive state or a retrieval error; it does not fall back to historical plots as current conditions.
+The compact `latest.json` feeds the page, while its matching authentic issue file in the immutable history archive provides the raw observation and feature details, including the separately captured 63160 field when present. The dashboard hydrates that full record by issuance ID. If hydration fails, it displays the compact archive state or a retrieval error; it does not fall back to historical plots as current conditions.
 
 ## Application sections
 
