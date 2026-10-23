@@ -33,10 +33,11 @@
       timing = `Valid ${utc(observation.valid_time_utc)} · retrieved ${utc(observation.retrieved_utc)}`;
     }
     const stamp = observation ? freshness(observation.valid_time_utc, now, maxAge) : `<span class="research-status status-missing">Missing observation${status ? ` · ${esc(status)}` : ''}</span>`;
+    const statusMarkup = forcedLabel ? `<div class="station-status-stack">${forcedLabel}${stamp}</div>` : stamp;
     const qc = observation?.qc == null ? 'QC unavailable' : `QC ${esc(Array.isArray(observation.qc) ? observation.qc.join(', ') : observation.qc)}`;
     const changeLine = numeric(change) ? `<p class="research-change">${esc(changeLabel)}: <strong>${fmt(change)} ft</strong></p>` : '';
     const source = observation ? sourceLink(observation) : 'Source not available in this issue';
-    return `<article class="station-card" aria-labelledby="${id}-title"><div class="station-heading"><div><h3 id="${id}-title">${esc(title)}</h3><p>${esc(descriptor)}</p></div>${forcedLabel || stamp}</div><p class="station-level">${level}</p><p class="station-datum">Reference: ${esc(datum)}</p>${changeLine}<p class="station-meta">${timing}</p><p class="station-meta">${source} · ${qc}</p>${note ? `<p class="station-note">${esc(note)}</p>` : ''}</article>`;
+    return `<article class="station-card" aria-labelledby="${id}-title"><div class="station-heading"><div><h3 id="${id}-title">${esc(title)}</h3><p>${esc(descriptor)}</p></div>${statusMarkup}</div><p class="station-level">${level}</p><p class="station-datum">Reference: ${esc(datum)}</p>${changeLine}<p class="station-meta">${timing}</p><p class="station-meta">${source} · ${qc}</p>${note ? `<p class="station-note">${esc(note)}</p>` : ''}</article>`;
   };
   const signedTrend = value => {
     if (!numeric(value)) return 'Trend unavailable';
