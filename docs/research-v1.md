@@ -1,6 +1,12 @@
-# MAUL1 Coastal Influence Research v1.0
+# MAUL1 Coastal Influence Research v1.0.0
 
-**Status: research application for shadow evaluation. Not an operational forecast, warning system, flood probability, or certified coastal attribution product.**
+**MAUL1 Coastal Influence Research v1.0.0 — Shadow Evaluation / Not Operational**
+
+**Release review date:** 2026-10-23 · **Deployment:** [GitHub Pages](https://mefferso.github.io/MAUL1-Coastal-Influence/)
+
+This is a release candidate for scientific shadow evaluation, not an operational forecast, warning system, flood probability, or certified coastal attribution product. The v1.0.0 tag is held until a reviewer can inspect the deployed page interactively. The Pages deployment action reported success, but the current QA environment cannot reach the published host and has no browser-control tool.
+
+See [CHANGELOG.md](../CHANGELOG.md) for the release summary.
 
 ## Purpose and intended users
 
@@ -52,7 +58,7 @@ Simulation runs are isolated and are not presented as authentic issuances. Actua
 
 Verification uses only authentic archived issues made before their forecast valid times and subsequent MAUL1 observations captured after those times. It reports MAE, RMSE, bias, persistence skill, rise hits/misses/false alarms, interval coverage, target observation delay, input-age strata, maturity/completeness, and outcome-group counts where available. Due-but-unverified targets remain unverified rather than being assigned a cause. Individual hourly forecast rows overlap and are not independent events; event metrics are withheld until at least five independent groups qualify under the fixed outcome rule.
 
-At the main snapshot used for this v1.0 review (latest authentic issuance 2026-10-23 13:27 UTC), the performance archive held 125 verification records/revisions across model/horizon combinations. Each 6-hour model had 13 verified forecast/observation pairs and each 12-hour model had 12; no 24-hour model metrics had matured. There were zero qualifying independent event groups, so event detection/lead performance was insufficient. The 6-hour persistence MAE was 0.035 ft; Phase 5A MAUL1-only MAE was 0.057 ft (skill −0.63 vs persistence), and Phase 5A coastal MAE was 0.064 ft (skill −0.83). At 12 hours, persistence MAE was 0.056 ft; Phase 5A MAUL1-only MAE was 0.040 ft (skill +0.29), while Phase 5A coastal MAE was 0.120 ft (skill −1.12). These very small early samples are dominated by quiet conditions and do not establish general forecast skill. The 24-hour guidance remains unverified. The live performance file is the source of truth as records accumulate; historical hindcasts are never folded into these numbers.
+At the release QA data snapshot (performance evaluation 2026-10-23 15:05:15 UTC; latest authentic issuance 2026-10-23 15:05:14 UTC, issuance `8f155e2ef71816bc`), the archive held 130 verification records/revisions. Each 6-hour model had 13 verified forecast/observation pairs and each 12-hour model had 12. Each 24-hour model had one verified pair; one other due target remained unverified and 15 slots were not yet due. A single 24-hour pair is not a meaningful performance estimate. There were zero qualifying independent event groups, so event detection and lead performance remained insufficient. The 6-hour persistence MAE was 0.035 ft; Phase 5A MAUL1-only MAE was 0.057 ft (skill −0.63 vs persistence), and Phase 5A coastal MAE was 0.064 ft (skill −0.83). At 12 hours, persistence MAE was 0.056 ft; Phase 5A MAUL1-only MAE was 0.040 ft (skill +0.29), while Phase 5A coastal MAE was 0.120 ft (skill −1.12). These small samples are quiet-heavy and do not establish general forecast skill. The 24-hour guidance remains scientifically unverified. The live performance file is the source of truth as records accumulate; historical hindcasts are never folded into these numbers.
 
 ## Historical research findings
 
@@ -87,6 +93,28 @@ Metrics are descriptive of the captured cases. Small samples, short observation 
 **It can:** show the latest archived authentic observation snapshot and its age; distinguish native versus documented references; show authentic archived forecast guidance and frozen model provenance; compare each forecast model with persistence; expose predictor gaps/imputation and verification sample size; and provide traceable historical methods and limitations.
 
 **It cannot:** issue an operational warning; establish a flood probability; equate native 00065 to NAVD88; guarantee the static page is current; establish that Phase 8 precursors were available in real time; certify MCHL1; attribute a MAUL1 rise to coast versus river; prove predictive skill from software functioning; or replace NWS procedures and forecaster judgment.
+
+## Installation, data dependencies, and maintenance
+
+This is a static GitHub Pages application. To preview it locally, use Python 3.12's built-in server: run `python -m http.server 8000 --directory site` and open `http://localhost:8000/`. Static preview needs no package installation. For analysis and regression tests, install the dependencies in `requirements-phase5a.txt`, run the Python unit suite, and run the Node syntax and smoke checks before proposing code changes.
+
+Automated prospective inputs depend on public USGS NWIS IV, NOAA CO-OPS, and HADS through the Iowa Environmental Mesonet archive. Their products can be provisional, delayed, incomplete, or unavailable. The historical charts and map load Plotly and Leaflet from public CDNs; if those hosts are blocked, core forecast and research data may still be available while chart/map sections fail to render. GitHub Actions validates site code and upload/deployment, but no browser-driven smoke test is currently configured.
+
+### Reviewing newly accumulated prospective cases
+
+1. Check the latest successful Phase 6 workflow and the latest authentic issue in `site/data/prospective/latest.json`. Confirm mode is `authentic`, actual issue time is before every forecast valid time, and the model-artifact hash matches the frozen artifact manifest.
+2. Follow its issuance ID in `site/data/prospective/history/index.json` to the immutable forecast record. Compare source valid/retrieval times, QC, age, feature availability, and abstention reasons; do not repair old issue files in place.
+3. Check `site/data/prospective/performance.json` for matured, verified, due-unverified, and not-yet-due counts by model and horizon. Open retained numbered verification revisions when observations arrive late or are corrected; each revision must retain the original issuance and forecast values.
+4. Interpret MAE/RMSE/bias and rise counts alongside persistence, sample counts, observation delay, missing-input strata, interval coverage, and independent outcome groups. Do not treat hourly overlapping rows as independent events; below five independent groups event metrics remain withheld.
+5. Record a new analysis only as a separate research product with its input hashes and methods. Never backfill an authentic issue from a later observation or merge hindcast rows into the prospective archive.
+
+### Known unresolved release limitations
+
+- Live-page interaction and viewport behavior could not be independently inspected in the release QA environment. The latest GitHub Pages deployment action reported success and the automated checks passed, but no browser automation tool was available and the environment policy blocks access to the public Pages host.
+- There is no automated browser end-to-end test; chart/map behavior with the external Plotly and Leaflet CDNs is not covered by Node smoke tests.
+- Prospective samples remain small, especially at 24 hours (one pair per model in the release QA snapshot). No independent event groups qualify.
+- MCHL1 sensor identity, gauge-zero stability, absolute datum, provider QC interpretation, and current delivery remain unverified. It is shadow-only and forecast-ineligible.
+- Local rainfall and tributary observations are incomplete, limiting source attribution.
 
 ## Maintenance and troubleshooting
 

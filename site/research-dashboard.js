@@ -7,17 +7,25 @@
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const numeric = value => value !== null && value !== '' && Number.isFinite(Number(value));
+  const qualityIsUsable = value => {
+    if (value == null) return true;
+    const flags = Array.isArray(value) ? value.map(item => String(item).trim()) : typeof value === 'string' ? value.split(',').map(item => item.trim()) : null;
+    return flags !== null && flags.every(flag => ['', '0', 'P', 'provisional'].includes(flag));
+  };
   const fmt = (value, digits=2) => numeric(value) ? Number(value).toFixed(digits) : '—';
   const utc = value => value ? esc(value) : 'time unavailable';
   const safeUrl = value => /^https?:\/\//i.test(String(value || '')) ? String(value) : '';
   const ageHours = (time, now) => {
     const epoch = Date.parse(time);
-    return Number.isFinite(epoch) ? Math.max(0, (now - epoch) / 3600000) : null;
+    return Number.isFinite(epoch) && epoch <= now ? (now - epoch) / 3600000 : null;
   };
   const ageLabel = h => h === null ? 'age unavailable' : h < 1 ? `${Math.round(h*60)} min old` : `${h.toFixed(1)} h old`;
   const freshness = (time, now, maxHours) => {
-    const age = ageHours(time, now);
-    return age === null ? '<span class="research-status status-unknown">time unavailable</span>' : age > maxHours
+    const epoch = Date.parse(time);
+    if (!Number.isFinite(epoch)) return '<span class="research-status status-unknown">time unavailable</span>';
+    if (epoch > now) return '<span class="research-status status-unknown">Future timestamp · freshness unknown</span>';
+    const age = (now - epoch) / 3600000;
+    return age > maxHours
       ? `<span class="research-status status-stale">Stale · ${ageLabel(age)}</span>`
       : `<span class="research-status status-fresh">Available · ${ageLabel(age)}</span>`;
   };
@@ -28,11 +36,14 @@
   const observationCard = ({id, title, descriptor, status, observation, datum, maxAge, change, changeLabel, note, forcedLabel, now=Date.now()}) => {
     let level = 'Observation unavailable';
     let timing = 'No current observation is present in the latest authentic issue.';
-    if (observation && numeric(observation.value)) {
+    const validObservation = observation && numeric(observation.value);
+    if (validObservation) {
       level = `${fmt(observation.value)} ${esc(observation.units || '')}`;
       timing = `Valid ${utc(observation.valid_time_utc)} · retrieved ${utc(observation.retrieved_utc)}`;
     }
-    const stamp = observation ? freshness(observation.valid_time_utc, now, maxAge) : `<span class="research-status status-missing">Missing observation${status ? ` · ${esc(status)}` : ''}</span>`;
+    const stamp = validObservation
+      ? freshness(observation.valid_time_utc, now, maxAge)
+      : `<span class="research-status status-missing">${observation ? 'Invalid observation value' : 'Missing observation'}${status ? ` · ${esc(status)}` : ''}</span>`;
     const statusMarkup = forcedLabel ? `<div class="station-status-stack">${forcedLabel}${stamp}</div>` : stamp;
     const qc = observation?.qc == null ? 'QC unavailable' : `QC ${esc(Array.isArray(observation.qc) ? observation.qc.join(', ') : observation.qc)}`;
     const changeLine = numeric(change) ? `<p class="research-change">${esc(changeLabel)}: <strong>${fmt(change)} ft</strong></p>` : '';
@@ -52,9 +63,13 @@
     const diagnostics = snap.feature_diagnostics || {};
     const den = availability.DENL1 || {};
     const maul = availability.MAUL1_00065 || {};
+    const issueEpoch = Date.parse(record.actual_issue_time_utc);
     const directNavdStatus = availability.MAUL1_63160?.status;
     const directNavd = availability.MAUL1_63160?.observation;
-    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === 'elevation' && directNavd.parameter_code === '63160' && String(directNavd.datum || '').toUpperCase() === 'NAVD88' && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value) && ageHours(directNavd.valid_time_utc, now) !== null && ageHours(directNavd.valid_time_utc, now) <= 2);
+    const navdValidEpoch = Date.parse(directNavd?.valid_time_utc);
+    const navdRetrievedEpoch = Date.parse(directNavd?.retrieved_utc);
+    const navdAge = ageHours(directNavd?.valid_time_utc, now);
+    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === 'elevation' && directNavd.parameter_code === '63160' && String(directNavd.datum || '').toUpperCase() === 'NAVD88' && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value) && qualityIsUsable(directNavd.qc) && Number.isFinite(issueEpoch) && issueEpoch <= now && Number.isFinite(navdValidEpoch) && Number.isFinite(navdRetrievedEpoch) && navdValidEpoch <= navdRetrievedEpoch && navdRetrievedEpoch <= issueEpoch && navdAge !== null && navdAge <= 2);
     const nwc = availability.NWCL1 || {};
     const mdl = availability.MDLL1 || {};
     const mch = availability.MCHL1 || {};
@@ -67,9 +82,13 @@
     const mchlChange = mchl.features || {};
     const mchlNote = 'Unverified HADS context. Shadow-only and excluded from frozen model forecasts; relative change does not establish absolute datum or sensor validity.';
     const currentIssueAge = ageHours(record.actual_issue_time_utc, now);
-    const issueStatus = currentIssueAge !== null && currentIssueAge > 3
-      ? `<span class="research-status status-stale">Issue archive ${ageLabel(currentIssueAge)}</span>`
-      : `<span class="research-status status-fresh">Authentic issue ${utc(record.actual_issue_time_utc)}</span>`;
+    const issueStatus = !Number.isFinite(issueEpoch)
+      ? '<span class="research-status status-unknown">Issue time unavailable</span>'
+      : issueEpoch > now
+        ? '<span class="research-status status-unknown">Issue timestamp is in the future</span>'
+        : currentIssueAge > 3
+          ? `<span class="research-status status-stale">Issue archive ${ageLabel(currentIssueAge)}</span>`
+          : `<span class="research-status status-fresh">Authentic issue ${utc(record.actual_issue_time_utc)}</span>`;
     const maulThreshold = verifiedNavd
       ? `<p class="datum-gate"><strong>Separate direct NAVD88 observation:</strong> ${fmt(directNavd.value)} ft at ${utc(directNavd.valid_time_utc)} · ${ageLabel(ageHours(directNavd.valid_time_utc,now))} · ${sourceLink(directNavd)} · QC ${esc(Array.isArray(directNavd.qc)?directNavd.qc.join(', '):directNavd.qc ?? 'unavailable')}. Local 4.0 ft NAVD88 threshold difference: ${fmt(Number(directNavd.value)-4)} ft. This does not alter or convert native 00065 stage.</p>`
       : '<p class="datum-gate"><strong>NAVD88 elevation unavailable.</strong> This issue contains native USGS 00065 gage height only. No conversion is applied and the NAVD88 reference line is withheld.</p>';

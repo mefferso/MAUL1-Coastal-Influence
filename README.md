@@ -1,8 +1,8 @@
-# MAUL1 Coastal Influence Research v1.0
+# MAUL1 Coastal Influence Research v1.0.0
 
 A static, public research application for NWS LIX shadow evaluation of authentic prospective MAUL1 forecast guidance and coastal-versus-river observation context. **Research only; not operationally certified.** The local project threshold is **4.0 ft NAVD88**, and native USGS `00065` is not automatically comparable to it. This repository does not issue warnings, estimate flood probabilities, or recommend advisories.
 
-See the [Research v1.0 guide](docs/research-v1.md) for intended use, application interpretation, Phase 7–8 findings, prospective verification status, safeguards, troubleshooting and limitations.
+**MAUL1 Coastal Influence Research v1.0.0 — Shadow Evaluation / Not Operational.** The v1.0.0 tag is held pending interactive live-site verification. See the [release changelog](CHANGELOG.md) and [Research v1.0 guide](docs/research-v1.md) for intended use, application interpretation, Phase 7–8 findings, prospective verification status, safeguards, troubleshooting and limitations.
 
 ## Network and source decisions
 

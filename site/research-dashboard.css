@@ -3,3 +3,6 @@
 @media(max-width:600px){.station-grid{grid-template-columns:1fr}.evidence-context dl{grid-template-columns:1fr;gap:1px}.evidence-context dd{margin:0 0 7px 0}.research-grid{gap:12px}.research-dashboard>h2{font-size:1.25rem}}
 
 .station-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:5px;max-width:130px}
+
+/* Keep wide forecast and verification tables usable without widening the page. */
+.table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}.table-wrap:focus-visible{outline:3px solid #287b8c;outline-offset:2px}.table-wrap table{width:max-content;min-width:100%;border-collapse:collapse}.table-wrap th,.table-wrap td{padding:6px 8px;border-bottom:1px solid #e1eaec;text-align:left;vertical-align:top}.table-wrap th{font-size:.72rem;color:#405a61;background:#f3f7f8}.table-wrap td{font-size:.75rem;line-height:1.4}
