@@ -52,4 +52,31 @@ assert.match(renderCurrentConditions(direct, Date.parse('2026-10-23T14:00:00Z'))
 assert.match(renderCurrentConditions(direct, Date.parse('2026-10-23T17:00:00Z')), /NAVD88 elevation unavailable/i);
 assert.match(renderCurrentConditions(null, Date.now()), /No authentic prospective/i);
 assert.match(renderCurrentConditions({...issue, mode:'simulation'}, Date.now()), /No authentic prospective/i);
+
+const futureIssue = JSON.parse(JSON.stringify(issue));
+futureIssue.actual_issue_time_utc = '2026-10-23T18:00:00Z';
+const futureIssueHtml = renderCurrentConditions(futureIssue, Date.parse('2026-10-23T17:00:00Z'));
+assert.match(futureIssueHtml, /Issue timestamp is in the future/);
+assert.doesNotMatch(futureIssueHtml, /status-fresh">Authentic issue/);
+const malformedIssue = JSON.parse(JSON.stringify(issue));
+malformedIssue.actual_issue_time_utc = 'not-a-time';
+assert.match(renderCurrentConditions(malformedIssue, Date.parse('2026-10-23T17:00:00Z')), /Issue time unavailable/);
+const futureObservation = JSON.parse(JSON.stringify(issue));
+futureObservation.snapshot.availability.MAUL1_00065.observation.valid_time_utc = '2026-10-23T17:01:00Z';
+const futureObservationHtml = renderCurrentConditions(futureObservation, Date.parse('2026-10-23T17:00:00Z'));
+assert.match(futureObservationHtml, /Future timestamp · freshness unknown/);
+const malformedObservation = JSON.parse(JSON.stringify(issue));
+malformedObservation.snapshot.availability.MAUL1_00065.observation.value = 'not-a-stage';
+assert.match(renderCurrentConditions(malformedObservation, Date.parse('2026-10-23T14:00:00Z')), /Invalid observation value/);
+const futureElevation = JSON.parse(JSON.stringify(direct));
+futureElevation.snapshot.availability.MAUL1_63160.observation.valid_time_utc = '2026-10-23T17:01:00Z';
+futureElevation.snapshot.availability.MAUL1_63160.observation.retrieved_utc = '2026-10-23T17:02:00Z';
+assert.match(renderCurrentConditions(futureElevation, Date.parse('2026-10-23T17:00:00Z')), /NAVD88 elevation unavailable/);
+const inconsistentElevation = JSON.parse(JSON.stringify(direct));
+inconsistentElevation.snapshot.availability.MAUL1_63160.observation.retrieved_utc = '2026-10-23T12:30:00Z';
+assert.match(renderCurrentConditions(inconsistentElevation, Date.parse('2026-10-23T14:00:00Z')), /NAVD88 elevation unavailable/);
+const badQcElevation = JSON.parse(JSON.stringify(direct));
+badQcElevation.snapshot.availability.MAUL1_63160.observation.qc = ['ice'];
+assert.match(renderCurrentConditions(badQcElevation, Date.parse('2026-10-23T14:00:00Z')), /NAVD88 elevation unavailable/);
+
 console.log('Research dashboard rendering safeguards passed');
