@@ -79,4 +79,9 @@ const badQcElevation = JSON.parse(JSON.stringify(direct));
 badQcElevation.snapshot.availability.MAUL1_63160.observation.qc = ['ice'];
 assert.match(renderCurrentConditions(badQcElevation, Date.parse('2026-10-23T14:00:00Z')), /NAVD88 elevation unavailable/);
 
+
+const futureIssueElevation = JSON.parse(JSON.stringify(direct));
+futureIssueElevation.actual_issue_time_utc = '2026-10-23T18:00:00Z';
+assert.match(renderCurrentConditions(futureIssueElevation, Date.parse('2026-10-23T14:00:00Z')), /NAVD88 elevation unavailable/);
+
 console.log('Research dashboard rendering safeguards passed');
