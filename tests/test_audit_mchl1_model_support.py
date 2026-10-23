@@ -29,6 +29,24 @@ class CoefficientMappingTests(unittest.TestCase):
         self.assertEqual(result["status"], "no_mchl1_predictors")
         self.assertEqual(result["features"], [])
 
+    def test_extreme_sentinel_derived_changes_are_not_counted_as_usable_support(self):
+        result = audit.summarize_model_support(
+            model_name="phase5a_coastal",
+            horizon=6,
+            model={"feature_names": ["mchl1_stage_change_6h_native_ft"],
+                   "active": [True, True, True], "coefficients": [0.0, 0.1, 0.0]},
+            feature_rows=[
+                {"mchl1_stage_change_6h_native_ft": "0.2"},
+                {"mchl1_stage_change_6h_native_ft": "4999998.97"},
+                {"mchl1_stage_change_6h_native_ft": ""},
+            ],
+            train_count=3,
+        )
+        feature = result["features"][0]
+        self.assertEqual(feature["observed_rows"], 2)
+        self.assertEqual(feature["sentinel_contaminated_rows"], 1)
+        self.assertEqual(feature["usable_observed_rows"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,230 @@
+{
+  "schema": "phase6.mchl1-usgs-overlap-multiwindow.v1",
+  "forecast_eligible": false,
+  "periods": [
+    {
+      "schema": "phase6.mchl1-usgs-overlap-probe.v1",
+      "forecast_eligible": false,
+      "window_start_utc": "2022-12-20",
+      "window_end_utc_exclusive": "2022-12-25",
+      "sources": {
+        "MCHL1": {
+          "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py?stations=MCHL1&sts=2022-12-20T00%3A00Z&ets=2022-12-25T00%3A00Z&what=txt&delim=comma",
+          "sha256": "e7567e70a6e33e72df8484d9517ca9e99a40080c9ba0d9eaf3ae4f4b8322d540",
+          "raw_file": "site/data/research/mchl1-usgs-overlap/raw/2022-12-20_2022-12-25_mchl1.csv",
+          "raw_query_valid_readings": 374,
+          "valid_readings": 373,
+          "quality_metadata": {
+            "raw_row_count": 386,
+            "qualifier_fields": [],
+            "qualifier_value_counts": {},
+            "missing_sentinel_rows": 12,
+            "missing_sentinel_rows_in_window": 12,
+            "duplicate_valid_time_rows": 0
+          },
+          "status": "retrieved"
+        },
+        "USGS-073802302": {
+          "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=073802302&parameterCd=00065&startDT=2022-12-19&endDT=2022-12-25",
+          "sha256": "a5fb2cf5c35a25d9dd5134fd6079c04c96656501cd24c5812d45455a0b4fbd56",
+          "raw_file": "site/data/research/mchl1-usgs-overlap/raw/2022-12-20_2022-12-25_usgs_073802302.json",
+          "raw_query_valid_readings": 643,
+          "valid_readings": 462,
+          "quality_metadata": {
+            "raw_row_count": 643,
+            "qualifier_value_counts": {
+              "A": 643
+            }
+          },
+          "status": "retrieved"
+        }
+      },
+      "note": "Compare two separate native gage-height series. Offset/correlation cannot establish common datum, sensor identity, or QC approval.",
+      "comparison": {
+        "matched_exact_valid_times": 373,
+        "first_matched_utc": "2022-12-20T23:45:00+00:00",
+        "last_matched_utc": "2022-12-24T23:45:00+00:00",
+        "median_native_stage_difference_ft": 0.0,
+        "mean_native_stage_difference_ft": 0.0,
+        "native_stage_difference_range_ft": [
+          0.0,
+          0.0
+        ],
+        "offset_half_window_shift_ft": 0.0,
+        "source_reporting": {
+          "MCHL1": {
+            "reading_count": 373,
+            "first_valid_utc": "2022-12-20T23:45:00+00:00",
+            "last_valid_utc": "2022-12-24T23:45:00+00:00",
+            "median_interval_minutes": 15.0,
+            "dominant_interval_minutes": 15.0,
+            "interval_distribution_minutes": {
+              "15.0": 363,
+              "30.0": 7,
+              "45.0": 1,
+              "60.0": 1
+            },
+            "largest_gap_minutes": 60.0,
+            "largest_adjacent_stage_change_ft": 0.27,
+            "interval_at_largest_adjacent_change_minutes": 15.0,
+            "estimated_missing_between_endpoints": 12,
+            "expected_window_readings": 480,
+            "observed_window_readings": 373,
+            "missing_window_readings": 107,
+            "window_coverage_percent": 77.7083
+          },
+          "USGS-073802302": {
+            "reading_count": 462,
+            "first_valid_utc": "2022-12-20T00:15:00+00:00",
+            "last_valid_utc": "2022-12-24T23:45:00+00:00",
+            "median_interval_minutes": 15.0,
+            "dominant_interval_minutes": 15.0,
+            "interval_distribution_minutes": {
+              "15.0": 448,
+              "30.0": 10,
+              "45.0": 2,
+              "60.0": 1
+            },
+            "largest_gap_minutes": 60.0,
+            "largest_adjacent_stage_change_ft": 0.27,
+            "interval_at_largest_adjacent_change_minutes": 15.0,
+            "estimated_missing_between_endpoints": 17,
+            "expected_window_readings": 480,
+            "observed_window_readings": 462,
+            "missing_window_readings": 18,
+            "window_coverage_percent": 96.25
+          }
+        },
+        "stage_changes": {
+          "6h": {
+            "matched_changes": 337,
+            "median_change_difference_ft": 0.0,
+            "mean_absolute_change_difference_ft": 0.0
+          },
+          "24h": {
+            "matched_changes": 269,
+            "median_change_difference_ft": 0.0,
+            "mean_absolute_change_difference_ft": 0.0
+          },
+          "72h": {
+            "matched_changes": 94,
+            "median_change_difference_ft": 0.0,
+            "mean_absolute_change_difference_ft": 0.0
+          }
+        }
+      },
+      "retrieved_utc": "2026-10-23T12:05:50.723582+00:00"
+    },
+    {
+      "schema": "phase6.mchl1-usgs-overlap-probe.v1",
+      "forecast_eligible": false,
+      "window_start_utc": "2024-11-14",
+      "window_end_utc_exclusive": "2024-11-19",
+      "sources": {
+        "MCHL1": {
+          "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py?stations=MCHL1&sts=2024-11-14T00%3A00Z&ets=2024-11-19T00%3A00Z&what=txt&delim=comma",
+          "sha256": "dc1d14d211cd2218c054a580635da1ef26c8b2330d1e95416286fa47c18df14e",
+          "raw_file": "site/data/research/mchl1-usgs-overlap/raw/2024-11-14_2024-11-19_mchl1.csv",
+          "raw_query_valid_readings": 480,
+          "valid_readings": 479,
+          "quality_metadata": {
+            "raw_row_count": 481,
+            "qualifier_fields": [],
+            "qualifier_value_counts": {},
+            "missing_sentinel_rows": 1,
+            "missing_sentinel_rows_in_window": 1,
+            "duplicate_valid_time_rows": 0
+          },
+          "status": "retrieved"
+        },
+        "USGS-073802302": {
+          "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=073802302&parameterCd=00065&startDT=2024-11-13&endDT=2024-11-19",
+          "sha256": "648564540d2181a6aba581b7e8d5b85cc0c8d8d5bd59c926715f389d4c060e0c",
+          "raw_file": "site/data/research/mchl1-usgs-overlap/raw/2024-11-14_2024-11-19_usgs_073802302.json",
+          "raw_query_valid_readings": 669,
+          "valid_readings": 479,
+          "quality_metadata": {
+            "raw_row_count": 669,
+            "qualifier_value_counts": {
+              "A": 669
+            }
+          },
+          "status": "retrieved"
+        }
+      },
+      "note": "Compare two separate native gage-height series. Offset/correlation cannot establish common datum, sensor identity, or QC approval.",
+      "comparison": {
+        "matched_exact_valid_times": 479,
+        "first_matched_utc": "2024-11-14T00:00:00+00:00",
+        "last_matched_utc": "2024-11-18T23:45:00+00:00",
+        "median_native_stage_difference_ft": 0.0,
+        "mean_native_stage_difference_ft": 0.0,
+        "native_stage_difference_range_ft": [
+          0.0,
+          0.0
+        ],
+        "offset_half_window_shift_ft": 0.0,
+        "source_reporting": {
+          "MCHL1": {
+            "reading_count": 479,
+            "first_valid_utc": "2024-11-14T00:00:00+00:00",
+            "last_valid_utc": "2024-11-18T23:45:00+00:00",
+            "median_interval_minutes": 15.0,
+            "dominant_interval_minutes": 15.0,
+            "interval_distribution_minutes": {
+              "15.0": 477,
+              "30.0": 1
+            },
+            "largest_gap_minutes": 30.0,
+            "largest_adjacent_stage_change_ft": 0.07,
+            "interval_at_largest_adjacent_change_minutes": 15.0,
+            "estimated_missing_between_endpoints": 1,
+            "expected_window_readings": 480,
+            "observed_window_readings": 479,
+            "missing_window_readings": 1,
+            "window_coverage_percent": 99.7917
+          },
+          "USGS-073802302": {
+            "reading_count": 479,
+            "first_valid_utc": "2024-11-14T00:00:00+00:00",
+            "last_valid_utc": "2024-11-18T23:45:00+00:00",
+            "median_interval_minutes": 15.0,
+            "dominant_interval_minutes": 15.0,
+            "interval_distribution_minutes": {
+              "15.0": 477,
+              "30.0": 1
+            },
+            "largest_gap_minutes": 30.0,
+            "largest_adjacent_stage_change_ft": 0.07,
+            "interval_at_largest_adjacent_change_minutes": 15.0,
+            "estimated_missing_between_endpoints": 1,
+            "expected_window_readings": 480,
+            "observed_window_readings": 479,
+            "missing_window_readings": 1,
+            "window_coverage_percent": 99.7917
+          }
+        },
+        "stage_changes": {
+          "6h": {
+            "matched_changes": 454,
+            "median_change_difference_ft": 0.0,
+            "mean_absolute_change_difference_ft": 0.0
+          },
+          "24h": {
+            "matched_changes": 382,
+            "median_change_difference_ft": 0.0,
+            "mean_absolute_change_difference_ft": 0.0
+          },
+          "72h": {
+            "matched_changes": 191,
+            "median_change_difference_ft": 0.0,
+            "mean_absolute_change_difference_ft": 0.0
+          }
+        }
+      },
+      "retrieved_utc": "2026-10-23T12:05:50.734996+00:00"
+    }
+  ],
+  "period_count": 2,
+  "note": "Compare separate native gage-height series. USGS end dates are adjusted to the shared exclusive boundary; 65s separates requests to respect HADS throttling. Exact agreement cannot establish common datum, sensor identity, independence, or provider QC approval."
+}

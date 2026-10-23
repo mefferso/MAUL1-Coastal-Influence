@@ -1,5 +1,8 @@
 import datetime as dt
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare, reporting_intervals, usgs_query_date_bounds, retry_after_seconds
 
 class OverlapTests(unittest.TestCase):
@@ -12,6 +15,11 @@ class OverlapTests(unittest.TestCase):
         result=hads_quality_metadata(body)
         self.assertEqual(result["raw_row_count"],2)
         self.assertEqual(result["qualifier_value_counts"]["qc"],{"<empty>":1,"A":1})
+
+    def test_hads_missing_sentinel_is_counted_but_never_a_stage(self):
+        body=b"station,utc_valid,HGIRGZZ\nMCHL1,2026-09-01 00:00:00,1.1\nMCHL1,2026-09-01 00:15:00,9999999.0\n"
+        self.assertEqual(len(hads_rows(body)),1)
+        self.assertEqual(hads_quality_metadata(body)["missing_sentinel_rows"],1)
     def test_usgs_parser_and_comparison(self):
         payload=b'{"value":{"timeSeries":[{"sourceInfo":{"siteCode":[{"value":"073802302"}]},"variable":{"variableCode":[{"value":"00065"}]},"values":[{"value":[{"dateTime":"2026-09-01T00:00:00Z","value":"1.0"},{"dateTime":"2026-09-01T06:00:00Z","value":"1.2"}]}]}]}}'
         a=usgs_rows(payload)
@@ -61,6 +69,21 @@ class OverlapTests(unittest.TestCase):
         result=usgs_quality_metadata(payload)
         self.assertEqual(result["raw_row_count"],2)
         self.assertEqual(result["qualifier_value_counts"],{"<none reported>":1,"P":1})
+
+    def test_offline_raw_reanalysis_preserves_provenance_and_excludes_hads_sentinel(self):
+        from scripts.probe_mchl1_usgs_overlap import run_window
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            (root/"2026-09-01_2026-09-05_mchl1.csv").write_text(
+                "station,utc_valid,HGIRGZZ\nMCHL1,2026-09-01 00:00:00,1.0\n"
+                "MCHL1,2026-09-01 00:15:00,9999999.0\n")
+            payload={"value":{"timeSeries":[{"sourceInfo":{"siteCode":[{"value":"073802302"}]},
+                "variable":{"variableCode":[{"value":"00065"}]},"values":[{"value":[
+                    {"dateTime":"2026-09-01T00:00:00Z","value":"1.0","qualifiers":["A"]}]}]}]}}
+            (root/"2026-09-01_2026-09-05_usgs_073802302.json").write_text(json.dumps(payload))
+            report=run_window("2026-09-01","2026-09-05",raw_input_dir=root)
+        self.assertEqual(report["comparison"]["matched_exact_valid_times"],1)
+        self.assertEqual(report["sources"]["MCHL1"]["quality_metadata"]["missing_sentinel_rows_in_window"],1)
 
 if __name__=="__main__":
     unittest.main()

@@ -19,6 +19,7 @@ UTC=dt.timezone.utc
 USGS="https://waterservices.usgs.gov/nwis/iv/"
 HADS="https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py"
 INTER_WINDOW_DELAY_SECONDS=65
+HADS_MISSING_SENTINELS={9999999.0}
 
 def usgs_query_date_bounds(start_date,end_exclusive):
     """Pad site-local USGS date bounds, then clip returned observations to UTC."""
@@ -46,23 +47,38 @@ def hads_rows(body):
             raise ValueError("unexpected HADS station")
         try:
             v=float(row["HGIRGZZ"])
-            if math.isfinite(v): out[timestamp(row["utc_valid"])]=v
+            if math.isfinite(v) and v not in HADS_MISSING_SENTINELS:
+                out[timestamp(row["utc_valid"])]=v
         except (TypeError,ValueError):
             continue
     return out
 
-def hads_quality_metadata(body):
+def hads_quality_metadata(body,window_start=None,window_end=None):
     reader=csv.DictReader(io.StringIO(body.decode("utf-8-sig")))
     fields=reader.fieldnames or []
     qualifier_fields=[name for name in fields if any(token in name.lower() for token in ("qc","qual","quality"))]
     counts={name:Counter() for name in qualifier_fields}
-    rows=0
+    rows=0;sentinels=0;window_sentinels=0;stamps=[]
     for row in reader:
         rows+=1
+        try:
+            value=float(row.get("HGIRGZZ", ""))
+            if value in HADS_MISSING_SENTINELS:
+                sentinels+=1
+                stamp=timestamp(row["utc_valid"])
+                if window_start is not None and window_end is not None and window_start<=stamp<window_end:
+                    window_sentinels+=1
+            else:
+                stamps.append(timestamp(row["utc_valid"]))
+        except (TypeError,ValueError,KeyError):
+            pass
         for name in qualifier_fields:
             counts[name][row.get(name) or "<empty>"]+=1
     return {"raw_row_count":rows,"qualifier_fields":qualifier_fields,
-            "qualifier_value_counts":{name:dict(sorted(count.items())) for name,count in counts.items()}}
+            "qualifier_value_counts":{name:dict(sorted(count.items())) for name,count in counts.items()},
+            "missing_sentinel_rows":sentinels,
+            "missing_sentinel_rows_in_window":window_sentinels if window_start is not None else None,
+            "duplicate_valid_time_rows":len(stamps)-len(set(stamps))}
 
 def usgs_rows(body):
     doc=json.loads(body)
@@ -96,6 +112,8 @@ def usgs_quality_metadata(body):
 def reporting_intervals(series,window_start=None,window_end=None):
     stamps=sorted(series)
     intervals=[(right-left).total_seconds()/60 for left,right in zip(stamps,stamps[1:])]
+    changes=[(abs(series[right]-series[left]),(right-left).total_seconds()/60)
+             for left,right in zip(stamps,stamps[1:])]
     counts=Counter(intervals)
     most_common=counts.most_common()
     dominant=most_common[0][0] if most_common and (len(most_common)==1 or most_common[0][1]>most_common[1][1]) else None
@@ -107,6 +125,8 @@ def reporting_intervals(series,window_start=None,window_end=None):
       "dominant_interval_minutes":dominant,
       "interval_distribution_minutes":{str(k):v for k,v in sorted(counts.items())},
       "largest_gap_minutes":max(intervals) if intervals else None,
+      "largest_adjacent_stage_change_ft":round(max((change for change,_ in changes),default=0),4) if changes else None,
+      "interval_at_largest_adjacent_change_minutes":next((gap for change,gap in changes if change==max((x for x,_ in changes),default=None)),None) if changes else None,
       "estimated_missing_between_endpoints":max(0,expected-len(stamps)) if expected is not None else None}
     if window_start is not None and window_end is not None and dominant is not None:
         expected_window=math.ceil((window_end-window_start).total_seconds()/60/dominant)
@@ -153,7 +173,7 @@ def request(url):
             time.sleep(retry_after_seconds(error.headers,attempt))
     raise RuntimeError("request retry loop exited unexpectedly")
 
-def run_window(start_text,end_text,raw_dir=None):
+def run_window(start_text,end_text,raw_dir=None,raw_input_dir=None):
     start=dt.date.fromisoformat(start_text);end=dt.date.fromisoformat(end_text)
     if not 4<= (end-start).days <=8:
         raise ValueError("require 4–8 days of historical coverage (end exclusive)")
@@ -168,7 +188,9 @@ def run_window(start_text,end_text,raw_dir=None):
     for name,url,parse,quality in (("MCHL1",hurl,hads_rows,hads_quality_metadata),
                                    ("USGS-073802302",uurl,usgs_rows,usgs_quality_metadata)):
         try:
-            body=request(url)
+            suffix="mchl1.csv" if name=="MCHL1" else "usgs_073802302.json"
+            raw_name=f"{start.isoformat()}_{end.isoformat()}_{suffix}"
+            body=(Path(raw_input_dir)/raw_name).read_bytes() if raw_input_dir else request(url)
             report["sources"][name]["sha256"]=hashlib.sha256(body).hexdigest()
             if raw_dir:
                 raw_path=Path(raw_dir)/f"{start.isoformat()}_{end.isoformat()}_{name.lower().replace('-','_')}.{'csv' if name=='MCHL1' else 'json'}"
@@ -181,7 +203,10 @@ def run_window(start_text,end_text,raw_dir=None):
             data[name]={stamp:value for stamp,value in parsed.items() if start_utc<=stamp<end_utc}
             report["sources"][name]["raw_query_valid_readings"]=len(parsed)
             report["sources"][name]["valid_readings"]=len(data[name])
-            report["sources"][name]["quality_metadata"]=quality(body)
+            report["sources"][name]["quality_metadata"]=(
+                quality(body,dt.datetime.combine(start,dt.time.min,UTC),dt.datetime.combine(end,dt.time.min,UTC))
+                if name=="MCHL1" else quality(body)
+            )
             report["sources"][name]["status"]="retrieved"
         except Exception as e:
             report["sources"][name]["status"]="error"
@@ -198,15 +223,16 @@ def main():
     parser.add_argument("--end")
     parser.add_argument("--window",action="append",nargs=2,metavar=("START","END"),help="append one inclusive-start, exclusive-end UTC window")
     parser.add_argument("--raw-dir",type=Path,help="save exact response bodies for provenance")
+    parser.add_argument("--raw-input-dir",type=Path,help="reanalyze archived response bodies without agency requests")
     args=parser.parse_args()
     if args.window and (args.start or args.end): parser.error("use --window or --start/--end, not both")
     windows=args.window or [[args.start or "2026-09-01",args.end or "2026-09-05"]]
     try:
         periods=[]
         for index,(start,end) in enumerate(windows):
-            if index:
+            if index and not args.raw_input_dir:
                 time.sleep(INTER_WINDOW_DELAY_SECONDS)
-            periods.append(run_window(start,end,args.raw_dir))
+            periods.append(run_window(start,end,args.raw_dir,args.raw_input_dir))
     except ValueError as error:
         parser.error(str(error))
     report={"schema":"phase6.mchl1-usgs-overlap-multiwindow.v1","forecast_eligible":False,

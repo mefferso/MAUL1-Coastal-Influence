@@ -39,6 +39,12 @@ def summarize_model_support(model_name: str, horizon: int, model: dict,
         if not name.startswith("mchl1_"):
             continue
         observed = sum(row.get(name) not in (None, "") for row in feature_rows)
+        # MCHL1's SHEF missing code can leak into lag differences as values
+        # near +/-5e6 ft. Flag these separately from ordinary missing values.
+        sentinel_contaminated = sum(
+            row.get(name) not in (None, "") and abs(float(row[name])) > 10_000
+            for row in feature_rows
+        )
         features.append({
             "name": name,
             "training_rows": train_count,
@@ -46,6 +52,9 @@ def summarize_model_support(model_name: str, horizon: int, model: dict,
             "missing_rows": train_count - observed,
             "observed_percent": 100.0 * observed / train_count if train_count else None,
             "missing_percent": 100.0 * (train_count - observed) / train_count if train_count else None,
+            "sentinel_contaminated_rows": sentinel_contaminated,
+            "usable_observed_rows": observed - sentinel_contaminated,
+            "usable_observed_percent": 100.0 * (observed - sentinel_contaminated) / train_count if train_count else None,
             "value_coefficient_standardized": coefficient_for(model, index),
             "missingness_coefficient_standardized": coefficient_for(model, index, missingness=True),
         })
