@@ -27,7 +27,40 @@
   const showMetrics = report => {
     const groups=report?.model_horizon_metrics || {};
     if (!Object.keys(groups).length) return '<p>No prospective verification sample is available. Accuracy and event skill are intentionally withheld until observations mature.</p>';
-    return '<div class="table-wrap"><table><thead><tr><th>Model / horizon</th><th>N</th><th>MAE</th><th>Bias</th><th>Skill vs persistence</th><th>POD 0.25 / 0.50 / 1.00 ft</th><th>False alarm 0.25 / 0.50 / 1.00 ft</th><th>Underforecast in rises</th><th>80% interval coverage</th><th>Upper exceedance</th></tr></thead><tbody>' + Object.entries(groups).map(([name,m])=>`<tr><th>${esc(name)}</th><td>${esc(m.n)}</td><td>${fmt(m.mae_ft)}</td><td>${fmt(m.bias_ft)}</td><td>${m.skill_vs_persistence == null ? '—' : (100*m.skill_vs_persistence).toFixed(1)+'%'}</td><td>${['0.25','0.50','1.00'].map(t=>m.rises?.[t]?.probability_of_detection == null ? '—' : (100*m.rises[t].probability_of_detection).toFixed(0)+'%').join(' / ')}</td><td>${['0.25','0.50','1.00'].map(t=>m.rises?.[t]?.false_alarm_ratio == null ? '—' : (100*m.rises[t].false_alarm_ratio).toFixed(0)+'%').join(' / ')}</td><td>${m.underforecast_frequency_during_rises == null ? '—' : (100*m.underforecast_frequency_during_rises).toFixed(0)+'%'}</td><td>${m.intervals?.coverage == null ? '—' : (100*m.intervals.coverage).toFixed(0)+'%'}</td><td>${m.intervals?.upper_bound_exceedance_frequency == null ? '—' : (100*m.intervals.upper_bound_exceedance_frequency).toFixed(0)+'%'}</td></tr>`).join('') + '</tbody></table></div>';
+    const byModel = new Map(Object.entries(groups).map(([key,value])=>[key,value]));
+    const completeness=report?.verification_completeness || {};
+    const horizonList = [6,12,24];
+    const rows = [];
+    for (const model of models) for (const horizon of horizonList) {
+      const name = `${model}:${horizon}h`;
+      const m = byModel.get(name);
+      const c = completeness[name];
+      const coverage = c ? `${c.verified}/${c.matured} verified/matured; ${c.due_unverified} due unverified; ${c.not_yet_due} not yet due` : '—';
+      if (!m) {
+        rows.push(`<tr><th>${esc(model.replaceAll('_',' '))} / ${horizon} h</th><td colspan="10">Pending verification; no matured archived outcomes yet.</td><td>${esc(coverage)}</td><td>Independent-event score pending</td></tr>`);
+        continue;
+      }
+      const riseCounts = ['0.25','0.50','1.00'].map(t=>{
+        const r=m.rises?.[t];
+        return `${t} ft: ${r ? `${r.hits}/${r.misses}/${r.false_alarms}; POD ${r.probability_of_detection==null?'—':`${(100*r.probability_of_detection).toFixed(0)}%`}; FAR ${r.false_alarm_ratio==null?'—':`${(100*r.false_alarm_ratio).toFixed(0)}%`}` : '—'}`;
+      }).join('<br>');
+      const event=m.qualifying_24h_events;
+      let eventSummary='Not grouped at this horizon';
+      if (horizon===24) {
+        if (!event || event.status!=='computed') eventSummary=`${event?.event_count ?? 0} groups; event metrics withheld until five`;
+        else {
+          const leads=(event.events || []).filter(x=>x.detected && x.lead_to_first_qualifying_target_hours!=null).map(x=>x.lead_to_first_qualifying_target_hours).sort((a,b)=>a-b);
+          const median=leads.length ? (leads.length%2 ? leads[(leads.length-1)/2] : (leads[leads.length/2-1]+leads[leads.length/2])/2) : null;
+          eventSummary=`${event.detected_events}/${event.event_count} detected; ${event.missed_events} missed; median lead ${median==null?'—':`${median.toFixed(1)} h`}`;
+        }
+      }
+      const age=m.input_age_effect || {};
+      const ageSummary=`≤1 h: ${fmt(age.le_1h?.mae_ft)} (n=${age.le_1h?.n ?? 0})<br>&gt;1 h: ${fmt(age.gt_1h?.mae_ft)} (n=${age.gt_1h?.n ?? 0})`;
+      const latency=m.observation_latency_minutes || {};
+      const delaySummary=latency.median==null?'—':`${Number(latency.median).toFixed(0)} min (n=${latency.n})`;
+      rows.push(`<tr><th>${esc(model.replaceAll('_',' '))} / ${horizon} h</th><td>${esc(m.n)}</td><td>${fmt(m.mae_ft)}</td><td>${fmt(m.rmse_ft)}</td><td>${fmt(m.bias_ft)}</td><td>${fmt(m.mae_persistence_ft)}${m.skill_vs_persistence==null?'':`<br><small>skill ${(100*m.skill_vs_persistence).toFixed(1)}%</small>`}</td><td>${riseCounts}<br><small>hits/misses/false alarms</small></td><td>${m.intervals?.coverage==null?'—':`${(100*m.intervals.coverage).toFixed(0)}%`}<br><small>n=${esc(m.intervals?.n ?? 0)}</small></td><td>${m.intervals?.upper_bound_exceedance_frequency==null?'—':`${(100*m.intervals.upper_bound_exceedance_frequency).toFixed(0)}%`}</td><td>${ageSummary}</td><td>${delaySummary}</td><td>${esc(coverage)}</td><td>${esc(eventSummary)}</td></tr>`);
+    }
+    return '<div class="table-wrap"><table><thead><tr><th>Model / horizon</th><th>Verified N</th><th>MAE</th><th>RMSE</th><th>Bias</th><th>Persistence MAE / skill</th><th>Rise hits / misses / false alarms at 0.25, 0.50, 1.00 ft</th><th>80% interval coverage</th><th>Upper bound exceeded</th><th>MAE by MAUL1 input age</th><th>Target observation delay</th><th>Verification coverage</th><th>Independent 0.50-ft 24h rise groups / lead</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div><p>Rise counts use individual overlapping forecasts. Observation delay is retrieval time minus observation valid time. Due-but-unverified targets are not assigned a cause. The 24-hour event row groups outcome-qualified windows; event skill stays withheld below five independent groups. Pending rows have no score yet.</p>';
   };
   Promise.all(['data/prospective/latest.json','data/prospective/history/index.json','data/prospective/performance.json'].map(path=>fetch(path).then(r=>r.ok?r.json():null))).then(async ([latest, history, metrics]) => {
     root.innerHTML = `<div id="phase6-latest">${showForecast(latest)}</div><h3>Archived forecast history</h3><label for="phase6-issue-select">Select an immutable issuance:</label> <select id="phase6-issue-select"></select><div id="phase6-selected">No previous issues.</div><h3>Prospective performance</h3><p>Verification count: ${esc(metrics?.verification_count ?? 0)} · ${esc(metrics?.revision_count ?? 0)} retained verification revisions. Overlapping hourly forecasts are not independent event samples.</p>${showMetrics(metrics)}<p><strong>Limitations:</strong> research-only; MAUL1 native gage-height datum; no NAVD88 threshold equivalence; input availability depends on source freshness; event metrics remain withheld below five independent groups. Frozen model version: ${esc(latest?.snapshot?.model_artifact_sha256 || 'pending first issue')}.</p>`;
