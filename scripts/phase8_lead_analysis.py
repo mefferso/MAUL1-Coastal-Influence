@@ -95,12 +95,12 @@ def first_confirmation(screen_rows, signal, start, end, ordered_issues=None):
 
 
 def first_pathway_confirmation(signals):
-    """Return the pathway with the earliest uniquely interpretable local screen."""
-    candidates = [(name, signals[name]["retrospective_lead_hours"])
+    """Return the uniquely credited pathway confirmed earliest for this event."""
+    candidates = [(name, signals[name]["unique_event_credit_lead_hours"])
                   for name in PATHWAYS
-                  if signals.get(name, {}).get("timing") == "before" and
-                  isinstance(signals[name].get("retrospective_lead_hours"), (int, float)) and
-                  signals[name]["retrospective_lead_hours"] > 0]
+                  if signals.get(name, {}).get("unique_event_credit") is True and
+                  isinstance(signals[name].get("unique_event_credit_lead_hours"), (int, float)) and
+                  signals[name]["unique_event_credit_lead_hours"] > 0]
     return max(candidates, key=lambda item: item[1])[0] if candidates else None
 
 
