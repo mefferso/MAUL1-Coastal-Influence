@@ -10,6 +10,8 @@ from scripts.phase8_lead_analysis import (
     first_confirmation,
     forward_response_status,
     expanding_discharge_thresholds,
+    first_control_trigger,
+    first_pathway_confirmation,
     nearest_upcoming_event,
     representative_cases,
     signal_episodes,
@@ -187,6 +189,22 @@ class Phase8LeadAnalysisTests(unittest.TestCase):
         self.assertEqual(river["event_id"], "valid")
         both = next(case for case in cases if "both river" in case["selection"])
         self.assertEqual(both["event_id"], "valid")
+
+    def test_first_confirmed_pathway_selects_earliest_confirmation_not_closest_to_onset(self):
+        signals = {
+            "coastal": {"timing": "before", "retrospective_lead_hours": 48},
+            "river": {"timing": "before", "retrospective_lead_hours": 6},
+            "residual": {"timing": "after", "retrospective_lead_hours": -2},
+        }
+
+        self.assertEqual(first_pathway_confirmation(signals), "coastal")
+
+    def test_active_signal_at_control_start_is_first_trigger_even_if_episode_restarts_later(self):
+        start = dt.datetime(2024, 1, 1, tzinfo=UTC)
+        issues = [start + i * HOUR for i in range(4)]
+        rows = {time: {"flags": {"wind": state}} for time, state in zip(issues, ("present", "unknown", "absent", "present"))}
+
+        self.assertEqual(first_control_trigger(issues, rows, [issues[3]], "wind"), start)
 
 
 if __name__ == "__main__":
