@@ -2,6 +2,8 @@
 
 The NWS HADS station directory identifies MCHL1 as Pass Manchac near Highway 51, DCP CE678A12, reporting HG. IEM documents a HADS/SHEF query interface at `https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py` with `stations`, `sts`, `ets`, and `what` parameters. IEM warns about a per-client request throttle introduced October 5, 2026. Keep probe requests limited, manual, and narrow.
 
+HADS `HGIRGZZ` responses can contain `9999999.0` as a missing-value sentinel. It is finite as a floating-point number, so ingestion and overlap analysis must explicitly reject it before stage changes are calculated. The parser now drops this value while the overlap provenance records its raw count; historical feature tables and frozen models remain unchanged.
+
 Run the exploratory, **read-only** candidate check with:
 
 ```bash

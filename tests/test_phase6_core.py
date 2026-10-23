@@ -92,6 +92,36 @@ class Phase6CoreTests(unittest.TestCase):
         self.assertEqual(metrics["rises"]["0.25"]["hits"], 1)
         self.assertEqual(metrics["events"]["status"], "insufficient_independent_events")
 
+    def test_metrics_report_maul1_input_age_and_target_observation_delay(self):
+        rows = [
+            {"forecast_change_ft": .2, "observed_change_ft": .1,
+             "issue_maul1_age_hours": .5, "observation_delay_minutes": 15},
+            {"forecast_change_ft": .4, "observed_change_ft": .1,
+             "issue_maul1_age_hours": 1.5, "observation_delay_minutes": 75},
+        ]
+        metrics = phase6_metrics.compute_metrics(rows)
+        self.assertEqual(metrics["input_age_effect"]["le_1h"]["n"], 1)
+        self.assertAlmostEqual(metrics["input_age_effect"]["gt_1h"]["mae_ft"], .3)
+        self.assertEqual(metrics["observation_latency_minutes"]["n"], 2)
+        self.assertEqual(metrics["observation_latency_minutes"]["median"], 45)
+
+    def test_verification_completeness_separates_due_unverified_and_future_targets(self):
+        record = {"mode": "authentic", "issuance_id": "i1", "forecasts": {
+            "6": {"valid_time_utc": "2026-10-23T10:00:00Z", "models": {
+                "m": {"status": "issued"}, "abstained": {"status": "abstained"}}},
+            "12": {"valid_time_utc": "2026-10-23T18:00:00Z", "models": {
+                "m": {"status": "issued"}}},
+        }}
+        verified = {("i1", 6, "m")}
+        result = phase6_metrics.verification_completeness(
+            [record], verified, "2026-10-23T12:00:00Z"
+        )
+        self.assertEqual(result["m:6h"]["issued"], 1)
+        self.assertEqual(result["m:6h"]["matured"], 1)
+        self.assertEqual(result["m:6h"]["verified"], 1)
+        self.assertEqual(result["abstained:6h"]["abstained"], 1)
+        self.assertEqual(result["m:12h"]["not_yet_due"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

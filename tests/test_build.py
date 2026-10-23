@@ -38,6 +38,9 @@ class TestHads(unittest.TestCase):
   self.assertEqual(rows[0]['datum'],'HADS native gage height (unverified)')
   self.assertEqual(rows[0]['value'],1.25)
   with self.assertRaises(ValueError):build.parse_hads('station,utc_valid,HGIRGZZ\nOTHER,2025-04-01 00:00:00,1.25\n')
+ def test_hads_sentinel_is_not_archived_as_stage(self):
+  rows=build.parse_hads('station,utc_valid,HGIRGZZ\nMCHL1,2025-04-01 00:00:00,1.25\nMCHL1,2025-04-01 00:15:00,9999999.0\nMCHL1,2025-04-01 00:30:00,nan\n')
+  self.assertEqual([row['value'] for row in rows],[1.25])
 
 class TestTrends(unittest.TestCase):
  def test_exact_delta_without_gap_interpolation(self):

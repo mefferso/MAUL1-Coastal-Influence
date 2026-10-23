@@ -1,5 +1,7 @@
 """Prospective summary metrics, including predefined rise thresholds."""
+import datetime as dt
 import math
+import statistics
 THRESHOLDS = (.25, .50, 1.00)
 def compute_metrics(rows):
     valid = [r for r in rows if r.get("forecast_change_ft") is not None and r.get("observed_change_ft") is not None]
@@ -29,6 +31,26 @@ def compute_metrics(rows):
         "upper_bound_exceedance_frequency":sum(bool(r.get("upper_bound_exceeded")) for r in intervals)/len(intervals) if intervals else None,
         "mean_width_ft":sum(float(r["interval_upper_ft"])-float(r["interval_lower_ft"]) for r in intervals)/len(intervals) if intervals else None,
         "coverage_during_rises":sum(bool(r.get("interval_covered")) for r in intervals if float(r["observed_change_ft"])>0)/sum(float(r["observed_change_ft"])>0 for r in intervals) if any(float(r["observed_change_ft"])>0 for r in intervals) else None}
+    def age_summary(items):
+        differences=[float(r["forecast_change_ft"])-float(r["observed_change_ft"]) for r in items]
+        return {"n":len(items),
+                "mae_ft":sum(abs(x) for x in differences)/len(differences) if differences else None,
+                "rmse_ft":math.sqrt(sum(x*x for x in differences)/len(differences)) if differences else None,
+                "bias_ft":sum(differences)/len(differences) if differences else None}
+    with_age=[r for r in valid if r.get("issue_maul1_age_hours") is not None]
+    out["input_age_effect"]={
+        "le_1h":age_summary([r for r in with_age if float(r["issue_maul1_age_hours"])<=1]),
+        "gt_1h":age_summary([r for r in with_age if float(r["issue_maul1_age_hours"])>1]),
+        "n_with_age":len(with_age),
+    }
+    delays=sorted(float(r["observation_delay_minutes"]) for r in valid
+                  if r.get("observation_delay_minutes") is not None and math.isfinite(float(r["observation_delay_minutes"])))
+    out["observation_latency_minutes"]={
+        "n":len(delays),
+        "median":statistics.median(delays) if delays else None,
+        "p90":delays[min(len(delays)-1,int(.90*(len(delays)-1)))] if delays else None,
+        "max":max(delays) if delays else None,
+    }
     rises = {}
     for threshold in THRESHOLDS:
         hit = miss = false = correct = 0
@@ -104,3 +126,45 @@ def summarize_qualifying_events(rows, threshold_ft=0.50, separation_hours=24):
         result["missed_events"] = len(events) - result["detected_events"]
         result["events"] = events
     return result
+
+
+def verification_completeness(records, verified_keys, analysis_time):
+    """Count authentic forecast slots, abstentions, matured targets, and verification coverage.
+
+    A due target without a matching archived verification is labeled due_unverified;
+    the count does not diagnose whether the cause was missing or delayed observation data.
+    """
+    def utc(value):
+        parsed=dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            raise ValueError("timezone required")
+        return parsed.astimezone(dt.timezone.utc)
+
+    cutoff=utc(analysis_time)
+    by_group={}
+    verified={(str(issue),int(horizon),str(model)) for issue,horizon,model in verified_keys}
+    for record in records:
+        if record.get("mode", "authentic")!="authentic":
+            continue
+        for horizon,forecast in record.get("forecasts",{}).items():
+            target=utc(forecast["valid_time_utc"])
+            for model,item in forecast.get("models",{}).items():
+                key=f"{model}:{int(horizon)}h"
+                counts=by_group.setdefault(key,{"forecast_slots":0,"issued":0,"abstained":0,
+                    "other_unavailable":0,"matured":0,"verified":0,"due_unverified":0,"not_yet_due":0})
+                counts["forecast_slots"]+=1
+                if item.get("status")=="abstained":
+                    counts["abstained"]+=1
+                elif item.get("status")!="issued":
+                    counts["other_unavailable"]+=1
+                else:
+                    counts["issued"]+=1
+                    if target>cutoff:
+                        counts["not_yet_due"]+=1
+                    else:
+                        counts["matured"]+=1
+                        if (str(record["issuance_id"]),int(horizon),str(model)) in verified:
+                            counts["verified"]+=1
+                        else:
+                            counts["due_unverified"]+=1
+    return by_group

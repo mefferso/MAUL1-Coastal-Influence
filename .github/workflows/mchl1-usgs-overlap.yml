@@ -11,7 +11,7 @@ permissions:
 jobs:
   compare:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,10 +20,17 @@ jobs:
       - name: Verify offline parsing and causal differences
         run: python -m unittest discover -s tests -p test_mchl1_usgs_overlap.py -v
       - name: Query independent historical observations (diagnostic-only)
-        run: python scripts/probe_mchl1_usgs_overlap.py --start 2026-09-01 --end 2026-09-05 > mchl1-usgs-overlap.json
+        run: |
+          set -o pipefail
+          python scripts/probe_mchl1_usgs_overlap.py \
+            --window 2022-12-20 2022-12-25 \
+            --window 2024-11-14 2024-11-19 \
+            --raw-dir mchl1-usgs-raw | tee mchl1-usgs-overlap.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mchl1-usgs-overlap
-          path: mchl1-usgs-overlap.json
+          name: mchl1-usgs-overlap-multiple-periods
+          path: |
+            mchl1-usgs-overlap.json
+            mchl1-usgs-raw/
           retention-days: 21

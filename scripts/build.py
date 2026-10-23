@@ -103,6 +103,9 @@ def parse_hads(payload):
   if item['station']!='MCHL1': raise ValueError('Unexpected HADS station')
   try: value=float(item['HGIRGZZ'])
   except (ValueError, TypeError): continue
+  # HADS CSV uses 9999999.0 for a missing SHEF stage value; it is finite
+  # numerically but must remain absent from stage features and history.
+  if not math.isfinite(value) or value == 9999999.0: continue
   rows.append(dict(time=iso(item['utc_valid']+'+00:00'),value=value,station='MCHL1',variable='stage',unit='ft',datum='HADS native gage height (unverified)',quality='unverified',source='Iowa Environmental Mesonet archive of NWS HADS SHEF'))
  return rows
 

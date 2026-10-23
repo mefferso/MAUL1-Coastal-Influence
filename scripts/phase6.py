@@ -199,6 +199,7 @@ def update_site():
         with capture_path.open("xb") as stream:
             stream.write(gzip.compress(payload,compresslevel=9,mtime=0))
     observed=[{"valid_time_utc":x["valid_time_utc"],"ingested_utc":x["retrieved_utc"],"value_ft":float(x["value"])} for x in verification_capture["observations"] if x["station"]=="MAUL1" and x["parameter"]=="stage" and x["datum"]=="gage height"]
+    evaluation_time=dt.datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00","Z")
     forecasts=[json.loads(p.read_text()) for p in sorted(issues.glob("*.json"))]
     forecasts.sort(key=lambda x:x["actual_issue_time_utc"])
     records=[]
@@ -206,7 +207,7 @@ def update_site():
         prev=[]
         for p in sorted(verdir.glob(record["issuance_id"]+"-*.json")):
             prev.extend(json.loads(p.read_text()).get("revisions",[]))
-        revisions=phase6_verify.verify(record,observed,dt.datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00","Z"),prev)
+        revisions=phase6_verify.verify(record,observed,evaluation_time,prev)
         if revisions:
             path=verdir/f"{record['issuance_id']}-{len(prev)+1:04d}.json"
             path.write_text(json.dumps({"revisions":revisions},indent=2)+"\n")
@@ -232,12 +233,17 @@ def update_site():
         rec=next((r for r in records if r["issuance_id"]==v["issuance_id"]),None)
         if not rec or rec.get("latest_maul1_native_stage_ft") is None: continue
         group=f"{v['model']}:{v['horizon_hours']}h"
+        maul1_age=rec.get("snapshot",{}).get("availability",{}).get("MAUL1_00065",{}).get("age_hours")
+        observation_delay=(phase6_verify.parse(v["observation_ingested_utc"])-
+                           phase6_verify.parse(v["observation_valid_time_utc"])).total_seconds()/60
         by_group.setdefault(group,[]).append({"valid_time_utc":v["forecast_valid_time_utc"],"actual_issue_time_utc":rec["actual_issue_time_utc"],"forecast_change_ft":v["predicted_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
             "observed_change_ft":v["observed_native_stage_ft"]-rec["latest_maul1_native_stage_ft"],
             "persistence_change_ft":0.0,
+            "issue_maul1_age_hours":maul1_age,"observation_delay_minutes":observation_delay,
             "interval_lower_ft":v.get("interval_lower_ft"),"interval_upper_ft":v.get("interval_upper_ft"),
             "interval_covered":v.get("interval_covered"),"upper_bound_exceeded":v.get("upper_bound_exceeded")})
     summary={k:phase6_metrics.compute_metrics(v) for k,v in by_group.items()}
+    completeness=phase6_metrics.verification_completeness(records,latest_v.keys(),evaluation_time)
     for key,rows in by_group.items():
         if key.endswith(":24h"):
             summary[key]["qualifying_24h_events"]=phase6_metrics.summarize_qualifying_events(rows)
@@ -245,7 +251,9 @@ def update_site():
         "forecast_file":f"../archive/issues/{r['issuance_id']}.json",
         "verification_files":[f"../verification/{p.name}" for p in sorted(verdir.glob(r["issuance_id"]+"-*.json"))]}
         for r in records],indent=2)+"\n")
-    (base/"performance.json").write_text(json.dumps({"prospective_only":True,"model_horizon_metrics":summary,"verification_count":len(latest_v),"revision_count":len(all_v)},indent=2)+"\n")
+    (base/"performance.json").write_text(json.dumps({"prospective_only":True,"model_horizon_metrics":summary,
+        "verification_completeness":completeness,"verification_count":len(latest_v),
+        "revision_count":len(all_v),"evaluation_time_utc":evaluation_time},indent=2)+"\n")
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(); parser.add_argument("--simulate",action="store_true"); parser.add_argument("--run-id",default="manual"); parser.add_argument("--scheduled",action="store_true")
