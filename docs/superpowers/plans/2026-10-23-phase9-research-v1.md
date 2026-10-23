@@ -12,7 +12,7 @@ Base: `main` at `5a97ec743bd668c173b3373b8ea7868510048879` (Phase 8 merge).
 - `site/research-dashboard.js`: render source-stamped current conditions and five-station evidence availability from the latest authentic archive; never infer NAVD88 or causality.
 - `scripts/phase6.py`: publish direct 63160 elevation in a separate availability slot without adding it to model features.
 - `tests/test_phase6_sources.py`: assert native stage and direct NAVD88 remain separate, with stale elevation explicit.
-- `site/style.css`: responsive layout and accessible status/table styling for the new dashboard.
+- `site/research-dashboard.css`: responsive layout and accessible status/table styling for the new dashboard.
 - `tests/research-dashboard-smoke.cjs`: pure rendering regression checks for data, stale/missing inputs, unverified MCHL1 and datum gates.
 - `.github/workflows/site.yml`: syntax-check and run the new dashboard smoke test during existing PR validation.
 - `docs/research-v1.md`: purpose, network, provenance, architecture, verified Phase 7/8 findings, authentic prospective status, scientific limitations and maintenance guidance.
