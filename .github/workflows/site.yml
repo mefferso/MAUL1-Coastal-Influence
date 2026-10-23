@@ -39,7 +39,11 @@ jobs:
             done
           fi
       - run: node --check site/app.js
+      - run: node --check site/phase6.js
+      - run: node --check site/research-dashboard.js
       - run: node tests/site-smoke.cjs
+      - run: node tests/phase6-site-smoke.cjs
+      - run: node tests/research-dashboard-smoke.cjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
