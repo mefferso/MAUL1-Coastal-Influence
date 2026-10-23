@@ -70,7 +70,7 @@
       ? `<span class="research-status status-stale">Issue archive ${ageLabel(currentIssueAge)}</span>`
       : `<span class="research-status status-fresh">Authentic issue ${utc(record.actual_issue_time_utc)}</span>`;
     const maulThreshold = verifiedNavd
-      ? `<p class="datum-gate"><strong>Separate direct NAVD88 observation:</strong> ${fmt(directNavd.value)} ft at ${utc(directNavd.valid_time_utc)}. Local 4.0 ft NAVD88 threshold difference: ${fmt(Number(directNavd.value)-4)} ft. This does not alter or convert native 00065 stage.</p>`
+      ? `<p class="datum-gate"><strong>Separate direct NAVD88 observation:</strong> ${fmt(directNavd.value)} ft at ${utc(directNavd.valid_time_utc)} · ${ageLabel(ageHours(directNavd.valid_time_utc,now))} · ${sourceLink(directNavd)} · QC ${esc(Array.isArray(directNavd.qc)?directNavd.qc.join(', '):directNavd.qc ?? 'unavailable')}. Local 4.0 ft NAVD88 threshold difference: ${fmt(Number(directNavd.value)-4)} ft. This does not alter or convert native 00065 stage.</p>`
       : '<p class="datum-gate"><strong>NAVD88 elevation unavailable.</strong> This issue contains native USGS 00065 gage height only. No conversion is applied and the NAVD88 reference line is withheld.</p>';
     const denChange = numeric(features.denl1_log_change_6h) ? (Math.exp(Number(features.denl1_log_change_6h))-1)*100 : null;
     const rows = [
