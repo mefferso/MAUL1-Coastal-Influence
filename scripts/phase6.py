@@ -30,12 +30,19 @@ def latest_snapshot(snapshot, issued):
               and quality_is_usable(o.get("qc"))]
         return max(rows,key=lambda x:x["valid_time_utc"]) if rows else None
     target=latest("MAUL1","stage","gage height")
+    elevation=latest("MAUL1","elevation","NAVD88")
     feature={"maul1_stage_native_ft":float(target["value"]) if target else None}; status={}
     status["MAUL1_00065"]={"status":"eligible" if target else "missing_or_stale","observation":target}
+    # Keep direct elevation separately from native 00065 and out of all model features.
+    status["MAUL1_63160"]={"status":"eligible" if elevation else "missing","observation":dict(elevation,parameter_code="63160") if elevation else None,"maximum_age_hours":2}
     if target:
         age=(issued-dt.datetime.fromisoformat(target["valid_time_utc"].replace("Z","+00:00"))).total_seconds()/3600
         if age>2: status["MAUL1_00065"]["status"]="stale"
         status["MAUL1_00065"]["age_hours"]=age
+    if elevation:
+        age=(issued-dt.datetime.fromisoformat(elevation["valid_time_utc"].replace("Z","+00:00"))).total_seconds()/3600
+        status["MAUL1_63160"]["age_hours"]=age
+        if age>2: status["MAUL1_63160"]["status"]="stale"
     for key,station,param,datum in (("NWCL1","NWCL1","water_level","MLLW"),("DENL1","DENL1","discharge","native"),("MDLL1","MDLL1","stage","gage height"),("MCHL1","MCHL1","stage",None)):
         item=latest(station,param,datum)
         status[key]={"status":"eligible" if item else "missing","observation":item,"maximum_age_hours":3}
