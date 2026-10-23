@@ -47,16 +47,20 @@ assert.equal(tabs[2].attributes['aria-selected'],'true');
 assert.equal(tabs[2].focused,true);
 assert.equal(panels[2].hidden,false);
 
+const now=Date.now();
+const iso=offset=>new Date(now+offset*60000).toISOString();
+const issueTime=iso(-10);
+const anchorTime=iso(-20);
 const issue = {
-  mode:'authentic', actual_issue_time_utc:'2026-10-23T15:52:58Z', model_anchor_time_utc:'2026-10-23T15:00:00Z',
+  mode:'authentic', actual_issue_time_utc:issueTime, model_anchor_time_utc:anchorTime,
   latest_maul1_native_stage_ft:2.44,
   forecasts:{
-    6:{valid_time_utc:'2026-10-23T21:00:00Z',effective_lead_hours:5.1,models:{
+    6:{valid_time_utc:iso(5*60),effective_lead_hours:5.1,models:{
       persistence:{status:'issued',predicted_stage_native_ft:2.44,predicted_change_ft:0},
       phase5a_maul1_only:{status:'issued',predicted_stage_native_ft:2.53,predicted_change_ft:.09,interval_lower_ft:2.38,interval_upper_ft:2.67},
       phase5a_coastal:{status:'issued',predicted_stage_native_ft:2.54,predicted_change_ft:.10,interval_lower_ft:2.44,interval_upper_ft:2.63}
     }},
-    24:{valid_time_utc:'2026-10-24T15:00:00Z',effective_lead_hours:23.1,models:{
+    24:{valid_time_utc:iso(23*60),effective_lead_hours:23.1,models:{
       persistence:{status:'issued',predicted_stage_native_ft:2.44,predicted_change_ft:0}
     }}
   }
@@ -71,17 +75,19 @@ assert.match(forecast.renderGuidance({...issue,mode:'simulation'}),/No compatibl
 assert.deepEqual(forecast.buildTraces({...issue,mode:'simulation'}),[]);
 const traces=forecast.buildTraces(issue);
 assert.equal(traces.length,3);
-assert.ok(traces.every(t=>t.issuance==='2026-10-23T15:52:58Z'));
+assert.ok(traces.every(t=>t.issuance===issueTime));
 assert.ok(traces.some(t=>t.name==='Persistence'));
 assert.deepEqual(traces.find(t=>t.name==='Phase 5A · coastal predictors').x,[0,5.1]);
 assert.ok(traces.find(t=>t.name==='Phase 5A · coastal predictors').error_y);
-const withObservation={...issue,snapshot:{availability:{MAUL1_00065:{status:'eligible',observation:{station:'MAUL1',parameter:'stage',datum:'gage height',units:'ft',value:2.45,valid_time_utc:'2026-10-23T14:45:00Z',retrieved_utc:'2026-10-23T15:52:55Z',source:'USGS NWIS IV',qc:['P']}}}}};
+const withObservation={...issue,snapshot:{availability:{MAUL1_00065:{status:'eligible',observation:{station:'MAUL1',parameter:'stage',datum:'gage height',units:'ft',value:2.45,valid_time_utc:iso(-25),retrieved_utc:issueTime,source:'USGS NWIS IV',qc:['P']}}}}};
 const observedTraces=forecast.buildTraces(withObservation);
 const observed=observedTraces.find(t=>t.name==='Latest observation · USGS 00065');
 assert.ok(observed);
 assert.equal(observed.mode,'markers');
-assert.equal(observed.x[0],-0.25);
+assert.ok(Math.abs(observed.x[0]+(5/60))<1e-6);
 assert.ok(observedTraces.find(t=>t.name==='Phase 5A · coastal predictors').x[0]===0);
+const staleObservation=JSON.parse(JSON.stringify(withObservation));staleObservation.snapshot.availability.MAUL1_00065.observation.valid_time_utc=iso(-240);
+assert.equal(forecast.buildTraces(staleObservation).some(t=>t.name==='Latest observation · USGS 00065'),false);
 const badObservation=JSON.parse(JSON.stringify(withObservation));badObservation.snapshot.availability.MAUL1_00065.observation.datum='NAVD88';
 assert.equal(forecast.buildTraces(badObservation).some(t=>t.name==='Latest observation · USGS 00065'),false);
 const mislabeledObservation=JSON.parse(JSON.stringify(withObservation));mislabeledObservation.snapshot.availability.MAUL1_00065.observation.datum='gage height NAVD88';
