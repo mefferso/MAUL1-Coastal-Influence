@@ -63,12 +63,13 @@
     const diagnostics = snap.feature_diagnostics || {};
     const den = availability.DENL1 || {};
     const maul = availability.MAUL1_00065 || {};
+    const issueEpoch = Date.parse(record.actual_issue_time_utc);
     const directNavdStatus = availability.MAUL1_63160?.status;
     const directNavd = availability.MAUL1_63160?.observation;
     const navdValidEpoch = Date.parse(directNavd?.valid_time_utc);
     const navdRetrievedEpoch = Date.parse(directNavd?.retrieved_utc);
     const navdAge = ageHours(directNavd?.valid_time_utc, now);
-    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === 'elevation' && directNavd.parameter_code === '63160' && String(directNavd.datum || '').toUpperCase() === 'NAVD88' && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value) && qualityIsUsable(directNavd.qc) && Number.isFinite(navdValidEpoch) && Number.isFinite(navdRetrievedEpoch) && navdValidEpoch <= navdRetrievedEpoch && navdRetrievedEpoch <= now && navdAge !== null && navdAge <= 2);
+    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === 'elevation' && directNavd.parameter_code === '63160' && String(directNavd.datum || '').toUpperCase() === 'NAVD88' && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value) && qualityIsUsable(directNavd.qc) && Number.isFinite(issueEpoch) && issueEpoch <= now && Number.isFinite(navdValidEpoch) && Number.isFinite(navdRetrievedEpoch) && navdValidEpoch <= navdRetrievedEpoch && navdRetrievedEpoch <= issueEpoch && navdAge !== null && navdAge <= 2);
     const nwc = availability.NWCL1 || {};
     const mdl = availability.MDLL1 || {};
     const mch = availability.MCHL1 || {};
@@ -80,7 +81,6 @@
     const mchl = diagnostics.mchl1_shadow || {};
     const mchlChange = mchl.features || {};
     const mchlNote = 'Unverified HADS context. Shadow-only and excluded from frozen model forecasts; relative change does not establish absolute datum or sensor validity.';
-    const issueEpoch = Date.parse(record.actual_issue_time_utc);
     const currentIssueAge = ageHours(record.actual_issue_time_utc, now);
     const issueStatus = !Number.isFinite(issueEpoch)
       ? '<span class="research-status status-unknown">Issue time unavailable</span>'
