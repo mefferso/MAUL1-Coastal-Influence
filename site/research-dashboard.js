@@ -53,7 +53,7 @@
     const maul = availability.MAUL1_00065 || {};
     const directNavdStatus = availability.MAUL1_63160?.status;
     const directNavd = availability.MAUL1_63160?.observation;
-    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === '63160' && String(directNavd.datum || '').toUpperCase().includes('NAVD88') && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value));
+    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === 'elevation' && directNavd.parameter_code === '63160' && String(directNavd.datum || '').toUpperCase() === 'NAVD88' && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value) && ageHours(directNavd.valid_time_utc, now) !== null && ageHours(directNavd.valid_time_utc, now) <= 2);
     const nwc = availability.NWCL1 || {};
     const mdl = availability.MDLL1 || {};
     const mch = availability.MCHL1 || {};
