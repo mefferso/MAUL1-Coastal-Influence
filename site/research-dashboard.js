@@ -51,10 +51,12 @@
     const diagnostics = snap.feature_diagnostics || {};
     const den = availability.DENL1 || {};
     const maul = availability.MAUL1_00065 || {};
+    const directNavdStatus = availability.MAUL1_63160?.status;
+    const directNavd = availability.MAUL1_63160?.observation;
+    const verifiedNavd = Boolean(directNavdStatus === 'eligible' && directNavd && directNavd.station === 'MAUL1' && directNavd.parameter === '63160' && String(directNavd.datum || '').toUpperCase().includes('NAVD88') && directNavd.units === 'ft' && directNavd.source === 'USGS NWIS IV' && numeric(directNavd.value));
     const nwc = availability.NWCL1 || {};
     const mdl = availability.MDLL1 || {};
     const mch = availability.MCHL1 || {};
-    const maulNative = !(maul.observation?.parameter === '63160' && String(maul.observation?.datum || '').toLowerCase().includes('navd88'));
     const windU = features.nwcl1_wind_u_knots;
     const windV = features.nwcl1_wind_v_knots;
     const resultant = numeric(windU) && numeric(windV) ? Math.hypot(Number(windU), Number(windV)) : null;
@@ -67,9 +69,9 @@
     const issueStatus = currentIssueAge !== null && currentIssueAge > 3
       ? `<span class="research-status status-stale">Issue archive ${ageLabel(currentIssueAge)}</span>`
       : `<span class="research-status status-fresh">Authentic issue ${utc(record.actual_issue_time_utc)}</span>`;
-    const maulThreshold = maulNative
-      ? '<p class="datum-gate"><strong>NAVD88 elevation unavailable.</strong> This issue contains native USGS 00065 gage height only. No conversion is applied and the NAVD88 reference line is withheld.</p>'
-      : '<p class="datum-gate"><strong>Direct USGS 63160 NAVD88 elevation present.</strong> This verified elevation is kept separate from the native 00065 series.</p>';
+    const maulThreshold = verifiedNavd
+      ? `<p class="datum-gate"><strong>Separate direct NAVD88 observation:</strong> ${fmt(directNavd.value)} ft at ${utc(directNavd.valid_time_utc)}. Local 4.0 ft NAVD88 threshold difference: ${fmt(Number(directNavd.value)-4)} ft. This does not alter or convert native 00065 stage.</p>`
+      : '<p class="datum-gate"><strong>NAVD88 elevation unavailable.</strong> This issue contains native USGS 00065 gage height only. No conversion is applied and the NAVD88 reference line is withheld.</p>';
     const denChange = numeric(features.denl1_log_change_6h) ? (Math.exp(Number(features.denl1_log_change_6h))-1)*100 : null;
     const rows = [
       observationCard({id:'maul1-current',title:'MAUL1 · target',descriptor:'Amite River at Highway 22',status:maul.status,observation:maul.observation,datum:'Native USGS 00065 gage height; not NAVD88',maxAge:2,change:features.maul1_change_6h_ft,changeLabel:'Recent native-stage change',note:'Forecast anchor changes describe model inputs and are not a second observation.',now}),
