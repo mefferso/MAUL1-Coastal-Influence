@@ -16,11 +16,11 @@
   const numeric = value => value !== null && value !== '' && Number.isFinite(Number(value));
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const ft = value => numeric(value) ? `${Number(value).toFixed(2)} ft` : '—';
+  const nativeDatum = value => { if (!value) return true; const label=String(value); return !/(NAVD88|MLLW|MHHW|NGVD)/i.test(label) && /(native|gage height|00065)/i.test(label); };
   const validNative = record => record?.mode === 'authentic' && numeric(record.latest_maul1_native_stage_ft) &&
-    (!record.datum || /native|gage height/i.test(record.datum)) &&
-    (!record.stage_datum || /native|gage height/i.test(record.stage_datum)) &&
+    nativeDatum(record.datum) && nativeDatum(record.stage_datum) &&
     Number.isFinite(Date.parse(record.actual_issue_time_utc)) && Date.parse(record.actual_issue_time_utc) <= Date.now();
-  const forecastDatumIsNative = forecast => !forecast?.datum || /native|gage height/i.test(forecast.datum);
+  const forecastDatumIsNative = forecast => nativeDatum(forecast?.datum);
   const forecastChronologyIsValid = (record, forecast) => { const issue=Date.parse(record?.actual_issue_time_utc), valid=Date.parse(forecast?.valid_time_utc); return Number.isFinite(issue) && Number.isFinite(valid) && valid >= issue; };
   const qcIsUsable = value => { if(value==null)return true; const flags=Array.isArray(value)?value.map(x=>String(x).trim()):typeof value==='string'?value.split(',').map(x=>x.trim()):null; return flags!==null && flags.every(x=>['','0','P','provisional'].includes(x)); };
   function renderGuidance(record) {
@@ -54,7 +54,7 @@
     const observation=record.snapshot?.availability?.MAUL1_00065?.observation;
     const observationStatus=record.snapshot?.availability?.MAUL1_00065?.status;
     const observationValid=Date.parse(observation?.valid_time_utc), observationRetrieved=Date.parse(observation?.retrieved_utc), issueEpoch=Date.parse(issueTime), anchorEpoch=Date.parse(record.model_anchor_time_utc);
-    if(observationStatus==='eligible' && observation && observation.station==='MAUL1' && observation.parameter==='stage' && observation.source==='USGS NWIS IV' && observation.units==='ft' && /native|gage height/i.test(observation.datum||'') && numeric(observation.value) && qcIsUsable(observation.qc) && Number.isFinite(observationValid) && Number.isFinite(observationRetrieved) && Number.isFinite(anchorEpoch) && observationValid<=observationRetrieved && observationRetrieved<=issueEpoch && observationValid<=issueEpoch && issueEpoch<=Date.now() && Date.now()-observationValid<=2*3600000) {
+    if(observationStatus==='eligible' && observation && observation.station==='MAUL1' && observation.parameter==='stage' && observation.source==='USGS NWIS IV' && observation.units==='ft' && nativeDatum(observation.datum) && numeric(observation.value) && qcIsUsable(observation.qc) && Number.isFinite(observationValid) && Number.isFinite(observationRetrieved) && Number.isFinite(anchorEpoch) && observationValid<=observationRetrieved && observationRetrieved<=issueEpoch && observationValid<=issueEpoch && issueEpoch<=Date.now() && Date.now()-observationValid<=2*3600000) {
       traces.push({name:'Latest observation · USGS 00065',x:[(observationValid-anchorEpoch)/3600000],y:[Number(observation.value)],mode:'markers',marker:{color:'#12303c',size:10,symbol:'diamond'},hovertemplate:'Observed %{y:.2f} ft native stage<br>Valid '+observation.valid_time_utc+'<br>Retrieved '+observation.retrieved_utc+'<extra>Latest observation</extra>',issuance:issueTime});
     }
     const perModel = key => eligible.map(([horizon, forecast]) => {
