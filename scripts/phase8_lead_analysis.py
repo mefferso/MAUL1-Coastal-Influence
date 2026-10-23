@@ -176,8 +176,6 @@ def expanding_discharge_thresholds(index, issues):
 def forward_response_status(detection_time, horizon_hours, events, archive_end):
     """Classify response follow-up without turning unknown onset into a miss."""
     horizon_end = detection_time + HOUR * horizon_hours
-    if archive_end < horizon_end:
-        return "right_censored"
     for event in events:
         onset = event.get("_onset")
         if onset is not None and detection_time < onset <= horizon_end:
@@ -188,6 +186,8 @@ def forward_response_status(detection_time, horizon_hours, events, archive_end):
         left, right = event.get("_trough"), event.get("_peak")
         if left is not None and right is not None and left <= horizon_end and right > detection_time:
             return "onset_uncertain"
+    if archive_end < horizon_end:
+        return "right_censored"
     return "no_catalog_response"
 
 
