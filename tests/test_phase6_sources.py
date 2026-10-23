@@ -19,6 +19,24 @@ class Phase6SourceTests(unittest.TestCase):
         self.assertFalse(phase6.quality_is_usable("0,R,0"))
         self.assertFalse(phase6.quality_is_usable("invalid"))
 
+    def test_maul1_63160_is_archived_separately_from_native_stage(self):
+        issued=dt.datetime(2026,10,23,14,tzinfo=dt.timezone.utc)
+        stage={"station":"MAUL1","parameter":"stage","value":2.5,"units":"ft","datum":"gage height",
+               "valid_time_utc":"2026-10-23T12:00:00Z","retrieved_utc":"2026-10-23T13:30:00Z",
+               "qc":["P"],"eligible_completed_hour":True}
+        elevation={"station":"MAUL1","parameter":"elevation","value":4.25,"units":"ft","datum":"NAVD88",
+                   "source":"USGS NWIS IV","valid_time_utc":"2026-10-23T13:00:00Z",
+                   "retrieved_utc":"2026-10-23T13:30:00Z","qc":["P"],"eligible_completed_hour":True}
+        features,status=phase6.latest_snapshot({"observations":[stage,elevation]},issued)
+        self.assertEqual(features["maul1_stage_native_ft"],2.5)
+        self.assertEqual(status["MAUL1_00065"]["observation"]["datum"],"gage height")
+        self.assertEqual(status["MAUL1_63160"]["status"],"eligible")
+        self.assertEqual(status["MAUL1_63160"]["observation"]["parameter_code"],"63160")
+        self.assertEqual(status["MAUL1_63160"]["observation"]["datum"],"NAVD88")
+        stale=dict(elevation,valid_time_utc="2026-10-23T11:00:00Z")
+        _,stale_status=phase6.latest_snapshot({"observations":[stage,stale]},issued)
+        self.assertEqual(stale_status["MAUL1_63160"]["status"],"stale")
+
     def test_future_retrieval_cannot_enter_issue_features(self):
         base={"station":"MAUL1","source":"USGS","parameter":"stage","value":2.4,"units":"ft","datum":"gage height",
               "valid_time_utc":"2026-10-22T11:30:00Z","retrieved_utc":"2026-10-22T11:45:00Z","qc":[],"eligible_completed_hour":True}
