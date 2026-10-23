@@ -4,6 +4,10 @@ on:
     paths:
       - scripts/probe_mchl1_usgs_overlap.py
       - tests/test_mchl1_usgs_overlap.py
+      - scripts/phase7_data.py
+      - scripts/phase7_experiment.py
+      - tests/test_phase7_data.py
+      - docs/phase7-data-quality.md
       - .github/workflows/mchl1-usgs-overlap.yml
   workflow_dispatch:
 permissions:
@@ -11,7 +15,7 @@ permissions:
 jobs:
   compare:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,6 +29,7 @@ jobs:
           python scripts/probe_mchl1_usgs_overlap.py \
             --window 2022-12-20 2022-12-25 \
             --window 2024-11-14 2024-11-19 \
+            --span 2022-05-01 2026-10-01 \
             --raw-dir mchl1-usgs-raw | tee mchl1-usgs-overlap.json
       - uses: actions/upload-artifact@v4
         if: always()

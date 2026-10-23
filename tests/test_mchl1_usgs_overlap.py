@@ -3,9 +3,14 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare, reporting_intervals, usgs_query_date_bounds, retry_after_seconds
+from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare, reporting_intervals, usgs_query_date_bounds, retry_after_seconds, validate_window
 
 class OverlapTests(unittest.TestCase):
+    def test_long_span_mode_accepts_multiyear_request_but_keeps_short_probe_bounds(self):
+        self.assertTrue(validate_window(dt.date(2022, 5, 1), dt.date(2026, 10, 1), allow_long=True))
+        self.assertFalse(validate_window(dt.date(2022, 5, 1), dt.date(2026, 10, 1)))
+        self.assertFalse(validate_window(dt.date(2022, 5, 1), dt.date(2030, 1, 1), allow_long=True))
+
     def test_hads_rejects_wrong_station(self):
         with self.assertRaises(ValueError):
             hads_rows(b"station,utc_valid,HGIRGZZ\nOTHER,2026-09-01 00:00:00,1.1\n")

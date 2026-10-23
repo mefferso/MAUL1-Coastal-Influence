@@ -20,6 +20,12 @@ USGS="https://waterservices.usgs.gov/nwis/iv/"
 HADS="https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py"
 INTER_WINDOW_DELAY_SECONDS=65
 HADS_MISSING_SENTINELS={9999999.0}
+MAX_LONG_SPAN_DAYS=2000
+
+def validate_window(start,end,allow_long=False):
+    """Keep routine probes short; permit a bounded multiyear coverage audit explicitly."""
+    days=(end-start).days
+    return (4<=days<=8) or (allow_long and 30<=days<=MAX_LONG_SPAN_DAYS)
 
 def usgs_query_date_bounds(start_date,end_exclusive):
     """Pad site-local USGS date bounds, then clip returned observations to UTC."""
@@ -173,10 +179,10 @@ def request(url):
             time.sleep(retry_after_seconds(error.headers,attempt))
     raise RuntimeError("request retry loop exited unexpectedly")
 
-def run_window(start_text,end_text,raw_dir=None,raw_input_dir=None):
+def run_window(start_text,end_text,raw_dir=None,raw_input_dir=None,allow_long=False):
     start=dt.date.fromisoformat(start_text);end=dt.date.fromisoformat(end_text)
-    if not 4<= (end-start).days <=8:
-        raise ValueError("require 4–8 days of historical coverage (end exclusive)")
+    if not validate_window(start,end,allow_long):
+        raise ValueError("require 4–8 days for a probe, or 30–2000 days with long-span mode (end exclusive)")
     hurl=HADS+"?"+urllib.parse.urlencode({"stations":"MCHL1","sts":start.isoformat()+"T00:00Z","ets":end.isoformat()+"T00:00Z","what":"txt","delim":"comma"})
     usgs_start,usgs_end=usgs_query_date_bounds(start,end)
     uurl=USGS+"?"+urllib.parse.urlencode({"format":"json","sites":"073802302","parameterCd":"00065","startDT":usgs_start,"endDT":usgs_end})
@@ -222,17 +228,21 @@ def main():
     parser.add_argument("--start")
     parser.add_argument("--end")
     parser.add_argument("--window",action="append",nargs=2,metavar=("START","END"),help="append one inclusive-start, exclusive-end UTC window")
+    parser.add_argument("--span",action="append",nargs=2,metavar=("START","END"),help="append one explicit 30–2000-day coverage audit span")
     parser.add_argument("--raw-dir",type=Path,help="save exact response bodies for provenance")
     parser.add_argument("--raw-input-dir",type=Path,help="reanalyze archived response bodies without agency requests")
     args=parser.parse_args()
     if args.window and (args.start or args.end): parser.error("use --window or --start/--end, not both")
-    windows=args.window or [[args.start or "2026-09-01",args.end or "2026-09-05"]]
+    if args.span and not args.window and (args.start or args.end): parser.error("use --span or --start/--end, not both")
+    windows=args.window or ([] if args.span else [[args.start or "2026-09-01",args.end or "2026-09-05"]])
+    spans=args.span or []
     try:
         periods=[]
-        for index,(start,end) in enumerate(windows):
+        requests=[(start,end,False) for start,end in windows]+[(start,end,True) for start,end in spans]
+        for index,(start,end,long_span) in enumerate(requests):
             if index and not args.raw_input_dir:
                 time.sleep(INTER_WINDOW_DELAY_SECONDS)
-            periods.append(run_window(start,end,args.raw_dir,args.raw_input_dir))
+            periods.append(run_window(start,end,args.raw_dir,args.raw_input_dir,allow_long=long_span))
     except ValueError as error:
         parser.error(str(error))
     report={"schema":"phase6.mchl1-usgs-overlap-multiwindow.v1","forecast_eligible":False,
