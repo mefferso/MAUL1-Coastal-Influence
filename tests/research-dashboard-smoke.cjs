@@ -39,7 +39,9 @@ assert.match(renderCurrentConditions(unverified, Date.parse('2026-10-23T14:00:00
 const direct = JSON.parse(JSON.stringify(issue));
 direct.snapshot.availability.MAUL1_00065.observation.parameter = '63160';
 direct.snapshot.availability.MAUL1_00065.observation.datum = 'NAVD88';
-assert.match(renderCurrentConditions(direct, Date.parse('2026-10-23T14:00:00Z')), /Direct USGS 63160 NAVD88 elevation present/);
+assert.match(renderCurrentConditions(direct, Date.parse('2026-10-23T14:00:00Z')), /reference line is withheld/i);
+direct.snapshot.availability.MAUL1_63160 = {status:'eligible',observation:{station:'MAUL1',parameter:'63160',datum:'NAVD88',units:'ft',value:4.25,valid_time_utc:'2026-10-23T12:45:00Z',retrieved_utc:'2026-10-23T13:27:16Z',qc:['P'],source:'USGS NWIS IV',provenance_url:'https://example.test/maul-navd'}};
+assert.match(renderCurrentConditions(direct, Date.parse('2026-10-23T14:00:00Z')), /Local 4\.0 ft NAVD88 threshold difference: 0\.25 ft/);
 assert.match(renderCurrentConditions(null, Date.now()), /No authentic prospective/i);
 assert.match(renderCurrentConditions({...issue, mode:'simulation'}, Date.now()), /No authentic prospective/i);
 console.log('Research dashboard rendering safeguards passed');
