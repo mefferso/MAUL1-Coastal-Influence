@@ -94,6 +94,23 @@ def first_confirmation(screen_rows, signal, start, end, ordered_issues=None):
     return None
 
 
+def first_pathway_confirmation(signals):
+    """Return the pathway with the earliest uniquely interpretable local screen."""
+    candidates = [(name, signals[name]["retrospective_lead_hours"])
+                  for name in PATHWAYS
+                  if signals.get(name, {}).get("timing") == "before" and
+                  isinstance(signals[name].get("retrospective_lead_hours"), (int, float)) and
+                  signals[name]["retrospective_lead_hours"] > 0]
+    return max(candidates, key=lambda item: item[1])[0] if candidates else None
+
+
+def first_control_trigger(window_issues, rows, episode_starts, signal):
+    """Use the first in-window issue if active at entry; otherwise first new episode."""
+    if window_issues and rows[window_issues[0]]["flags"].get(signal) == "present":
+        return window_issues[0]
+    return min(episode_starts) if episode_starts else None
+
+
 def clean_mchl1_context_row(row):
     """Apply only the documented Phase 7 sentinel-contamination gate to MCHL1."""
     value = row.get("value")
@@ -348,14 +365,13 @@ def build_analysis(root, output):
                         if credited_lead <= horizon:
                             stats["within_horizon"][str(horizon)] += 1
             stats["unknown_fraction"].append(unknown_fraction)
-        primary_candidates = [signals[name] for name in PATHWAYS if signals[name]["timing"] == "before"]
-        first_any = min(primary_candidates, key=lambda row: row["retrospective_lead_hours"], default=None)
+        first_any = first_pathway_confirmation(signals)
         event_rows.append({"event_id": event["event_id"], "onset_utc": iso(onset), "onset_known": True,
                            "rise_native_ft": _number(event.get("rise_native_gage_height")),
                            "peak_utc": event.get("peak_utc"), "uncertainty_flags": event.get("uncertainty_flags"),
                            "classification_screen": classifications.get(event["event_id"], "Indeterminate"),
                            "classification_is_causal_truth": False,
-                           "first_confirmed_pathway": ("river" if first_any is signals.get("river") else "coastal") if first_any else None,
+                           "first_confirmed_pathway": first_any,
                            "assessment_window_utc": {"start": iso(start), "end_exclusive": iso(end + HOUR)},
                            "event_overlap_assignment": "Each screen-present episode is credited to the nearest upcoming known MAUL1 onset within 72 hours; no episode is credited to multiple events.",
                            "signals": signals,
@@ -448,7 +464,7 @@ def analyze_controls(controls, rows, episodes, events, archive_end):
             unknown = sum(rows[t]["flags"].get(signal, "unknown") == "unknown" for t in window_issues)
             starts = [t for t in episode_by_signal[signal] if start <= t < end]
             active_at_start = bool(window_issues and rows[window_issues[0]]["flags"].get(signal) == "present")
-            trigger_time = min(starts) if starts else (window_issues[0] if active_at_start and window_issues else None)
+            trigger_time = first_control_trigger(window_issues, rows, starts, signal)
             follow = {}
             if trigger_time:
                 for horizon in (6, 12, 24):
