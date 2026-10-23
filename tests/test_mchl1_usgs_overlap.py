@@ -3,9 +3,14 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare, reporting_intervals, usgs_query_date_bounds, retry_after_seconds
+from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare, reporting_intervals, usgs_query_date_bounds, retry_after_seconds, validate_window
 
 class OverlapTests(unittest.TestCase):
+    def test_long_span_mode_accepts_multiyear_request_but_keeps_short_probe_bounds(self):
+        self.assertTrue(validate_window(dt.date(2022, 5, 1), dt.date(2026, 10, 1), allow_long=True))
+        self.assertFalse(validate_window(dt.date(2022, 5, 1), dt.date(2026, 10, 1)))
+        self.assertFalse(validate_window(dt.date(2022, 5, 1), dt.date(2030, 1, 1), allow_long=True))
+
     def test_hads_rejects_wrong_station(self):
         with self.assertRaises(ValueError):
             hads_rows(b"station,utc_valid,HGIRGZZ\nOTHER,2026-09-01 00:00:00,1.1\n")
@@ -40,6 +45,15 @@ class OverlapTests(unittest.TestCase):
         self.assertEqual(result["source_reporting"]["MCHL1"]["dominant_interval_minutes"],15)
         self.assertEqual(result["source_reporting"]["MCHL1"]["estimated_missing_between_endpoints"],0)
         self.assertEqual(result["offset_half_window_shift_ft"],0.5)
+
+    def test_comparison_reports_yearly_agreement_and_missingness_summaries(self):
+        first=dt.datetime(2022,12,31,23,0,tzinfo=dt.timezone.utc)
+        second=dt.datetime(2023,1,1,0,0,tzinfo=dt.timezone.utc)
+        result=compare({first:1.0,second:1.1},{first:1.0,second:1.0},first,second+dt.timedelta(hours=1))
+        self.assertEqual(result["calendar_years"]["2022"]["matched_exact_valid_times"],1)
+        self.assertEqual(result["calendar_years"]["2023"]["matched_exact_valid_times"],1)
+        self.assertEqual(result["calendar_years"]["2023"]["exact_value_agreement_count"],0)
+        self.assertEqual(result["calendar_years"]["2023"]["median_native_stage_difference_ft"],0.1)
 
     def test_reporting_summary_counts_missing_window_edge_slots(self):
         start=dt.datetime(2026,9,1,tzinfo=dt.timezone.utc)

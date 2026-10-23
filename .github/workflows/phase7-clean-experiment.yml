@@ -1,0 +1,44 @@
+name: Phase 7 cleaned historical experiment
+on:
+  pull_request:
+    paths:
+      - 'scripts/phase7_data.py'
+      - 'scripts/phase7_experiment.py'
+      - 'scripts/phase5a.py'
+      - 'scripts/phase4.py'
+      - 'scripts/evidence.py'
+      - 'tests/test_phase7_data.py'
+      - 'docs/phase7-data-quality.md'
+      - '.github/workflows/phase7-clean-experiment.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-phase5a.txt
+      - name: Regression and causal contract tests
+        run: python -m unittest discover -s tests -v
+      - name: Build separate cleaned archive and Phase 5A hindcast
+        run: |
+          python scripts/phase7_experiment.py \
+            --workdir work/phase7 \
+            --outdir work/phase7/results
+      - name: Validate experimental outputs
+        run: |
+          python -m json.tool work/phase7/results/phase7-experiment.json >/dev/null
+          python -m json.tool work/phase7/results/summary.json >/dev/null
+          python -m json.tool work/phase7/results/verification.json >/dev/null
+          test -d work/phase7/phase7-run-*/cleaned-hourly
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase7-cleaned-hindcast-${{ github.sha }}
+          path: |
+            work/phase7
+          retention-days: 30
