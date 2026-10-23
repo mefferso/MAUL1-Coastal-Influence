@@ -1,0 +1,60 @@
+name: Phase 8 retrospective lead analysis
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/phase8-lead-analysis.yml'
+      - 'scripts/phase8_lead_analysis.py'
+      - 'scripts/evidence.py'
+      - 'scripts/phase4.py'
+      - 'tests/test_phase8_lead_analysis.py'
+      - 'docs/phase8-lead-results.md'
+      - 'site/data/history/hourly/**'
+      - 'site/data/history/phase3b/**'
+      - 'site/data/history/phase4/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retrospective-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen Phase 5 runtime dependency
+        run: python -m pip install -r requirements-phase5a.txt
+      - name: Run complete regression suite
+        run: python -m unittest discover -s tests -v
+      - name: Compile Phase 8 analysis
+        run: python -m py_compile scripts/phase8_lead_analysis.py
+      - name: Reproduce Phase 8 historical analysis
+        run: python scripts/phase8_lead_analysis.py --root . --output work/phase8
+      - name: Validate research outputs
+        run: |
+          python -m json.tool work/phase8/summary.json >/dev/null
+          python -m json.tool work/phase8/event-leads.json >/dev/null
+          python -m json.tool work/phase8/control-alarms.json >/dev/null
+          python -m json.tool work/phase8/propagation.json >/dev/null
+          python -m json.tool work/phase8/case-studies.json >/dev/null
+          python -m json.tool work/phase8/provenance.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path('work/phase8')
+          summary = json.loads((out / 'summary.json').read_text())
+          events = json.loads((out / 'event-leads.json').read_text())['events']
+          controls = json.loads((out / 'control-alarms.json').read_text())['controls']
+          provenance = json.loads((out / 'provenance.json').read_text())
+          assert summary['catalog'] == {'response_events': 189, 'known_onset': 179,
+                                        'uncertain_onset': 10, 'eligible_selected_controls': 63}
+          assert len(events) == 189 and len(controls) == 63
+          assert provenance['forecast_eligible'] is False
+          assert len(provenance['input_hashes_sha256']) >= 100
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase8-retrospective-lead-analysis-${{ github.sha }}
+          path: work/phase8
+          retention-days: 30
