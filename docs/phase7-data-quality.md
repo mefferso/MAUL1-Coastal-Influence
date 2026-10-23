@@ -72,6 +72,10 @@ Outcome-defined rising rows tell a mixed story. For target rise at least the cal
 
 The change is consistent with a small set of contaminated calibration rows influencing fitted MCHL1-bearing candidates, but it does not establish that correcting MCHL1 improves generalization. The observed overall holdout deterioration and opposing rise-stratum changes argue against promoting the cleaned fit. Keep frozen Phase 5 models as benchmarks and wait for a predeclared, independent event evaluation.
 
+### Existing event-level context
+
+The already committed Phase 5B event-robustness archive groups overlapping forecasts into 56 MAUL1 response-event groups for the reused holdout. This is not a fresh test and does not identify event cause. Comparing its coastal/tidal candidate (NWCL1, MDLL1, wind and calendar harmonics; no MCHL1 input) with MAUL1-only, the candidate reduced mean event MAE by 0.0312 ft at 6 h (95% event-bootstrap interval -0.0344 to -0.0280; lower error in 55/56 groups), 0.0450 ft at 12 h (-0.0513 to -0.0390; 54/56), and 0.0319 ft at 24 h (-0.0398 to -0.0243; 51/56). Intervals resample the event-level paired differences (10,000 draws; seed 20261023). These event summaries show a retrospective accuracy association during MAUL1 response events, beyond the quiet-row-dominated overall score. They do not establish that coastal forcing caused those rises, demonstrate lead before MAUL1 responds, or justify operational use. No independent event-level coastal/river/mixed classification is available here; cause remains unknown.
+
 ## Data validation requirements that remain open
 
 - Recover the original provider observations and their retrieval/QC metadata for source-level reconciliation, especially all historical HADS sentinel and gap periods.
