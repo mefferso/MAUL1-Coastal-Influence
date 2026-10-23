@@ -134,6 +134,13 @@ class Phase8LeadAnalysisTests(unittest.TestCase):
         self.assertEqual(forward_response_status(detection, 6, [uncertain], archive_end), "onset_uncertain")
         self.assertEqual(forward_response_status(detection, 6, [], detection + 5 * HOUR), "right_censored")
 
+    def test_observed_response_within_partial_horizon_beats_right_censoring(self):
+        detection = dt.datetime(2024, 1, 1, tzinfo=UTC)
+        response = {"onset_known": True, "_onset": detection + 4 * HOUR}
+        archive_end = detection + 5 * HOUR
+
+        self.assertEqual(forward_response_status(detection, 6, [response], archive_end), "response")
+
     def test_fast_expanding_discharge_quantile_matches_phase4_reference(self):
         start = dt.datetime(2016, 1, 1, tzinfo=UTC)
         discharge = {start + i * HOUR: row(float((i * 37) % 5000), datum="native", unit="cfs")
