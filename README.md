@@ -1,8 +1,8 @@
-# MAUL1 Coastal Influence Research v1.0.0
+# MAUL1 Coastal Influence Research v1.1.0 candidate
 
-A static, public research application for NWS LIX shadow evaluation of authentic prospective MAUL1 forecast guidance and coastal-versus-river observation context. **Research only; not operationally certified.** The local project threshold is **4.0 ft NAVD88**, and native USGS `00065` is not automatically comparable to it. This repository does not issue warnings, estimate flood probabilities, or recommend advisories.
+A static, public research application for NWS LIX shadow evaluation of authentic prospective MAUL1 forecast guidance and coastal-versus-river observation context. **Research / Shadow Evaluation / Not Operational.** The local project threshold is **4.0 ft NAVD88**, and native USGS `00065` is not automatically comparable to it. This repository does not issue warnings, estimate flood probabilities, or recommend advisories.
 
-**MAUL1 Coastal Influence Research v1.0.0 — Shadow Evaluation / Not Operational.** The v1.0.0 tag is held pending interactive live-site verification. See the [release changelog](CHANGELOG.md) and [Research v1.0 guide](docs/research-v1.md) for intended use, application interpretation, Phase 7–8 findings, prospective verification status, safeguards, troubleshooting and limitations.
+**MAUL1 Coastal Influence Research v1.1.0 candidate — Research / Shadow Evaluation / Not Operational.** The released v1.0.0 tag remains the immutable baseline. The v1.1.0 tag is pending required checks, deployment, and interactive published-page verification. See the [dashboard guide](docs/dashboard-v1.1.md), [release changelog](CHANGELOG.md), and [Research v1.0 guide](docs/research-v1.md) for intended use, application interpretation, scientific safeguards, and limitations.
 
 ## Network and source decisions
 
@@ -48,4 +48,4 @@ See [methodology](docs/methodology.md) for the physical logic, Phase 2A onset di
 
 ## Phase 4 evidence research
 
-Run `python scripts/phase4.py` to evaluate the existing archived observations without downloads. The dedicated **Phase 4 evidence evaluation** Actions job runs the full analysis twice, verifies deterministic output, and commits results before Pages deployment. See [rules and limitations](docs/phase4-methodology.md) and `site/data/history/phase4/report.md` for event/control counts, frozen sensitivity, holdout safeguards, four priority cases and separate completed-bin valid-time replay. Phase 4 produces no forecasts, probabilities, attribution percentages or advisory recommendations. Phase 5 has not begun.
+Run `python scripts/phase4.py` to evaluate the existing archived observations without downloads. The dedicated **Phase 4 evidence evaluation** Actions job runs the full analysis twice, verifies deterministic output, and commits results before Pages deployment. See [rules and limitations](docs/phase4-methodology.md) and `site/data/history/phase4/report.md` for event/control counts, frozen sensitivity, holdout safeguards, four priority cases and separate completed-bin valid-time replay. Phase 4 produces no forecasts, probabilities, attribution percentages or advisory recommendations. Phase 5A/5B historical hindcasts remain separate from the Phase 6 authentic prospective forecast archive; none is operational guidance.

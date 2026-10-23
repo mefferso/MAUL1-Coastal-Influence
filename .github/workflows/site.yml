@@ -41,6 +41,9 @@ jobs:
       - run: node --check site/app.js
       - run: node --check site/phase6.js
       - run: node --check site/research-dashboard.js
+      - run: node --check site/navigation.js
+      - run: node --check site/forecast-view.js
+      - run: node tests/navigation-forecast-smoke.cjs
       - run: node tests/site-smoke.cjs
       - run: node tests/phase6-site-smoke.cjs
       - run: node tests/research-dashboard-smoke.cjs

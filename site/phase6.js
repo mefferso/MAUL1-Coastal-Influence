@@ -1,16 +1,22 @@
 (() => {
   const root = document.getElementById('phase6-content');
-  if (!root) return;
+  const primaryRoot = document.getElementById('forecast-guidance');
+  const chartRoot = document.getElementById('forecast-chart');
+  if (!root && !primaryRoot) return;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt = value => value == null || value === '' || !Number.isFinite(Number(value)) ? '—' : `${Number(value).toFixed(2)} ft`;
   const models = ['persistence','phase5a_maul1_only','phase5a_coastal','phase5b_coastal_tidal','phase5b_full_multivariable'];
   const showForecast = record => {
     if (!record || record.mode !== 'authentic') return '<p>No authentic prospective issuance has been archived yet. Scheduled runs and source availability determine when the first issue can be made.</p>';
+    const issueEpoch = Date.parse(record.actual_issue_time_utc);
+    if (!Number.isFinite(issueEpoch) || issueEpoch > Date.now()) return '<p>Issue time is invalid or in the future; forecast guidance is withheld.</p>';
     let html = `<p>Actual issue: <strong>${esc(record.actual_issue_time_utc)}</strong> · Native MAUL1 stage ${fmt(record.latest_maul1_native_stage_ft)}</p>`;
     const availability = record.snapshot?.availability || {};
     html += '<p>Input availability: ' + Object.entries(availability).map(([k,v])=>`${esc(k)} ${esc(v.status)}${v.age_hours == null ? '' : ` (${Number(v.age_hours).toFixed(1)} h old)`}`).join(' · ') + '</p>';
     html += '<div class="table-wrap" role="region" tabindex="0" aria-label="Forecast guidance by horizon and model"><table><thead><tr><th>Horizon</th><th>Valid time</th>' + models.map(m=>`<th>${esc(m.replaceAll('_',' '))}</th>`).join('') + '</tr></thead><tbody>';
     for (const [h, forecast] of Object.entries(record.forecasts || {})) {
+      const validEpoch = Date.parse(forecast.valid_time_utc);
+      if (!Number.isFinite(validEpoch) || validEpoch < issueEpoch) { html += `<tr><th>${esc(h)} h</th><td>Invalid valid time</td><td colspan="${models.length}">Forecast chronology unavailable</td></tr>`; continue; }
       html += `<tr><th>${esc(h)} h</th><td>${esc(forecast.valid_time_utc)}</td>`;
       for (const name of models) { const m=forecast.models?.[name]; html += `<td>${m?.status === 'issued' ? `${fmt(m.predicted_stage_native_ft)}<br><small>Δ ${fmt(m.predicted_change_ft)}; 80% interval ${fmt(m.interval_lower_ft)}–${fmt(m.interval_upper_ft)}</small>` : esc(m?.status || 'unavailable')}</td>`; }
       html += '</tr>';
@@ -63,6 +69,19 @@
     return '<div class="table-wrap" role="region" tabindex="0" aria-label="Prospective forecast scorecard"><table><thead><tr><th>Model / horizon</th><th>Verified N</th><th>MAE</th><th>RMSE</th><th>Bias</th><th>Persistence MAE / skill</th><th>Rise hits / misses / false alarms at 0.25, 0.50, 1.00 ft</th><th>80% interval coverage</th><th>Upper bound exceeded</th><th>MAE by MAUL1 input age</th><th>Target observation delay</th><th>Verification coverage</th><th>Independent 0.50-ft 24h rise groups / lead</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div><p>Rise counts use individual overlapping forecasts. Observation delay is retrieval time minus observation valid time. Due-but-unverified targets are not assigned a cause. The 24-hour event row groups outcome-qualified windows; event skill stays withheld below five independent groups. Pending rows have no score yet.</p>';
   };
   Promise.all(['data/prospective/latest.json','data/prospective/history/index.json','data/prospective/performance.json'].map(path=>fetch(path).then(r=>r.ok?r.json():null))).then(async ([latest, history, metrics]) => {
+    if (primaryRoot) {
+      const view = window.MAUL1ForecastView;
+      primaryRoot.innerHTML = view ? view.renderGuidance(latest) : '<p>Forecast guidance renderer is unavailable.</p>';
+      if (chartRoot) {
+        const traces = view?.buildTraces(latest) || [];
+        if (window.Plotly && traces.length) {
+          window.Plotly.react(chartRoot, traces, {margin:{l:58,r:18,t:18,b:48},autosize:true,showlegend:true,legend:{orientation:'h',y:-0.25},xaxis:{title:'Effective lead from model anchor',ticksuffix:' h',rangemode:'tozero',zeroline:true},yaxis:{title:'MAUL1 native stage · ft',rangemode:'normal',fixedrange:false},hovermode:'closest'}, {responsive:true,displayModeBar:false});
+        } else {
+          chartRoot.textContent = 'A single-issuance chart is unavailable. Forecast values remain listed above.';
+        }
+      }
+    }
+    if (!root) return;
     root.innerHTML = `<div id="phase6-latest">${showForecast(latest)}</div><h3>Archived forecast history</h3><label for="phase6-issue-select">Select an immutable issuance:</label> <select id="phase6-issue-select"></select><div id="phase6-selected">No previous issues.</div><h3>Prospective performance</h3><p>Verification count: ${esc(metrics?.verification_count ?? 0)} · ${esc(metrics?.revision_count ?? 0)} retained verification revisions. Overlapping hourly forecasts are not independent event samples.</p>${showMetrics(metrics)}<p><strong>Limitations:</strong> research-only; MAUL1 native gage-height datum; no NAVD88 threshold equivalence; input availability depends on source freshness; event metrics remain withheld below five independent groups. Frozen model version: ${esc(latest?.snapshot?.model_artifact_sha256 || 'pending first issue')}.</p>`;
     const select=document.getElementById('phase6-issue-select');
     const entries=(history || []).filter(x=>x.mode==='authentic').slice().reverse();
@@ -76,5 +95,5 @@
       document.getElementById('phase6-selected').innerHTML=showForecast(record)+`<h4>Subsequent observations</h4>${verified}`;
     };
     select.addEventListener('change',render); await render();
-  }).catch(() => { root.textContent = 'Prospective archive is temporarily unavailable.'; });
+  }).catch(() => { if (root) root.textContent = 'Prospective archive is temporarily unavailable.'; if (primaryRoot) primaryRoot.textContent = 'Prospective archive is temporarily unavailable; no forecast guidance is shown.'; if (chartRoot) chartRoot.textContent = 'Chart unavailable.'; });
 })();
