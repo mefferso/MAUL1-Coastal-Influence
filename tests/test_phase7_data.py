@@ -79,3 +79,18 @@ class Phase7DataTests(unittest.TestCase):
             cleaned = json.loads(gzip.decompress((target / source_file.name).read_bytes()))
             self.assertTrue(cleaned["records"][0]["missing"])
             self.assertEqual(cleaned["records"][1]["value"], -1.0)
+
+    def test_clean_archive_refuses_output_paths_that_can_overwrite_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "hourly"
+            source.mkdir()
+            source_file = source / "2024-01.json.gz"
+            source_file.write_bytes(gzip.compress(json.dumps({"records": []}).encode(), mtime=0))
+            original = source_file.read_bytes()
+
+            with self.assertRaises(ValueError):
+                build_clean_experiment(source, source)
+            with self.assertRaises(ValueError):
+                build_clean_experiment(source, source / "nested-clean")
+
+            self.assertEqual(source_file.read_bytes(), original)

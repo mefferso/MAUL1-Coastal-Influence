@@ -148,6 +148,10 @@ def audit_archive(input_dir):
 def build_clean_experiment(input_dir, output_dir):
     """Write clean copies without changing any source file."""
     input_dir, output_dir = pathlib.Path(input_dir), pathlib.Path(output_dir)
+    source_path, output_path = input_dir.resolve(), output_dir.resolve()
+    if (source_path == output_path or source_path in output_path.parents
+            or output_path in source_path.parents):
+        raise ValueError("clean experimental output must be separate from the original archive")
     audit = audit_archive(input_dir)
     cleaned_counts = collections.Counter()
     for path in sorted(input_dir.glob("*.json.gz")):
