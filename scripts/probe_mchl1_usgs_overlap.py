@@ -8,14 +8,29 @@ import io
 import json
 import math
 import statistics
+import time
 from collections import Counter
 from pathlib import Path
+from urllib.error import HTTPError
 import urllib.parse
 import urllib.request
 
 UTC=dt.timezone.utc
 USGS="https://waterservices.usgs.gov/nwis/iv/"
 HADS="https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py"
+INTER_WINDOW_DELAY_SECONDS=65
+
+def usgs_query_date_bounds(start_date,end_exclusive):
+    """Pad site-local USGS date bounds, then clip returned observations to UTC."""
+    return (start_date-dt.timedelta(days=1)).isoformat(),end_exclusive.isoformat()
+
+def retry_after_seconds(headers,attempt):
+    """Return a bounded HADS 429 pause, preferring its Retry-After header."""
+    try:
+        value=float(headers.get("Retry-After"))
+    except (TypeError,ValueError):
+        value=60.0*(attempt+1)
+    return max(1.0,min(180.0,value))
 
 def timestamp(s):
     d=dt.datetime.fromisoformat(s.strip().replace("Z","+00:00"))
@@ -78,14 +93,14 @@ def usgs_quality_metadata(body):
                 for qualifier in qualifiers: counts[str(qualifier)]+=1
     return {"raw_row_count":rows,"qualifier_value_counts":dict(sorted(counts.items()))}
 
-def reporting_intervals(series):
+def reporting_intervals(series,window_start=None,window_end=None):
     stamps=sorted(series)
     intervals=[(right-left).total_seconds()/60 for left,right in zip(stamps,stamps[1:])]
     counts=Counter(intervals)
     most_common=counts.most_common()
     dominant=most_common[0][0] if most_common and (len(most_common)==1 or most_common[0][1]>most_common[1][1]) else None
     expected=(round((stamps[-1]-stamps[0]).total_seconds()/60/dominant)+1) if dominant and len(stamps)>1 else None
-    return {"reading_count":len(stamps),
+    result={"reading_count":len(stamps),
       "first_valid_utc":stamps[0].isoformat() if stamps else None,
       "last_valid_utc":stamps[-1].isoformat() if stamps else None,
       "median_interval_minutes":statistics.median(intervals) if intervals else None,
@@ -93,8 +108,16 @@ def reporting_intervals(series):
       "interval_distribution_minutes":{str(k):v for k,v in sorted(counts.items())},
       "largest_gap_minutes":max(intervals) if intervals else None,
       "estimated_missing_between_endpoints":max(0,expected-len(stamps)) if expected is not None else None}
+    if window_start is not None and window_end is not None and dominant is not None:
+        expected_window=math.ceil((window_end-window_start).total_seconds()/60/dominant)
+        observed_window=sum(window_start<=stamp<window_end for stamp in stamps)
+        result.update({"expected_window_readings":expected_window,
+            "observed_window_readings":observed_window,
+            "missing_window_readings":max(0,expected_window-observed_window),
+            "window_coverage_percent":round(100*observed_window/expected_window,4) if expected_window else None})
+    return result
 
-def compare(hads,usgs):
+def compare(hads,usgs,window_start=None,window_end=None):
     stamps=sorted(hads.keys()&usgs.keys())
     offsets=[hads[t]-usgs[t] for t in stamps]
     midpoint=len(offsets)//2
@@ -115,19 +138,28 @@ def compare(hads,usgs):
       "mean_native_stage_difference_ft":round(statistics.mean(offsets),4) if offsets else None,
       "native_stage_difference_range_ft":[round(min(offsets),4),round(max(offsets),4)] if offsets else None,
       "offset_half_window_shift_ft":round(half_shift,4) if half_shift is not None else None,
-      "source_reporting":{"MCHL1":reporting_intervals(hads),"USGS-073802302":reporting_intervals(usgs)},
+      "source_reporting":{"MCHL1":reporting_intervals(hads,window_start,window_end),
+                          "USGS-073802302":reporting_intervals(usgs,window_start,window_end)},
       "stage_changes":changes}
 
 def request(url):
-    with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"MAUL1-Coastal-Influence-research/1.0"}),timeout=50) as response:
-        return response.read()
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"MAUL1-Coastal-Influence-research/1.0"}),timeout=50) as response:
+                return response.read()
+        except HTTPError as error:
+            if error.code!=429 or attempt==2:
+                raise
+            time.sleep(retry_after_seconds(error.headers,attempt))
+    raise RuntimeError("request retry loop exited unexpectedly")
 
 def run_window(start_text,end_text,raw_dir=None):
     start=dt.date.fromisoformat(start_text);end=dt.date.fromisoformat(end_text)
     if not 4<= (end-start).days <=8:
         raise ValueError("require 4–8 days of historical coverage (end exclusive)")
     hurl=HADS+"?"+urllib.parse.urlencode({"stations":"MCHL1","sts":start.isoformat()+"T00:00Z","ets":end.isoformat()+"T00:00Z","what":"txt","delim":"comma"})
-    uurl=USGS+"?"+urllib.parse.urlencode({"format":"json","sites":"073802302","parameterCd":"00065","startDT":start.isoformat(),"endDT":end.isoformat()})
+    usgs_start,usgs_end=usgs_query_date_bounds(start,end)
+    uurl=USGS+"?"+urllib.parse.urlencode({"format":"json","sites":"073802302","parameterCd":"00065","startDT":usgs_start,"endDT":usgs_end})
     report={"schema":"phase6.mchl1-usgs-overlap-probe.v1","forecast_eligible":False,
             "window_start_utc":start.isoformat(),"window_end_utc_exclusive":end.isoformat(),
             "sources":{"MCHL1":{"url":hurl},"USGS-073802302":{"url":uurl}},
@@ -143,7 +175,11 @@ def run_window(start_text,end_text,raw_dir=None):
                 raw_path.parent.mkdir(parents=True,exist_ok=True)
                 raw_path.write_bytes(body)
                 report["sources"][name]["raw_file"]=str(raw_path)
-            data[name]=parse(body)
+            start_utc=dt.datetime.combine(start,dt.time.min,UTC)
+            end_utc=dt.datetime.combine(end,dt.time.min,UTC)
+            parsed=parse(body)
+            data[name]={stamp:value for stamp,value in parsed.items() if start_utc<=stamp<end_utc}
+            report["sources"][name]["raw_query_valid_readings"]=len(parsed)
             report["sources"][name]["valid_readings"]=len(data[name])
             report["sources"][name]["quality_metadata"]=quality(body)
             report["sources"][name]["status"]="retrieved"
@@ -151,7 +187,8 @@ def run_window(start_text,end_text,raw_dir=None):
             report["sources"][name]["status"]="error"
             report["sources"][name]["error"]=str(e)
     if len(data)==2:
-        report["comparison"]=compare(data["MCHL1"],data["USGS-073802302"])
+        report["comparison"]=compare(data["MCHL1"],data["USGS-073802302"],
+            dt.datetime.combine(start,dt.time.min,UTC),dt.datetime.combine(end,dt.time.min,UTC))
     report["retrieved_utc"]=dt.datetime.now(UTC).isoformat()
     return report
 
@@ -165,12 +202,16 @@ def main():
     if args.window and (args.start or args.end): parser.error("use --window or --start/--end, not both")
     windows=args.window or [[args.start or "2026-09-01",args.end or "2026-09-05"]]
     try:
-        periods=[run_window(start,end,args.raw_dir) for start,end in windows]
+        periods=[]
+        for index,(start,end) in enumerate(windows):
+            if index:
+                time.sleep(INTER_WINDOW_DELAY_SECONDS)
+            periods.append(run_window(start,end,args.raw_dir))
     except ValueError as error:
         parser.error(str(error))
     report={"schema":"phase6.mchl1-usgs-overlap-multiwindow.v1","forecast_eligible":False,
             "periods":periods,"period_count":len(periods),
-            "note":"Compare two separate native gage-height series. Exact agreement cannot establish common datum, sensor identity, independence, or provider QC approval."}
+            "note":f"Compare separate native gage-height series. USGS end dates are adjusted to the shared exclusive boundary; {INTER_WINDOW_DELAY_SECONDS}s separates requests to respect HADS throttling. Exact agreement cannot establish common datum, sensor identity, independence, or provider QC approval."}
     print(json.dumps(report,indent=2))
     if any(len(period["sources"])!=2 or any(source.get("status")!="retrieved" for source in period["sources"].values()) for period in periods):
         raise SystemExit(1)

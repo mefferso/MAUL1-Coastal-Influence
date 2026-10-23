@@ -1,6 +1,6 @@
 import datetime as dt
 import unittest
-from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare
+from scripts.probe_mchl1_usgs_overlap import hads_rows, hads_quality_metadata, usgs_rows, usgs_quality_metadata, compare, reporting_intervals, usgs_query_date_bounds, retry_after_seconds
 
 class OverlapTests(unittest.TestCase):
     def test_hads_rejects_wrong_station(self):
@@ -32,6 +32,25 @@ class OverlapTests(unittest.TestCase):
         self.assertEqual(result["source_reporting"]["MCHL1"]["dominant_interval_minutes"],15)
         self.assertEqual(result["source_reporting"]["MCHL1"]["estimated_missing_between_endpoints"],0)
         self.assertEqual(result["offset_half_window_shift_ft"],0.5)
+
+    def test_reporting_summary_counts_missing_window_edge_slots(self):
+        start=dt.datetime(2026,9,1,tzinfo=dt.timezone.utc)
+        end=start+dt.timedelta(hours=1)
+        values={start+dt.timedelta(minutes=15*i):1.0 for i in (1,2,3)}
+        result=reporting_intervals(values,start,end)
+        self.assertEqual(result["expected_window_readings"],4)
+        self.assertEqual(result["missing_window_readings"],1)
+        self.assertEqual(result["window_coverage_percent"],75.0)
+
+    def test_usgs_site_local_query_is_padded_around_exact_utc_window(self):
+        self.assertEqual(usgs_query_date_bounds(dt.date(2022,12,20),dt.date(2022,12,25)),
+                         ("2022-12-19","2022-12-25"))
+
+    def test_hads_rate_limit_delay_uses_retry_after_or_bounded_backoff(self):
+        self.assertEqual(retry_after_seconds({"Retry-After":"45"},0),45)
+        self.assertEqual(retry_after_seconds({},0),60)
+        self.assertEqual(retry_after_seconds({},1),120)
+        self.assertEqual(retry_after_seconds({"Retry-After":"900"},0),180)
     def test_no_interpolation(self):
         a={dt.datetime(2026,9,1,tzinfo=dt.timezone.utc):1.0}
         b={dt.datetime(2026,9,1,0,15,tzinfo=dt.timezone.utc):1.0}
