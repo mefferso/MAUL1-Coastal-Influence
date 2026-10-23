@@ -143,6 +143,47 @@ def reporting_intervals(series,window_start=None,window_end=None):
             "window_coverage_percent":round(100*observed_window/expected_window,4) if expected_window else None})
     return result
 
+def _dominant_interval_minutes(series):
+    stamps=sorted(series)
+    counts=Counter((right-left).total_seconds()/60 for left,right in zip(stamps,stamps[1:]))
+    common=counts.most_common()
+    return common[0][0] if common and (len(common)==1 or common[0][1]>common[1][1]) else None
+
+def calendar_year_comparison(hads,usgs,window_start=None,window_end=None):
+    if window_start is None:
+        all_stamps=sorted(set(hads)|set(usgs))
+        if not all_stamps:return {}
+        window_start=dt.datetime(all_stamps[0].year,1,1,tzinfo=UTC)
+        window_end=dt.datetime(all_stamps[-1].year+1,1,1,tzinfo=UTC)
+    if window_end is None:return {}
+    result={}
+    for year in range(window_start.year,window_end.year+int(window_end>dt.datetime(window_end.year,1,1,tzinfo=UTC))):
+        year_start=max(window_start,dt.datetime(year,1,1,tzinfo=UTC))
+        year_end=min(window_end,dt.datetime(year+1,1,1,tzinfo=UTC))
+        h={time:value for time,value in hads.items() if year_start<=time<year_end}
+        u={time:value for time,value in usgs.items() if year_start<=time<year_end}
+        matched=sorted(h.keys()&u.keys())
+        offsets=[h[time]-u[time] for time in matched]
+        def coverage(series,dominant):
+            expected=math.ceil((year_end-year_start).total_seconds()/60/dominant) if dominant else None
+            observed=len(series)
+            return {"usable_readings":observed,"expected_slots":expected,
+                    "estimated_missing_slots":max(0,expected-observed) if expected is not None else None,
+                    "coverage_percent":round(100*observed/expected,4) if expected else None}
+        result[str(year)]={
+            "window_start_utc":year_start.isoformat(),"window_end_utc_exclusive":year_end.isoformat(),
+            "MCHL1":coverage(h,_dominant_interval_minutes(hads)),
+            "USGS-073802302":coverage(u,_dominant_interval_minutes(usgs)),
+            "matched_exact_valid_times":len(matched),
+            "match_percent_of_MCHL1_valid_times":round(100*len(matched)/len(h),4) if h else None,
+            "match_percent_of_USGS_valid_times":round(100*len(matched)/len(u),4) if u else None,
+            "exact_value_agreement_count":sum(offset==0 for offset in offsets),
+            "median_native_stage_difference_ft":round(statistics.median(offsets),6) if offsets else None,
+            "mean_absolute_native_stage_difference_ft":round(statistics.mean(map(abs,offsets)),6) if offsets else None,
+            "native_stage_difference_range_ft":[round(min(offsets),6),round(max(offsets),6)] if offsets else None,
+        }
+    return result
+
 def compare(hads,usgs,window_start=None,window_end=None):
     stamps=sorted(hads.keys()&usgs.keys())
     offsets=[hads[t]-usgs[t] for t in stamps]
@@ -164,6 +205,7 @@ def compare(hads,usgs,window_start=None,window_end=None):
       "mean_native_stage_difference_ft":round(statistics.mean(offsets),4) if offsets else None,
       "native_stage_difference_range_ft":[round(min(offsets),4),round(max(offsets),4)] if offsets else None,
       "offset_half_window_shift_ft":round(half_shift,4) if half_shift is not None else None,
+      "calendar_years":calendar_year_comparison(hads,usgs,window_start,window_end),
       "source_reporting":{"MCHL1":reporting_intervals(hads,window_start,window_end),
                           "USGS-073802302":reporting_intervals(usgs,window_start,window_end)},
       "stage_changes":changes}
