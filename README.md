@@ -1,6 +1,8 @@
-# MAUL1 Coastal Influence — historical research
+# MAUL1 Coastal Influence Research v1.0
 
-A static, public event explorer for investigating how upper-Amite runoff and Lake Pontchartrain setup relate to water-level rises at MAUL1. **Research only.** The local project threshold is **4.0 ft NAVD88**. This repository does not forecast flooding, estimate causal percentages, or recommend advisories.
+A static, public research application for NWS LIX shadow evaluation of authentic prospective MAUL1 forecast guidance and coastal-versus-river observation context. **Research only; not operationally certified.** The local project threshold is **4.0 ft NAVD88**, and native USGS `00065` is not automatically comparable to it. This repository does not issue warnings, estimate flood probabilities, or recommend advisories.
+
+See the [Research v1.0 guide](docs/research-v1.md) for intended use, application interpretation, Phase 7–8 findings, prospective verification status, safeguards, troubleshooting and limitations.
 
 ## Network and source decisions
 
