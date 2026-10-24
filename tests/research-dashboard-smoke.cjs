@@ -131,6 +131,16 @@ async function testArchiveHydration() {
   assert.equal(loaded.record.issuance_id, compact.issuance_id);
   assert.equal(loaded.record.snapshot.availability.MAUL1_00065.observation.value, fullIssue.snapshot.availability.MAUL1_00065.observation.value);
   assert.deepEqual(fetchedPaths, ['data/prospective/latest.json','data/prospective/history/index.json',`data/prospective/history/${entry.forecast_file}`]);
+  const latestRenderTime=Date.parse(compact.actual_issue_time_utc)+5*60*1000;
+  const latestTraces=forecast.buildTraces(loaded.record,latestRenderTime);
+  const latestObservation=latestTraces.find(trace=>trace.name==='Latest observation · USGS 00065');
+  const latestAnchor=latestTraces.find(trace=>trace.name==='Model anchor · native stage');
+  assert.ok(latestObservation,'the latest hydrated authentic issue renders its eligible observation marker');
+  assert.equal(latestObservation.y[0],fullIssue.snapshot.availability.MAUL1_00065.observation.value);
+  assert.equal(latestObservation.x[0],fullIssue.snapshot.availability.MAUL1_00065.observation.valid_time_utc);
+  assert.equal(latestAnchor.x[0],fullIssue.model_anchor_time_utc);
+  assert.ok(latestTraces.some(trace=>trace.name==='Phase 5A · coastal predictors' && trace.x.includes(fullIssue.forecasts['6'].valid_time_utc)));
+  assert.match(forecast.renderGuidance(loaded.record,latestRenderTime),new RegExp(compact.actual_issue_time_utc.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   const guidance = forecast.renderGuidance(chronologyIssue, Date.parse('2026-10-24T06:00:00Z'));
   assert.match(guidance, /Latest archived MAUL1 observation · native USGS 00065/);
   assert.match(guidance, /2\.68 ft · fresh/);
