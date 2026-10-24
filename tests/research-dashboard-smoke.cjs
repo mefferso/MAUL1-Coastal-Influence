@@ -130,7 +130,8 @@ async function testArchiveHydration() {
   assert.equal(loaded.latest.issuance_id, compact.issuance_id);
   assert.equal(loaded.record.issuance_id, compact.issuance_id);
   assert.equal(loaded.record.snapshot.availability.MAUL1_00065.observation.value, fullIssue.snapshot.availability.MAUL1_00065.observation.value);
-  assert.deepEqual(fetchedPaths, ['data/prospective/latest.json','data/prospective/history/index.json',`data/prospective/history/${entry.forecast_file}`]);
+  assert.deepEqual(fetchedPaths, ['data/prospective/latest.json','data/prospective/history/index.json',`data/prospective/archive/issues/${compact.issuance_id}.json`]);
+  assert.ok(fetchedPaths.every(path=>!path.includes('/../')), 'static Pages archive requests use canonical paths, not parent-directory traversal');
   const latestRenderTime=Date.parse(compact.actual_issue_time_utc)+5*60*1000;
   const latestTraces=forecast.buildTraces(loaded.record,latestRenderTime);
   const latestObservation=latestTraces.find(trace=>trace.name==='Latest observation · USGS 00065');
