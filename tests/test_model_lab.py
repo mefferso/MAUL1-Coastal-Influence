@@ -23,10 +23,6 @@ def row(issue, target, *, split="calibration", actual=2.0, stage=1.9,
 
 
 class ModelLabTests(unittest.TestCase):
-    def test_baseline_parity_canonicalizes_floating_residuals_at_declared_tolerance(self):
-        self.assertEqual(model_lab.canonical_parity_difference(3.0e-18), 0.0)
-        self.assertEqual(model_lab.canonical_parity_difference(1.0e-8), 1.0e-8)
-
     def test_committed_report_is_historical_only_and_has_provenance_for_all_horizons(self):
         path = pathlib.Path(__file__).resolve().parents[1] / "site/data/research/model-lab.json"
         report = json.loads(path.read_text())

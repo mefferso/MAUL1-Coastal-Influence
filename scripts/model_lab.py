@@ -28,12 +28,6 @@ import phase6_metrics
 
 UTC = dt.timezone.utc
 HORIZONS = (6, 12, 24)
-PARITY_TOLERANCE = 1e-8
-
-
-def canonical_parity_difference(delta):
-    """Hide floating-point reduction noise below the reported parity tolerance."""
-    return 0.0 if delta < PARITY_TOLERANCE else delta
 EMBARGO_HOURS = 72
 VALIDATION_GUARD_HOURS = 144
 BOOTSTRAP_SEED = 20261024
@@ -548,12 +542,12 @@ def _baseline_parity(root, reproduction_dir, committed_a, committed_b):
                 left, right = old.get(key), new.get(key)
                 if left is not None or right is not None:
                     delta = abs(float(left) - float(right)) if left is not None and right is not None else math.inf
-                    deltas[key] = canonical_parity_difference(delta)
-                    if delta > PARITY_TOLERANCE:
+                    deltas[key] = delta
+                    if delta > 1e-8:
                         raise ValueError(f"{family} reproduction mismatch {method} {h} {key}: {left} != {right}")
             checks.append({"horizon_hours": h, "model_family": family, "method": method,
                            "status": "matched", "absolute_differences": deltas})
-    return {"status": "matched", "tolerance": PARITY_TOLERANCE, "checks": checks,
+    return {"status": "matched", "tolerance": 1e-8, "checks": checks,
             "temporary_output_only": True}
 
 
