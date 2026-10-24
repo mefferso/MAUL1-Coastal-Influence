@@ -1,0 +1,49 @@
+name: Publish v1.1.0 research release
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-v1.1-release.yml
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify immutable release target and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_COMMIT: 9510a9df94f4d0712f3b64e0308239c7d5c34b40
+        run: |
+          set -euo pipefail
+          git fetch --force origin refs/tags/v1.1.0:refs/tags/v1.1.0
+          actual="$(git rev-parse 'refs/tags/v1.1.0^{commit}')"
+          test "$actual" = "$EXPECTED_COMMIT" || { echo "Unexpected v1.1.0 tag target: $actual"; exit 1; }
+          if gh release view v1.1.0 >/dev/null 2>&1; then
+            echo "Release already exists; will not modify it."
+            exit 0
+          fi
+          cat > /tmp/v1.1-release-notes.md <<'NOTES'
+          **Research / Shadow Evaluation / Not Operational**
+
+          ## What changed
+          - Reorganized the dashboard into Current Forecast, Forecast Verification, and Historical Research views.
+          - Corrected single-issuance 6/12/24-hour chart chronology to plot actual UTC valid times.
+          - Displayed model anchor and eligible observed native MAUL1 stage separately.
+          - Added clearer experimental model-change ranges, persistence comparisons, input completeness, observation freshness, and forecast-cycle context.
+          - Preserved accessible historical research sections and authentic prospective verification.
+          - Fixed JavaScript loading dependencies and immutable archive hydration for the published forecast dashboard.
+
+          ## Scientific limitations
+          - MAUL1 USGS 00065 native gage height is **not** the same vertical reference as NAVD88; direct 63160 NAVD88 measurements are evaluated separately. The local 4.0 ft NAVD88 threshold is not applied to native stage.
+          - Frozen models have not demonstrated predictive skill during independent meaningful rising-water events; no preferred model, flood probability, coastal/river causal classification, or warning recommendation is supported.
+          - MCHL1 remains unverified, shadow-only, and excluded from active frozen forecast inputs.
+          - Authentic forecast verification is distinct from retrospective hindcasts and experimental simulations.
+
+          **Release commit:** `9510a9df94f4d0712f3b64e0308239c7d5c34b40`
+          NOTES
+          gh release create v1.1.0 --verify-tag --title "MAUL1 Coastal Influence Research v1.1.0" --notes-file /tmp/v1.1-release-notes.md
+          gh release view v1.1.0 --json url,tagName,targetCommitish
