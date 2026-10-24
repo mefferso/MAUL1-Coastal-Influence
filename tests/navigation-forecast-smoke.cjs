@@ -5,6 +5,19 @@ const navigation = require('../site/navigation.js');
 const forecast = require('../site/forecast-view.js');
 
 const html = fs.readFileSync('site/index.html', 'utf8');
+// Deferred scripts execute in document order; verify the real page's provider/consumer sequence.
+const deferredScripts = [...html.matchAll(/<script\b(?=[^>]*\bdefer\b)[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(match => match[1]);
+const scriptPosition = name => deferredScripts.findIndex(src => src.endsWith(`/${name}`) || src === name);
+for (const [provider, consumer] of [
+  ['https://cdn.plot.ly/plotly-2.35.2.min.js', 'app.js'],
+  ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'app.js'],
+  ['forecast-view.js', 'phase6.js'],
+  ['research-dashboard.js', 'phase6.js']
+]) {
+  assert.ok(scriptPosition(provider) >= 0, `deferred script ${provider} is loaded from the actual HTML`);
+  assert.ok(scriptPosition(consumer) >= 0, `deferred script ${consumer} is loaded from the actual HTML`);
+  assert.ok(scriptPosition(provider) < scriptPosition(consumer), `${provider} must initialize before its consumer ${consumer}`);
+}
 assert.match(html, /aria-label="Application views"/);
 assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*>Current Forecast/);
 assert.match(html, /id="current-forecast-view"[^>]*>/);
