@@ -91,6 +91,12 @@ const futureIssueElevation = JSON.parse(JSON.stringify(direct));
 futureIssueElevation.actual_issue_time_utc = '2026-10-23T18:00:00Z';
 assert.match(renderCurrentConditions(futureIssueElevation, Date.parse('2026-10-23T14:00:00Z')), /NAVD88 elevation unavailable/);
 
+
+// Browser IIFE must publish its API before Phase 6 initializes.
+const browserScript = fs.readFileSync('site/research-dashboard.js', 'utf8');
+assert.match(browserScript, /if \(root\) root\.MAUL1ResearchDashboard = api;/, 'shared research loader must be exported to window');
+assert.ok(browserScript.indexOf('root.MAUL1ResearchDashboard = api') < browserScript.indexOf('api.start(root.document'), 'shared loader must be exported before startup');
+
 console.log('Research dashboard rendering safeguards passed');
 
 async function testArchiveHydration() {
