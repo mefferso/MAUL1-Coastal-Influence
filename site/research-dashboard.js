@@ -1,6 +1,7 @@
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.MAUL1ResearchDashboard = api;
   if (root && root.document) api.start(root.document, root.fetch.bind(root));
 })(typeof window !== 'undefined' ? window : null, function () {
   'use strict';
