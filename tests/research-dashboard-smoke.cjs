@@ -100,6 +100,9 @@ async function testArchiveHydration() {
   assert.ok(entry, 'compact latest issue is present in the archive index');
   const fullPath = `data/prospective/history/${entry.forecast_file}`;
   const fullIssue = JSON.parse(fs.readFileSync(`site/data/prospective/archive/issues/${compact.issuance_id}.json`, 'utf8'));
+  const chronologyEntry = entries.find(item => item.actual_issue_time_utc === '2026-10-24T05:54:08Z');
+  assert.ok(chronologyEntry, 'the deliberately unequal Oct 24 issuance/anchor example remains archived');
+  const chronologyIssue = JSON.parse(fs.readFileSync(`site/data/prospective/archive/issues/${chronologyEntry.issuance_id}.json`, 'utf8'));
   const fetcher = async path => ({
     ok: true,
     json: async () => path === 'data/prospective/history/index.json' ? entries : fullIssue
@@ -107,15 +110,15 @@ async function testArchiveHydration() {
   const hydrated = await hydrateLatestIssue(compact, fetcher);
   assert.equal(hydrated.issuance_id, compact.issuance_id);
   assert.equal(hydrated.actual_issue_time_utc, compact.actual_issue_time_utc);
-  assert.equal(hydrated.snapshot.availability.MAUL1_00065.observation.value, 2.68);
-  assert.notEqual(hydrated.snapshot.availability.MAUL1_00065.observation.value, hydrated.latest_maul1_native_stage_ft);
-  const chartTraces = forecast.buildTraces(hydrated, Date.parse('2026-10-24T06:00:00Z'));
+  assert.equal(hydrated.snapshot.availability.MAUL1_00065.observation.value, fullIssue.snapshot.availability.MAUL1_00065.observation.value);
+  const chartTraces = forecast.buildTraces(chronologyIssue, Date.parse('2026-10-24T06:00:00Z'));
   const chartObservation = chartTraces.find(trace => trace.name === 'Latest observation · USGS 00065');
   const chartAnchor = chartTraces.find(trace => trace.name === 'Model anchor · native stage');
   assert.equal(chartObservation.y[0], 2.68);
   assert.equal(chartObservation.x[0], '2026-10-24T04:45:00Z');
   assert.equal(chartAnchor.y[0], 2.7375);
   assert.equal(chartAnchor.x[0], '2026-10-24T05:00:00Z');
+  assert.notEqual(chartObservation.y[0], chartAnchor.y[0], 'observation and forecast anchor retain their distinct archived values');
   const coastalTrace=chartTraces.find(trace=>trace.name==='Phase 5A · coastal predictors');
   assert.deepEqual(coastalTrace.x.slice(1), ['2026-10-24T11:00:00Z','2026-10-24T17:00:00Z','2026-10-25T05:00:00Z']);
   assert.ok(Math.abs(coastalTrace.customdata[1][2]-5.097778)<1e-6, 'issuance-relative lead remains hover metadata while valid UTC determines x position');
@@ -126,9 +129,9 @@ async function testArchiveHydration() {
   });
   assert.equal(loaded.latest.issuance_id, compact.issuance_id);
   assert.equal(loaded.record.issuance_id, compact.issuance_id);
-  assert.equal(loaded.record.snapshot.availability.MAUL1_00065.observation.value, 2.68);
+  assert.equal(loaded.record.snapshot.availability.MAUL1_00065.observation.value, fullIssue.snapshot.availability.MAUL1_00065.observation.value);
   assert.deepEqual(fetchedPaths, ['data/prospective/latest.json','data/prospective/history/index.json',`data/prospective/history/${entry.forecast_file}`]);
-  const guidance = forecast.renderGuidance(hydrated, Date.parse('2026-10-24T06:00:00Z'));
+  const guidance = forecast.renderGuidance(chronologyIssue, Date.parse('2026-10-24T06:00:00Z'));
   assert.match(guidance, /Latest archived MAUL1 observation · native USGS 00065/);
   assert.match(guidance, /2\.68 ft · fresh/);
   assert.match(guidance, /\+0\.02 ft to \+0\.12 ft/);
@@ -160,10 +163,9 @@ async function testArchiveHydration() {
 
   const performance = JSON.parse(fs.readFileSync('site/data/prospective/performance.json', 'utf8'));
   const verificationOverview = forecast.renderVerificationOverview(performance);
-  assert.match(verificationOverview, /21<\/td>/);
-  assert.match(verificationOverview, /19<\/td>/);
-  assert.match(verificationOverview, /12<\/td>/);
-  assert.match(verificationOverview, /0 qualifying 24-hour rises of at least 0\.50 ft/);
+  for (const horizon of [6,12,24]) assert.match(verificationOverview, new RegExp(`<td>${performance.model_horizon_metrics[`persistence:${horizon}h`].n}<\\/td>`));
+  const eventCount=performance.model_horizon_metrics['phase5a_maul1_only:24h']?.qualifying_24h_events?.event_count ?? 0;
+  assert.ok(verificationOverview.includes(`${eventCount} qualifying 24-hour rises of at least 0.50 ft`));
   assert.match(verificationOverview, /overlapping forecast\/observation comparisons, not independent events/i);
   const cycleOverview = forecast.renderArchiveCycleHealth(entries, Date.parse('2026-10-24T06:00:00Z'));
   assert.match(cycleOverview, /5\.2 h earlier/);
