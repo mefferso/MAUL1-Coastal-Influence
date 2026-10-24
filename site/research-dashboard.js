@@ -117,7 +117,7 @@
       const entries = await indexResponse.json();
       const matches = (Array.isArray(entries) ? entries : []).filter(item => item.mode === 'authentic' && item.issuance_id === latest.issuance_id);
       if (matches.length !== 1 || matches[0].forecast_file !== `../archive/issues/${latest.issuance_id}.json`) return null;
-      const fullResponse = await fetcher(`data/prospective/history/${matches[0].forecast_file}`);
+      const fullResponse = await fetcher(`data/prospective/archive/issues/${encodeURIComponent(latest.issuance_id)}.json`);
       if (!fullResponse.ok) return null;
       const full = await fullResponse.json();
       if (!full || full.mode !== 'authentic' || full.issuance_id !== latest.issuance_id ||
