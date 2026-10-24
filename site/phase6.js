@@ -2,6 +2,7 @@
   const root = document.getElementById('phase6-content');
   const primaryRoot = document.getElementById('forecast-guidance');
   const chartRoot = document.getElementById('forecast-chart');
+  const cycleRoot = document.getElementById('forecast-cycle-health');
   if (!root && !primaryRoot) return;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt = value => value == null || value === '' || !Number.isFinite(Number(value)) ? '—' : `${Number(value).toFixed(2)} ft`;
@@ -68,21 +69,25 @@
     }
     return '<div class="table-wrap" role="region" tabindex="0" aria-label="Prospective forecast scorecard"><table><thead><tr><th>Model / horizon</th><th>Verified N</th><th>MAE</th><th>RMSE</th><th>Bias</th><th>Persistence MAE / skill</th><th>Rise hits / misses / false alarms at 0.25, 0.50, 1.00 ft</th><th>80% interval coverage</th><th>Upper bound exceeded</th><th>MAE by MAUL1 input age</th><th>Target observation delay</th><th>Verification coverage</th><th>Independent 0.50-ft 24h rise groups / lead</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div><p>Rise counts use individual overlapping forecasts. Observation delay is retrieval time minus observation valid time. Due-but-unverified targets are not assigned a cause. The 24-hour event row groups outcome-qualified windows; event skill stays withheld below five independent groups. Pending rows have no score yet.</p>';
   };
-  Promise.all(['data/prospective/latest.json','data/prospective/history/index.json','data/prospective/performance.json'].map(path=>fetch(path).then(r=>r.ok?r.json():null))).then(async ([latest, history, metrics]) => {
+  const archive = window.MAUL1ResearchDashboard;
+  const latestPromise = archive?.loadLatestIssue ? archive.loadLatestIssue(fetch) : Promise.resolve({latest:null,record:null});
+  Promise.all([latestPromise, ...['data/prospective/history/index.json','data/prospective/performance.json'].map(path=>fetch(path).then(r=>r.ok?r.json():null))]).then(async ([loadedIssue, history, metrics]) => {
+    const view = window.MAUL1ForecastView;
+    const {latest, record:issue} = loadedIssue || {};
+    if (cycleRoot) cycleRoot.innerHTML = view?.renderArchiveCycleHealth(history) || 'Archive cycle history is unavailable.';
     if (primaryRoot) {
-      const view = window.MAUL1ForecastView;
-      primaryRoot.innerHTML = view ? view.renderGuidance(latest) : '<p>Forecast guidance renderer is unavailable.</p>';
+      primaryRoot.innerHTML = issue && view ? view.renderGuidance(issue) : '<p class="research-empty">The matching immutable authentic issue is unavailable. Forecast guidance is withheld.</p>';
       if (chartRoot) {
-        const traces = view?.buildTraces(latest) || [];
+        const traces = issue && view?.buildTraces(issue) || [];
         if (window.Plotly && traces.length) {
-          window.Plotly.react(chartRoot, traces, {margin:{l:58,r:18,t:18,b:48},autosize:true,showlegend:true,legend:{orientation:'h',y:-0.25},xaxis:{title:'Effective lead from model anchor',ticksuffix:' h',rangemode:'tozero',zeroline:true},yaxis:{title:'MAUL1 native stage · ft',rangemode:'normal',fixedrange:false},hovermode:'closest'}, {responsive:true,displayModeBar:false});
+          window.Plotly.react(chartRoot, traces, {margin:{l:58,r:18,t:30,b:52},autosize:true,showlegend:true,legend:{orientation:'h',y:-0.28},xaxis:{type:'date',title:'Valid time · UTC',showgrid:true,zeroline:true},yaxis:{title:'MAUL1 native stage · ft',rangemode:'normal',fixedrange:false},shapes:[{type:'line',xref:'x',yref:'paper',x0:issue.actual_issue_time_utc,x1:issue.actual_issue_time_utc,y0:0,y1:1,line:{color:'#b14f39',width:1.5,dash:'dot'}}],annotations:[{xref:'x',yref:'paper',x:issue.actual_issue_time_utc,y:1,text:'Issued',showarrow:false,yshift:10,font:{size:10,color:'#8a3b2c'}}],hovermode:'closest'}, {responsive:true,displayModeBar:false});
         } else {
-          chartRoot.textContent = 'A single-issuance chart is unavailable. Forecast values remain listed above.';
+          chartRoot.textContent = 'A single-issuance UTC chart is unavailable. No forecast points are inferred.';
         }
       }
     }
     if (!root) return;
-    root.innerHTML = `<div id="phase6-latest">${showForecast(latest)}</div><h3>Archived forecast history</h3><label for="phase6-issue-select">Select an immutable issuance:</label> <select id="phase6-issue-select"></select><div id="phase6-selected">No previous issues.</div><h3>Prospective performance</h3><p>Verification count: ${esc(metrics?.verification_count ?? 0)} · ${esc(metrics?.revision_count ?? 0)} retained verification revisions. Overlapping hourly forecasts are not independent event samples.</p>${showMetrics(metrics)}<p><strong>Limitations:</strong> research-only; MAUL1 native gage-height datum; no NAVD88 threshold equivalence; input availability depends on source freshness; event metrics remain withheld below five independent groups. Frozen model version: ${esc(latest?.snapshot?.model_artifact_sha256 || 'pending first issue')}.</p>`;
+    root.innerHTML = `<div id="phase6-latest">${showForecast(latest)}</div>${view?.renderVerificationOverview(metrics)||''}<h3>Archived forecast history</h3><label for="phase6-issue-select">Select an immutable issuance:</label> <select id="phase6-issue-select"></select><div id="phase6-selected">No previous issues.</div><h3>Prospective performance</h3><p>Verification count: ${esc(metrics?.verification_count ?? 0)} · ${esc(metrics?.revision_count ?? 0)} retained verification revisions. Overlapping hourly forecasts are not independent event samples.</p>${showMetrics(metrics)}<p><strong>Limitations:</strong> research-only; MAUL1 native gage-height datum; no NAVD88 threshold equivalence; input availability depends on source freshness; event metrics remain withheld below five independent groups. Frozen model version: ${esc(latest?.snapshot?.model_artifact_sha256 || 'pending first issue')}.</p>`;
     const select=document.getElementById('phase6-issue-select');
     const entries=(history || []).filter(x=>x.mode==='authentic').slice().reverse();
     if (!entries.length) { select.disabled=true; return; }

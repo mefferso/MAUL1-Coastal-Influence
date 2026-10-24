@@ -33,6 +33,7 @@
     const url = safeUrl(observation?.provenance_url);
     return url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(observation.source || 'source record')}</a>` : esc(observation?.source || 'source unavailable');
   };
+  let latestIssuePromise = null;
   const observationCard = ({id, title, descriptor, status, observation, datum, maxAge, change, changeLabel, note, forcedLabel, now=Date.now()}) => {
     let level = 'Observation unavailable';
     let timing = 'No current observation is present in the latest authentic issue.';
@@ -64,6 +65,10 @@
     const den = availability.DENL1 || {};
     const maul = availability.MAUL1_00065 || {};
     const issueEpoch = Date.parse(record.actual_issue_time_utc);
+    const maulObservation = maul.observation;
+    const maulValidEpoch = Date.parse(maulObservation?.valid_time_utc);
+    const maulRetrievedEpoch = Date.parse(maulObservation?.retrieved_utc);
+    const maulNativeObservationUsable = Boolean(maul.status === 'eligible' && maulObservation?.station === 'MAUL1' && maulObservation?.parameter === 'stage' && maulObservation?.source === 'USGS NWIS IV' && maulObservation?.units === 'ft' && maulObservation?.datum && !/(NAVD88|MLLW|MHHW|NGVD)/i.test(String(maulObservation.datum)) && /(native|gage height|00065)/i.test(String(maulObservation.datum)) && numeric(maulObservation?.value) && maulObservation?.qc != null && qualityIsUsable(maulObservation.qc) && Number.isFinite(issueEpoch) && issueEpoch <= now && Number.isFinite(maulValidEpoch) && Number.isFinite(maulRetrievedEpoch) && maulValidEpoch <= maulRetrievedEpoch && maulRetrievedEpoch <= issueEpoch && maulValidEpoch <= issueEpoch);
     const directNavdStatus = availability.MAUL1_63160?.status;
     const directNavd = availability.MAUL1_63160?.observation;
     const navdValidEpoch = Date.parse(directNavd?.valid_time_utc);
@@ -94,7 +99,7 @@
       : '<p class="datum-gate"><strong>NAVD88 elevation unavailable.</strong> This issue contains native USGS 00065 gage height only. No conversion is applied and the NAVD88 reference line is withheld.</p>';
     const denChange = numeric(features.denl1_log_change_6h) ? (Math.exp(Number(features.denl1_log_change_6h))-1)*100 : null;
     const rows = [
-      observationCard({id:'maul1-current',title:'MAUL1 · target',descriptor:'Amite River at Highway 22',status:maul.status,observation:maul.observation,datum:'Native USGS 00065 gage height; not NAVD88',maxAge:2,change:features.maul1_change_6h_ft,changeLabel:'Recent native-stage change',note:'Forecast anchor changes describe model inputs and are not a second observation.',now}),
+      observationCard({id:'maul1-current',title:'MAUL1 · target',descriptor:'Amite River at Highway 22',status:maulNativeObservationUsable?maul.status:'ineligible native 00065 observation',observation:maulNativeObservationUsable?maulObservation:null,datum:'Native USGS 00065 gage height; not NAVD88',maxAge:2,change:features.maul1_change_6h_ft,changeLabel:'Recent native-stage change',note:'Forecast anchor changes describe model inputs and are not a second observation.',now}),
       observationCard({id:'denl1-current',title:'DENL1 · upstream river',descriptor:'USGS 07378500 discharge',status:den.status,observation:den.observation,datum:'Discharge in cfs; separate native gage height is not shown here',maxAge:3,note:numeric(denChange)?`Frozen-input 6 h log-discharge change corresponds to about ${fmt(denChange,1)}%; not a MAUL1 event classification.`:'Recent discharge trend unavailable.',now}),
       observationCard({id:'nwcl1-current',title:'NWCL1 · lake and wind',descriptor:'Lake Pontchartrain · CO-OPS 8761927',status:nwc.status,observation:nwc.observation,datum:'Water level in MLLW; no cross-station stage comparison',maxAge:3,note:`Wind-vector resultant from model inputs: ${resultant===null?'unavailable':`${fmt(resultant,1)} knots`}. Time-matched observed-minus-predicted residual: ${residualAvailable?'available':'unavailable'}; no residual screen is assigned without it.`,now}),
       observationCard({id:'mdll1-current',title:'MDLL1 · independent lake gauge',descriptor:'USGS 301200090072400',status:mdl.status,observation:mdl.observation,datum:'Native USGS gage height; datum not equated to NWCL1 MLLW',maxAge:3,change:features.mdll1_stage_change_6h_ft,changeLabel:'Recent native-stage change',now}),
@@ -104,30 +109,49 @@
     const riverState = den.observation ? `DENL1 discharge observation available${numeric(denChange)?` with about ${fmt(denChange,1)}% model-input change over 6 h`:''}. This is upstream context, not attribution at MAUL1.` : 'DENL1 discharge unavailable in this issue.';
     return `<div class="research-issue-row">${issueStatus}<span>Model feature anchor: ${utc(record.model_anchor_time_utc || diagnostics.model_anchor_utc || 'unavailable')}</span></div><p class="research-assessment"><strong>Current observational assessment: indeterminate.</strong> These issue inputs are context only; no coastal/river evidence classification or causal attribution is computed.</p><div class="station-grid">${rows}</div><section class="evidence-context" aria-label="Observational evidence context"><h3>Evidence context · not attribution</h3><dl><dt>Coastal-supporting screen</dt><dd>${esc(coastalState)}</dd><dt>River-supporting context</dt><dd>${esc(riverState)}</dd><dt>Simultaneous evidence</dt><dd>Not assessed: the issue record does not run the complete Phase 4 screens across a shared valid-time window.</dd><dt>Classification</dt><dd>Indeterminate until screen inputs and coverage are sufficient; screens do not establish cause.</dd></dl></section>${maulThreshold}<p class="research-footnote">Freshness is recalculated from observation valid time when this page is viewed. Source QC and retrieval times are shown when recorded. The compact archive is an issuance snapshot, not a continuous live gauge feed.</p>`;
   }
+  async function hydrateLatestIssue(latest, fetcher) {
+    if (!latest || latest.mode !== 'authentic' || !latest.issuance_id) return null;
+    try {
+      const indexResponse = await fetcher('data/prospective/history/index.json');
+      if (!indexResponse.ok) return null;
+      const entries = await indexResponse.json();
+      const matches = (Array.isArray(entries) ? entries : []).filter(item => item.mode === 'authentic' && item.issuance_id === latest.issuance_id);
+      if (matches.length !== 1 || matches[0].forecast_file !== `../archive/issues/${latest.issuance_id}.json`) return null;
+      const fullResponse = await fetcher(`data/prospective/history/${matches[0].forecast_file}`);
+      if (!fullResponse.ok) return null;
+      const full = await fullResponse.json();
+      if (!full || full.mode !== 'authentic' || full.issuance_id !== latest.issuance_id ||
+          full.actual_issue_time_utc !== latest.actual_issue_time_utc || !full.snapshot || !full.forecasts) return null;
+      return full;
+    } catch (_) {
+      return null;
+    }
+  }
+  async function loadLatestIssue(fetcher) {
+    if (!latestIssuePromise) {
+      latestIssuePromise = (async () => {
+        try {
+          const response = await fetcher('data/prospective/latest.json');
+          if (!response.ok) return {latest:null, record:null};
+          const latest = await response.json();
+          return {latest, record:await hydrateLatestIssue(latest, fetcher)};
+        } catch (_) {
+          return {latest:null, record:null};
+        }
+      })();
+    }
+    return latestIssuePromise;
+  }
   async function start(document, fetcher) {
     const target = document.getElementById('research-current');
     if (!target) return;
     target.innerHTML = '<p class="research-empty">Loading the latest authentic source snapshot…</p>';
     try {
-      const latestResponse = await fetcher('data/prospective/latest.json');
-      if (!latestResponse.ok) throw new Error('Latest issue unavailable');
-      const latest = await latestResponse.json();
-      let record = latest;
-      if (latest.mode === 'authentic') {
-        const indexResponse = await fetcher('data/prospective/history/index.json');
-        if (indexResponse.ok) {
-          const entries = await indexResponse.json();
-          const entry = (Array.isArray(entries) ? entries : []).find(item => item.mode === 'authentic' && item.issuance_id === latest.issuance_id);
-          if (entry?.forecast_file) {
-            const fullResponse = await fetcher(`data/prospective/history/${entry.forecast_file}`);
-            if (fullResponse.ok) record = await fullResponse.json();
-          }
-        }
-      }
-      target.innerHTML = renderCurrentConditions(record);
+      const {record} = await loadLatestIssue(fetcher);
+      target.innerHTML = record ? renderCurrentConditions(record) : '<p class="research-empty">The matching immutable authentic issue could not be verified. Current conditions and chart markers are withheld.</p>';
     } catch (_) {
       target.innerHTML = '<p class="research-empty">Prospective source snapshot is unavailable. No current value is inferred from historical charts.</p>';
     }
   }
-  return {renderCurrentConditions, start};
+  return {renderCurrentConditions, hydrateLatestIssue, loadLatestIssue, start};
 });
