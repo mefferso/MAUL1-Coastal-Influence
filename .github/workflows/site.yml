@@ -24,6 +24,23 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-phase5a.txt
+      - name: Reproduce historical Phase 5A and Phase 5B baselines into temporary outputs
+        run: |
+          temp_dir="$(mktemp -d)"
+          mkdir -p "$temp_dir/phase5a" "$temp_dir/phase5b"
+          echo "MODEL_LAB_REPRO_DIR=$temp_dir" >> "$GITHUB_ENV"
+          python scripts/phase5a.py --root . --outdir "$temp_dir/phase5a" > /dev/null
+          python scripts/phase5b.py --root . --out "$temp_dir/phase5b" > /dev/null
+      - name: Rebuild and compare deterministic Model Lab report
+        run: |
+          python scripts/model_lab.py --root . --reproduction-dir "$MODEL_LAB_REPRO_DIR" --output "$MODEL_LAB_REPRO_DIR/report-one.json" --markdown "$MODEL_LAB_REPRO_DIR/findings.md" > /dev/null
+          cmp "$MODEL_LAB_REPRO_DIR/report-one.json" site/data/research/model-lab.json
+          cmp "$MODEL_LAB_REPRO_DIR/findings.md" docs/model-lab-findings.md
+          cmp "$MODEL_LAB_REPRO_DIR/findings.md" site/data/research/model-lab-findings.md
+          python scripts/model_lab.py --root . --reproduction-dir "$MODEL_LAB_REPRO_DIR" --output "$MODEL_LAB_REPRO_DIR/report-two.json" --markdown "$MODEL_LAB_REPRO_DIR/findings-two.md" > /dev/null
+          cmp "$MODEL_LAB_REPRO_DIR/report-one.json" "$MODEL_LAB_REPRO_DIR/report-two.json"
+          cmp "$MODEL_LAB_REPRO_DIR/findings.md" "$MODEL_LAB_REPRO_DIR/findings-two.md"
+          git diff --exit-code -- site/data/history site/data/prospective
       - run: python scripts/analyze.py > /dev/null
       - run: python scripts/analyze.py > /dev/null
       - run: python -m unittest discover -s tests -v
@@ -50,13 +67,17 @@ jobs:
       - run: node --check site/forecast-view.js
       - run: node --check site/performance-data.js
       - run: node --check site/performance-explorer.js
+      - run: node --check site/model-lab.js
       - run: python -m py_compile scripts/maul1_observation_context.py
+      - run: python -m py_compile scripts/model_lab.py
       - run: node tests/navigation-forecast-smoke.cjs
       - run: node tests/site-smoke.cjs
       - run: node tests/phase6-site-smoke.cjs
       - run: node tests/research-dashboard-smoke.cjs
       - run: node tests/test_performance_explorer.js
       - run: node tests/performance-explorer-smoke.cjs
+      - run: node tests/test_model_lab_ui.js
+      - run: node tests/model-lab-smoke.cjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
