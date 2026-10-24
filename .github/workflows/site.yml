@@ -43,10 +43,14 @@ jobs:
       - run: node --check site/research-dashboard.js
       - run: node --check site/navigation.js
       - run: node --check site/forecast-view.js
+      - run: node --check site/performance-data.js
+      - run: node --check site/performance-explorer.js
       - run: node tests/navigation-forecast-smoke.cjs
       - run: node tests/site-smoke.cjs
       - run: node tests/phase6-site-smoke.cjs
       - run: node tests/research-dashboard-smoke.cjs
+      - run: node tests/test_performance_explorer.js
+      - run: node tests/performance-explorer-smoke.cjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
