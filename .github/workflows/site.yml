@@ -30,6 +30,11 @@ jobs:
       - run: python -m json.tool site/data/manifest.json > /dev/null
       - run: python -m json.tool site/data/analysis.json > /dev/null
       - run: python -m json.tool site/data/verification.json > /dev/null
+      - name: Validate MAUL1 observation context when published
+        run: |
+          if [ -f site/data/maul1-observation-context.json ]; then
+            python -c "import json,sys; sys.path.insert(0,'scripts'); import maul1_observation_context as c; c.validate_dataset(json.load(open('site/data/maul1-observation-context.json')))"
+          fi
       - name: Validate historical reports when present
         run: |
           if [ -f site/data/history/manifest.json ]; then
@@ -45,6 +50,7 @@ jobs:
       - run: node --check site/forecast-view.js
       - run: node --check site/performance-data.js
       - run: node --check site/performance-explorer.js
+      - run: python -m py_compile scripts/maul1_observation_context.py
       - run: node tests/navigation-forecast-smoke.cjs
       - run: node tests/site-smoke.cjs
       - run: node tests/phase6-site-smoke.cjs
