@@ -1,0 +1,48 @@
+name: Refresh MAUL1 observed-stage context
+on:
+  schedule:
+    - cron: '37 0 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/maul1-observation-context.yml'
+      - 'scripts/maul1_observation_context.py'
+permissions:
+  contents: write
+concurrency:
+  group: maul1-observation-context-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve or retain MAUL1 00065 observation context
+        run: python scripts/maul1_observation_context.py
+      - name: Validate published snapshot when available
+        run: |
+          if [ -f site/data/maul1-observation-context.json ]; then
+            python -c "import json,sys; sys.path.insert(0,'scripts'); import maul1_observation_context as c; c.validate_dataset(json.load(open('site/data/maul1-observation-context.json')))"
+          fi
+      - name: Commit changed observation context
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/data/maul1-observation-context.json 2>/dev/null || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: refresh MAUL1 observed-stage context'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          echo 'Could not publish MAUL1 observation context after three retries' >&2
+          exit 1
