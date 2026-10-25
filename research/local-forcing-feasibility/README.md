@@ -13,8 +13,8 @@ not connected to forecasting, Phase 6 issuance, verification, or the dashboard.
   feature intact and wraps it with retrieval time, request URL, status and a
   response hash. Provider failures are explicit.
 - `coverage.py`: no-fill UTC coverage and strict pre-issue alignment functions.
-- `test_feasibility.py`: fixture tests for request safety, source provenance,
-  units, qualifiers, missing values and strict issue-time separation.
+- `tests/test_local_forcing_feasibility.py`: fixture tests for request safety,
+  source provenance, units, qualifiers, missing values and strict issue-time separation.
 
 ## Reproduce the fixture analysis
 
