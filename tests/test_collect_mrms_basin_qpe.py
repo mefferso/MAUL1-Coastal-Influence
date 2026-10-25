@@ -2,6 +2,7 @@
 import pathlib
 import json
 import importlib.util
+import hashlib
 import sys
 import unittest
 from unittest.mock import patch
@@ -140,6 +141,14 @@ class TestMRMSBasinAggregation(unittest.TestCase):
                              mrms.MAX_DENL1_OUTSIDE_MAUL1_FRACTION)
         self.assertEqual(near_report["status"], "success", near_report.get("error"))
         self.assertIn("MRMS-MAUL1-BELOW-DENL1-BASIN", {row["station_id"] for row in near_rows})
+
+        with patch.object(mrms, "_decode_mrms", side_effect=ValueError("unsupported GRIB metadata")):
+            failed_report, failed_rows, _ = mrms._acquire(opener)
+        product_status = failed_report["source_status"][-1]
+        self.assertEqual(failed_report["status"], "failed")
+        self.assertEqual(failed_rows, [])
+        self.assertEqual(product_status["status"], "downloaded_unvalidated")
+        self.assertEqual(product_status["raw_sha256"], hashlib.sha256(payloads[mrms.PRODUCT_URL]).hexdigest())
 
     def test_basin_receipt_preserves_interval_grid_and_geometry_provenance(self):
         summary = {"status": "success", "mean_mm": 2.25, "valid_cell_count": 8,

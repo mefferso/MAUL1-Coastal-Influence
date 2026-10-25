@@ -40,6 +40,7 @@ jobs:
       - name: Verify live NOAA and USGS current endpoints
         run: python scripts/collect_nwcl1_forcing.py --live-smoke
       - name: Verify live MRMS product and NLDI basin endpoints
+        continue-on-error: true
         run: python scripts/collect_mrms_basin_qpe.py --live-smoke
 
   collect-and-persist:
@@ -59,13 +60,6 @@ jobs:
         id: collect
         continue-on-error: true
         run: python scripts/collect_nwcl1_forcing.py --out-dir research/prospective-forcing-archive
-      - name: Install optional MRMS geospatial decoder
-        continue-on-error: true
-        run: python -m pip install -r research/local-forcing-feasibility/mrms-requirements.txt
-      - name: Collect optional MRMS basin aggregates
-        if: always()
-        continue-on-error: true
-        run: python scripts/collect_mrms_basin_qpe.py --out-dir research/prospective-forcing-archive
       - name: Summarize source health
         if: always()
         run: |

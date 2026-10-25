@@ -410,16 +410,17 @@ def _acquire(opener=None) -> tuple[dict, list[dict], list[tuple[bytes, str]]]:
         if status != 200:
             raise RuntimeError(f"MRMS product returned HTTP {status}")
         digest = hashlib.sha256(body).hexdigest()
+        mrms_source = {"source": f"NOAA MRMS {PRODUCT}", "status": "downloaded_unvalidated",
+                       "url": PRODUCT_URL, "http_status": status,
+                       "retrieved_at": iso(received), "provider_http_date": server_date,
+                       "last_modified": last_modified, "etag": etag, "attempts": attempts,
+                       "raw_sha256": digest, "raw_bytes": len(body)}
+        report["source_status"].append(mrms_source)
         values, latitudes, longitudes, valid_end, valid_start, metadata = _decode_mrms(body)
         if metadata["grid_type"] != "regular_ll":
             raise ValueError(f"MRMS grid type {metadata['grid_type']!r} is not supported")
-        report["source_status"].append({"source": f"NOAA MRMS {PRODUCT}", "status": "success",
-                                         "url": PRODUCT_URL, "http_status": status,
-                                         "retrieved_at": iso(received), "provider_http_date": server_date,
-                                         "last_modified": last_modified, "etag": etag, "attempts": attempts,
-                                         "raw_sha256": digest, "raw_bytes": len(body),
-                                         "valid_start": valid_start, "valid_end": valid_end,
-                                         "product_metadata": metadata})
+        mrms_source.update(status="success", valid_start=valid_start, valid_end=valid_end,
+                           product_metadata=metadata)
         geom_map = {"MRMS-MAUL1-UPSTREAM-BASIN": (maul, "MAUL1"),
                     "MRMS-DENL1-UPSTREAM-BASIN": (den, "DENL1")}
         if incremental is not None:
