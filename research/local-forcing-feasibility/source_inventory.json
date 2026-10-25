@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "research_status": "retrospective feasibility; no operational use",
+  "reviewed_utc_date": "2026-10-25",
+  "sources": [
+    {
+      "id": "usgs-301828090363100-precipitation",
+      "provider": "USGS Water Data for the Nation",
+      "site_id": "USGS-301828090363100",
+      "site_name": "Precip at Amite River at Maurepas, Louisiana",
+      "parameters": [{"code": "00045", "name": "Precipitation, total", "unit": "inches"}],
+      "page_listed_period": {"start": "2021-08-19", "end_snapshot_a": "2026-10-14", "end_snapshot_b": "2026-10-25"},
+      "coverage_status": "partial; public pages expose multi-year range, but historical endpoint retrieval and interval completeness were not verified",
+      "quality": "provisional; approval and station-specific retention policy need confirmation",
+      "availability_time": "not provided with historical observations; retrieve/receipt timestamp must be recorded prospectively",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-301828090363100"
+    },
+    {
+      "id": "usgs-07378810-bayou-fountain",
+      "provider": "USGS Water Data for the Nation",
+      "site_id": "USGS-07378810",
+      "site_name": "Bayou Fountain at Bluebonnet Blvd near Baton Rouge, Louisiana",
+      "parameters": [
+        {"code": "00045", "name": "Precipitation, total", "unit": "inches", "coverage": "temporary recent series, approximately 120-day display window"},
+        {"code": "00065", "name": "Gage height", "unit": "feet", "coverage_start": "2007-10-01"},
+        {"code": "63160", "name": "Stream level, NAVD88 [GEOID12B]", "unit": "feet", "coverage": "recent series beginning 2026-06"}
+      ],
+      "page_listed_snapshot": {"continuous_start": "2007-10-01", "continuous_end": "2026-10-18"},
+      "coverage_status": "partial; stage nominally long-term, precipitation only recent; full timestamped series not downloaded",
+      "drainage_area_sq_mi": null,
+      "datum": "00065 is site-specific gage height; 63160 is a separate NAVD88/GEOID12B series. Do not join numerically or assume datum history without station manuscript/metadata review.",
+      "discharge": "No 00060 discharge series was listed on the reviewed current/legacy parameter page.",
+      "quality": "provisional; local precipitation is operational/temporary and not archived beyond the display period per site note",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378810/"
+    },
+    {
+      "id": "usgs-07378746-bayou-manchac",
+      "provider": "USGS Water Data for the Nation",
+      "site_id": "USGS-07378746",
+      "site_name": "Bayou Manchac at Alligator Bayou near Kleinpeter, Louisiana",
+      "parameters": [
+        {"code": "00045", "name": "Precipitation, total", "unit": "inches", "coverage": "2026-06-11 to 2026-10-09 in reviewed snapshot; temporary, 120-day display window"},
+        {"code": "00065", "name": "Gage height", "unit": "feet", "coverage_start": "2007-10-01"},
+        {"code": "63160", "name": "Stream level, NAVD88 [GEOID12B]", "unit": "feet", "coverage": "recent series beginning 2026-06"}
+      ],
+      "coverage_status": "partial; stage nominally long-term, precipitation only recent; full timestamped series not downloaded",
+      "datum": "00065 is site-specific gage height; 63160 is a separate NAVD88/GEOID12B series. No verified datum-change chronology was recovered.",
+      "discharge": "No 00060 discharge series was listed on the reviewed current/legacy parameter page.",
+      "quality": "provisional; USGS specifically says the Louisiana precipitation series are operational/temporary, retained only 120 days, and lack archival-grade routine QA",
+      "hydrologic_note": "USACE describes this site as between the flood-control structure and Bayou Manchac-Amite confluence, representing conditions just outside the basin; downstream/backwater sensitivity is plausible, so it is not an independent tributary-flow measurement.",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378746/"
+    },
+    {
+      "id": "usgs-07379960-dawson-creek",
+      "provider": "USGS Water Data for the Nation",
+      "site_id": "USGS-07379960",
+      "site_name": "Dawson Creek at Bluebonnet Blvd near Baton Rouge, Louisiana",
+      "parameters": [
+        {"code": "00045", "name": "Precipitation, total", "unit": "inches", "coverage": "2026-05-03 to 2026-08-31 in reviewed snapshot; temporary, 120-day display window"},
+        {"code": "00065", "name": "Gage height", "unit": "feet", "coverage_start": "2007-10-01"},
+        {"code": "63160", "name": "Stream level, NAVD88", "unit": "feet", "coverage": "recent series beginning 2026-05"}
+      ],
+      "page_listed_snapshot": {"stage_end": "2026-10-09", "daily_data_start": "2002-09-30", "daily_data_end": "2026-10-07", "drainage_area_sq_mi": 15.11, "huc8": "08070202"},
+      "coverage_status": "partial; continuous stage nominally long-term; discharge not listed; precipitation temporary",
+      "datum": "00065 is local gage height. Site altitude datum is NAVD88 but that does not convert 00065. 63160 is a separately identified NAVD88 series.",
+      "discharge": "No 00060 discharge series was listed on the reviewed parameter page. Field measurements do not establish continuous discharge.",
+      "quality": "provisional; USGS operational-rainfall note says routine QA is insufficient for later scientific/interpretive use",
+      "hydrologic_note": "A 15.11-square-mile HUC 08070202 urban creek is plausibly responsive to local rainfall. Direct routing and travel time to MAUL1 have not been demonstrated.",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07379960/"
+    },
+    {
+      "id": "noaa-mrms-qpe",
+      "provider": "NOAA MRMS / NOAA Open Data Dissemination",
+      "product": "MultiSensor_QPE_01H_Pass2; compare Pass1 and a gauge-influence/quality layer",
+      "space_time": "approximately 1 km, rolling one-hour accumulation; multi-sensor blend updated hourly",
+      "latency": "product documents differ: public product descriptions list 60-minute Pass1 and 120-minute Pass2; NOAA product tables list hourly products/latencies differently. Measure valid-time-to-receipt latency prospectively.",
+      "historical_archive": "MRMS operational record dates to 2014; public AWS archive is documented from October 2020; earlier community archives are selective and have retention caveats. Full grid/hour completeness for the 2023+ MAUL1 evaluation was not audited.",
+      "quality": "qualified; radar and gauge blending, QC, version changes and gauge availability affect estimates; preserve product/version and quality fields",
+      "aggregation": "Use the upstream MAUL1 drainage polygon or explicitly documented subbasin polygons and area-weighted grid-cell accumulation, not the nearest grid cell. Geometry and grid intersection are not yet generated.",
+      "cost": "free public NOAA data; GitHub Actions can query recent files and retain only watershed aggregates",
+      "url": "https://registry.opendata.aws/noaa-mrms-pds/"
+    },
+    {
+      "id": "usgs-07378500-denham-springs-existing-network",
+      "provider": "USGS Water Data for the Nation",
+      "site_id": "USGS-07378500",
+      "site_name": "Amite River at Denham Springs, Louisiana (existing DENL1 predictor)",
+      "why_included": "Already captures mainstem upstream discharge in the Phase 5 network. Compare its archived timing against proposed rainfall/tributary series to avoid claiming a local source adds independent information when the existing upstream hydrograph already reflects it.",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378500/"
+    }
+  ]
+}
