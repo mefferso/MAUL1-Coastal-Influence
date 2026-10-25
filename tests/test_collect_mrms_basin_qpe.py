@@ -1,8 +1,10 @@
 """Deterministic spatial aggregation tests; no internet or GRIB fixtures required."""
 import pathlib
+import json
+import importlib.util
 import sys
 import unittest
-from contextlib import contextmanager
+from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
 import collect_mrms_basin_qpe as mrms
@@ -89,6 +91,42 @@ class TestMRMSBasinAggregation(unittest.TestCase):
         self.assertAlmostEqual(mrms.incremental_basin_mean(20.0, 100.0, 10.0, 60.0), 35.0)
         with self.assertRaisesRegex(ValueError, "nested"):
             mrms.incremental_basin_mean(20.0, 50.0, 10.0, 60.0)
+
+    @unittest.skipUnless(importlib.util.find_spec("shapely"), "optional MRMS geometry dependency")
+    def test_nonnested_live_nldi_basins_emit_only_individual_aggregates(self):
+        class Response:
+            status = 200
+            headers = {"Date": "Sun, 25 Oct 2026 13:05:00 GMT"}
+
+            def __init__(self, body): self.body = body
+            def read(self): return self.body
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+
+        maul = rectangle(0.0, 0.0, 2.0, 2.0)
+        den = rectangle(1.0, 0.0, 3.0, 2.0)
+        payloads = {
+            mrms.NLDI_URLS["MAUL1"]: json.dumps({"type": "Feature", "properties": {}, "geometry": maul}).encode(),
+            mrms.NLDI_URLS["DENL1"]: json.dumps({"type": "Feature", "properties": {}, "geometry": den}).encode(),
+            mrms.PRODUCT_URL: b"synthetic grib source",
+        }
+
+        def opener(request, timeout=30):
+            return Response(payloads[request.full_url])
+
+        decoded = ([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+                   [[0.5, 0.5, 0.5, 0.5], [1.5, 1.5, 1.5, 1.5]],
+                   [[0.5, 1.5, 2.5, 3.5], [0.5, 1.5, 2.5, 3.5]],
+                   "2026-10-25T13:00:00Z", "2026-10-25T12:00:00Z",
+                   {"grid_type": "regular_ll", "generating_process": 42})
+        with patch.object(mrms, "_decode_mrms", return_value=decoded):
+            report, rows, raw_geometries = mrms._acquire(opener)
+        self.assertEqual(report["status"], "partial", report.get("error"))
+        self.assertEqual(report["incremental_basin_status"], "withheld_nldi_basins_not_nested")
+        self.assertAlmostEqual(report["basin_relationship"]["denl1_fraction_inside_maul1"], 0.5)
+        self.assertEqual({row["station_id"] for row in rows}, {
+            "MRMS-MAUL1-UPSTREAM-BASIN", "MRMS-DENL1-UPSTREAM-BASIN"})
+        self.assertEqual(len(raw_geometries), 2)
 
     def test_basin_receipt_preserves_interval_grid_and_geometry_provenance(self):
         summary = {"status": "success", "mean_mm": 2.25, "valid_cell_count": 8,

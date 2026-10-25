@@ -391,14 +391,12 @@ def _acquire(opener=None) -> tuple[dict, list[dict], list[tuple[bytes, str]]]:
             "method": "NLDI polygon intersection; planar overlap fraction in shared GeoJSON coordinate system",
         }
         report["basin_relationship"] = nesting
-        if not maul.buffer(1e-7).covers(den):
-            raise ValueError("NLDI DENL1 drainage basin is not nested within MAUL1 basin; "
-                             f"overlap={nesting['denl1_fraction_inside_maul1']:.6f}, "
-                             f"MAUL1_area_km2={nesting['maul1_area_km2']:.2f}, "
-                             f"DENL1_area_km2={nesting['denl1_area_km2']:.2f}")
-        incremental = maul.difference(den)
-        if incremental.is_empty or not incremental.is_valid:
-            raise ValueError("NLDI MAUL1-minus-DENL1 incremental basin is empty or invalid")
+        nested = maul.buffer(1e-7).covers(den)
+        incremental = maul.difference(den) if nested else None
+        if incremental is not None and (incremental.is_empty or not incremental.is_valid):
+            incremental = None
+            nested = False
+        report["incremental_basin_status"] = "available" if nested else "withheld_nldi_basins_not_nested"
 
         body, received, server_date, last_modified, etag, status, attempts = _fetch_source(PRODUCT_URL, opener)
         if status != 200:
@@ -415,8 +413,9 @@ def _acquire(opener=None) -> tuple[dict, list[dict], list[tuple[bytes, str]]]:
                                          "valid_start": valid_start, "valid_end": valid_end,
                                          "product_metadata": metadata})
         geom_map = {"MRMS-MAUL1-UPSTREAM-BASIN": (maul, "MAUL1"),
-                    "MRMS-DENL1-UPSTREAM-BASIN": (den, "DENL1"),
-                    "MRMS-MAUL1-BELOW-DENL1-BASIN": (incremental, "incremental")}
+                    "MRMS-DENL1-UPSTREAM-BASIN": (den, "DENL1")}
+        if incremental is not None:
+            geom_map["MRMS-MAUL1-BELOW-DENL1-BASIN"] = (incremental, "incremental")
         for station_id, (geom, label) in geom_map.items():
             result = aggregate_grid(values, latitudes, longitudes, geom, grid_type=metadata["grid_type"])
             result = _area_summary(geom, result)
@@ -435,11 +434,16 @@ def _acquire(opener=None) -> tuple[dict, list[dict], list[tuple[bytes, str]]]:
                                            "nldi_geometry_sha256": geometry_hash})
             validate(row)
             rows.append(row)
+        required_basin_rows = {row["station_id"] for row in rows} >= {
+            "MRMS-MAUL1-UPSTREAM-BASIN", "MRMS-DENL1-UPSTREAM-BASIN"}
         report.update(status="success" if len(rows) == 3 else "partial", completed_at=iso(dt.datetime.now(UTC)),
                       product_sha256=digest, valid_start=valid_start, valid_end=valid_end,
                       records_prepared=len(rows), provider_http_date=server_date)
         if len(rows) != 3:
-            report["error"] = "one or more basin coverage gates failed; no complete three-basin set prepared"
+            report["error"] = ("incremental basin withheld because NLDI polygons were not nested"
+                                if not nested else
+                                "one or more basin coverage gates failed; complete three-basin set not prepared")
+        if not required_basin_rows:
             rows = []
     except Exception as exc:
         report.update(status="failed", completed_at=iso(dt.datetime.now(UTC)),
@@ -476,6 +480,10 @@ def live_smoke(opener=None) -> dict:
     """Fetch and validate one current product without writing archive files."""
     report, rows, _ = _acquire(opener)
     report["records_prepared"] = len(rows)
+    report["live_smoke_success"] = (
+        report.get("status") in {"success", "partial"} and
+        {row.get("station_id") for row in rows} >= {
+            "MRMS-MAUL1-UPSTREAM-BASIN", "MRMS-DENL1-UPSTREAM-BASIN"})
     return report
 
 
@@ -487,7 +495,7 @@ def main() -> int:
     if args.live_smoke:
         report = live_smoke()
         print(json.dumps(report, indent=2, sort_keys=True))
-        return 0 if report["status"] == "success" else 2
+        return 0 if report.get("live_smoke_success") else 2
     report = collect(args.out_dir)
     print(json.dumps(report, indent=2, sort_keys=True))
     # MRMS is an optional research feed: persist health state without blocking

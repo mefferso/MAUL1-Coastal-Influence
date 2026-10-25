@@ -24,7 +24,7 @@
       "quality": "provisional; approval and station-specific retention policy need confirmation",
       "availability_time": "not provided with historical observations; retrieve/receipt timestamp must be recorded prospectively",
       "url": "https://waterdata.usgs.gov/monitoring-location/USGS-301828090363100",
-      "live_status": "Awaiting hosted PR smoke; local outbound USGS requests were unavailable."
+      "live_status": "Hosted check 2026-10-25 15:39Z: HTTP 200; one parsed current 00045 observation with valid time 15:00Z."
     },
     {
       "id": "usgs-07378810-bayou-fountain",
@@ -62,7 +62,7 @@
       "quality": "provisional; local precipitation is operational/temporary and not archived beyond the display period per site note",
       "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378810/",
       "prospective_archive": "Collector requests 00045 and 00065 as optional feeds; no 00060 discharge series is inferred.",
-      "live_status": "Awaiting hosted PR smoke; local outbound USGS requests were unavailable."
+      "live_status": "Hosted check 2026-10-25 15:39Z: HTTP 200; one parsed current 00045 and one 00065 observation per station, each with valid time 15:00Z."
     },
     {
       "id": "usgs-07378746-bayou-manchac",
@@ -96,7 +96,7 @@
       "hydrologic_note": "USACE describes this site as between the flood-control structure and Bayou Manchac-Amite confluence, representing conditions just outside the basin; downstream/backwater sensitivity is plausible, so it is not an independent tributary-flow measurement.",
       "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378746/",
       "prospective_archive": "Collector requests 00045 and 00065 as optional feeds; no 00060 discharge series is inferred.",
-      "live_status": "Awaiting hosted PR smoke; local outbound USGS requests were unavailable."
+      "live_status": "Hosted check 2026-10-25 15:39Z: HTTP 200; one parsed current 00045 and one 00065 observation per station, each with valid time 15:00Z."
     },
     {
       "id": "usgs-07379960-dawson-creek",
@@ -137,7 +137,7 @@
       "hydrologic_note": "A 15.11-square-mile HUC 08070202 urban creek is plausibly responsive to local rainfall. Direct routing and travel time to MAUL1 have not been demonstrated.",
       "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07379960/",
       "prospective_archive": "Collector requests 00045 and 00065 as optional feeds; no 00060 discharge series is inferred.",
-      "live_status": "Awaiting hosted PR smoke; local outbound USGS requests were unavailable."
+      "live_status": "Hosted check 2026-10-25 15:39Z: HTTP 200; one parsed current 00045 and one 00065 observation per station, each with valid time 15:00Z."
     },
     {
       "id": "noaa-mrms-qpe",
@@ -150,7 +150,7 @@
       "aggregation": "USGS NLDI upstream basins at MAUL1 and DENL1, plus their verified nested difference. Cell-center polygon inclusion, cos(latitude) area weighting and an 80% valid-cell gate; geometry and grid hashes retained.",
       "cost": "free public NOAA data; GitHub Actions can query recent files and retain only watershed aggregates",
       "url": "https://registry.opendata.aws/noaa-mrms-pds/",
-      "live_status": "Awaiting hosted PR live-smoke evidence; do not describe as currently verified until endpoint and GRIB contract pass."
+      "live_status": "Hosted check 2026-10-25: both NLDI basin requests HTTP 200, but DENL1 polygon was not contained by MAUL1; incremental basin withheld. The MRMS grid request was not reached in that run. Individual basin aggregation remains pending a new hosted check."
     },
     {
       "id": "usgs-07378500-denham-springs-existing-network",
@@ -162,8 +162,8 @@
     }
   ],
   "implementation_status": {
-    "usgs_candidates": "Implemented in optional prospective collector; hosted live smoke pending.",
-    "mrms_basin_qpe": "Research-only proof of concept implemented; hosted live endpoint and GRIB decoder smoke pending.",
+    "usgs_candidates": "Verified currently reporting by hosted PR smoke on 2026-10-25; one current row per listed parameter.",
+    "mrms_basin_qpe": "Research proof of concept implemented. Live NLDI polygons responded but were nonnested; incremental basin withheld. MRMS product and individual basin aggregation not yet live-verified.",
     "forecast_use": "None; Phase 6 models and authentic forecast/verification archives are unchanged."
   }
 }
