@@ -166,7 +166,13 @@ def fetch(url, opener, retries=3, sleeper=time.sleep):
 
 
 def usgs_url(station, parameters):
-    query = {"monitoring_location_id": station, "parameter_code": ",".join(parameters), "limit": "500", "f": "json"}
+    # OGC API behavior for a comma-separated property filter is inconsistent;
+    # request each parameter separately so one series cannot mask another.
+    if isinstance(parameters, (tuple, list)):
+        if len(parameters) != 1:
+            raise ValueError("USGS requests must select exactly one parameter_code")
+        parameters = parameters[0]
+    query = {"monitoring_location_id": station, "parameter_code": parameters, "limit": "500", "f": "json"}
     return USGS_API + "?" + urllib.parse.urlencode(query)
 
 
@@ -235,23 +241,25 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         results.append(item)
     for name in ("DENL1", "MDLL1", "MAUL1"):
         meta = SOURCES[name]
-        url = usgs_url(meta["station"], meta["parameters"])
-        item = {"source": f"USGS {name} {meta['station']}", "critical": True, "url": url}
-        try:
-            body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
-            digest, raw_path = write_immutable_raw(raw_dir, body)
-            rows = usgs_records(json.loads(body), received, digest, url, raw_path, http_date)
-            # Empty parameter 63160 is explicitly visible; never create a synthetic row.
-            parameter_codes = {row["parameter_code"] for row in rows if row["station_id"] == name}
-            item.update(status="success" if rows else "empty", response_code=status, attempts=attempts,
-                        count=len(rows), parameters_returned=sorted(parameter_codes), retrieved_at=iso(received),
-                        valid_time_min=min((r["valid_time"] for r in rows), default=None),
-                        valid_time_max=max((r["valid_time"] for r in rows), default=None),
-                        qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
-            all_rows.extend(rows)
-        except Exception as exc:
-            item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
-        results.append(item)
+        for parameter in meta["parameters"]:
+            url = usgs_url(meta["station"], parameter)
+            item = {"source": f"USGS {name} {meta['station']} parameter {parameter}",
+                    "critical": not (name == "MAUL1" and parameter == "63160"), "url": url}
+            try:
+                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
+                digest, raw_path = write_immutable_raw(raw_dir, body)
+                rows = usgs_records(json.loads(body), received, digest, url, raw_path, http_date)
+                rows = [row for row in rows if row["station_id"] == name and row["parameter_code"] == parameter]
+                item.update(status="success" if rows else "empty", response_code=status, attempts=attempts,
+                            count=len(rows), parameters_returned=sorted({r["parameter_code"] for r in rows}),
+                            retrieved_at=iso(received),
+                            valid_time_min=min((r["valid_time"] for r in rows), default=None),
+                            valid_time_max=max((r["valid_time"] for r in rows), default=None),
+                            qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
+                all_rows.extend(rows)
+            except Exception as exc:
+                item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+            results.append(item)
     receipt_file, added = append_receipts(receipts_dir, all_rows)
     run_id = now.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
     report = {"schema_version": "forcing-run-1", "run_id": run_id, "started_at": iso(now),
@@ -284,18 +292,19 @@ def main():
                               "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date}))
         for name in ("DENL1", "MDLL1", "MAUL1"):
             meta = SOURCES[name]
-            url = usgs_url(meta["station"], meta["parameters"])
-            body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
-            parsed = json.loads(body)
-            digest = hashlib.sha256(body).hexdigest()
-            rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
-            params = {r["parameter_code"] for r in rows if r["station_id"] == name}
-            required = {"00060", "00065"} if name == "DENL1" else {"00065"}
-            if status != 200 or not required.issubset(params):
-                raise RuntimeError(f"live USGS smoke failed: {name} HTTP {status}, parsed parameters={sorted(params)}")
-            print(json.dumps({"source": f"USGS {name} {meta['station']}", "http_status": status,
-                              "parsed_receipts": len(rows), "parameters": sorted(params),
-                              "retrieved_at": iso(received), "http_date": date}))
+            for parameter in meta["parameters"]:
+                url = usgs_url(meta["station"], parameter)
+                body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
+                parsed = json.loads(body)
+                digest = hashlib.sha256(body).hexdigest()
+                rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
+                rows = [r for r in rows if r["station_id"] == name and r["parameter_code"] == parameter]
+                optional_direct_datum = name == "MAUL1" and parameter == "63160"
+                if status != 200 or (not rows and not optional_direct_datum):
+                    raise RuntimeError(f"live USGS smoke failed: {name} parameter {parameter} HTTP {status}, parsed receipts={len(rows)}")
+                print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}", "http_status": status,
+                                  "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date,
+                                  "optional_unavailable": optional_direct_datum and not rows}))
         return
     report = collect(args.out_dir)
     print(json.dumps(report, indent=2, sort_keys=True))
