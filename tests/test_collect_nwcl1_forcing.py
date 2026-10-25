@@ -92,6 +92,16 @@ class TestNWCL1Collector(unittest.TestCase):
         self.assertEqual((body, date, status, attempts), (b'{"data": []}', "Sun, 25 Oct 2026 13:00:00 GMT", 200, 2))
         self.assertEqual(waits, [1])
 
+    def test_permanent_http_error_is_not_retried(self):
+        import urllib.error
+        calls = []
+        def opener(*args, **kwargs):
+            calls.append(1)
+            raise urllib.error.HTTPError("https://example.invalid", 400, "bad request", {}, None)
+        with self.assertRaisesRegex(RuntimeError, "non-retryable HTTP 400"):
+            collector.fetch("https://example.invalid", opener, sleeper=lambda _: None)
+        self.assertEqual(len(calls), 1)
+
     def test_collection_health_raw_provenance_and_cross_run_deduplication(self):
         class Response:
             status = 200
