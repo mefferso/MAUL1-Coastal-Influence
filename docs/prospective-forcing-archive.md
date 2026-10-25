@@ -41,6 +41,17 @@ Raw response bytes are SHA-256 addressed under `raw/`; receipt lines are append-
 
 The live smoke command retrieves current NOAA wind, NOAA water level, and USGS DENL1 current continuous data, checks for nonempty JSON feeds, and prints real HTTP and collector receipt metadata. Fixture tests validate deterministic parsing but are not proof of provider availability. In this environment, external network requests were blocked by the outbound proxy (403 CONNECT), so live provider verification must come from the GitHub Actions PR check before claiming endpoint availability. The public-data source schemas, units and actual availability need continued verification against each response; missing `63160` is shown as absent in run health and never synthesized.
 
+Source endpoints and parameter contracts:
+
+| Archive alias | Provider station | Current endpoint and parameter | Interpretation |
+| --- | --- | --- | --- |
+| NWCL1 | NOAA CO-OPS `8761927` | [CO-OPS Data API](https://api.tidesandcurrents.noaa.gov/api/prod/datagetter), products `wind`, `water_level`, `predictions` | Wind `s` and `d` fields; water level and predictions explicitly request `datum=MLLW`. The hosted smoke job checks each response by parsing source records. |
+| DENL1 | USGS `USGS-07378500` | [Water Data OGC API latest-continuous](https://api.waterdata.usgs.gov/ogcapi/v0/collections/latest-continuous/items), separate parameter requests `00060` and `00065` | Discharge and native gage height are distinct series; current response reports discharge in `ft^3/s`, retained in `provider_unit` and normalized to cfs without numerical conversion. |
+| MDLL1 | USGS `USGS-301200090072400` | Same OGC API; parameter `00065` | Native gage height only. No conversion to another station datum. |
+| MAUL1 | USGS `USGS-07380215` | Same OGC API; `00065` and `63160` queried separately | `00065` stays native gage height. `63160` is kept only when the exact direct series is returned and labeled NAVD88; an empty response is recorded as empty. |
+
+USGS `approval_status`, `qualifier`, `time_series_id`, `unit_of_measure`, `last_modified`, feature geometry and the original feature payload are retained as QC/provenance. In observed DENL1 responses the OGC `unit_of_measure` literal is `ft^3/s`; the collector preserves that literal alongside normalized `cfs`. `last_modified` is a provider field, not assumed to be first-publication time. Per-source `newest_valid_age_seconds` is the observed valid-time age at our actual retrieval and is not a measurement of provider release latency.
+
 Provider times (`valid_time`), collector times (`retrieved_at`), HTTP server `Date`, and any source-provided modification field are stored as different fields. None of these reconstructs when an observation first became publicly available. Backfilled historical source records must not be merged into the prospective receipt archive.
 
 **Important:** a `retrieved_at` timestamp proves only when *our collector saw the value*, not when it first became available. A provider publication timestamp, if reported, is additional evidence; don't fabricate it. For historical datasets without real receipts, use an explicitly different historical archive namespace and never populate `retrieved_at` with guessed dates.
