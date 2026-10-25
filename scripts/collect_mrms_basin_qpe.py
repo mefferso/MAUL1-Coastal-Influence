@@ -381,8 +381,21 @@ def _acquire(opener=None) -> tuple[dict, list[dict], list[tuple[bytes, str]]]:
                                              "feature_properties": feature.get("properties", {})})
         maul = geometries["MAUL1"]
         den = geometries["DENL1"]
+        overlap = maul.intersection(den)
+        nesting = {
+            "maul1_area_km2": _geometry_area_km2(maul),
+            "denl1_area_km2": _geometry_area_km2(den),
+            "intersection_area_km2": _geometry_area_km2(overlap),
+            "denl1_fraction_inside_maul1": (overlap.area / den.area if den.area else 0.0),
+            "maul1_fraction_inside_denl1": (overlap.area / maul.area if maul.area else 0.0),
+            "method": "NLDI polygon intersection; planar overlap fraction in shared GeoJSON coordinate system",
+        }
+        report["basin_relationship"] = nesting
         if not maul.buffer(1e-7).covers(den):
-            raise ValueError("NLDI DENL1 drainage basin is not nested within MAUL1 basin")
+            raise ValueError("NLDI DENL1 drainage basin is not nested within MAUL1 basin; "
+                             f"overlap={nesting['denl1_fraction_inside_maul1']:.6f}, "
+                             f"MAUL1_area_km2={nesting['maul1_area_km2']:.2f}, "
+                             f"DENL1_area_km2={nesting['denl1_area_km2']:.2f}")
         incremental = maul.difference(den)
         if incremental.is_empty or not incremental.is_valid:
             raise ValueError("NLDI MAUL1-minus-DENL1 incremental basin is empty or invalid")
