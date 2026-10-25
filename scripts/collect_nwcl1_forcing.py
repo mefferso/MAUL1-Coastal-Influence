@@ -302,7 +302,9 @@ def main():
                 rows = [r for r in rows if r["station_id"] == name and r["parameter_code"] == parameter]
                 optional_direct_datum = name == "MAUL1" and parameter == "63160"
                 if status != 200 or (not rows and not optional_direct_datum):
-                    raise RuntimeError(f"live USGS smoke failed: {name} parameter {parameter} HTTP {status}, parsed receipts={len(rows)}")
+                    sample_props = (parsed.get("features") or [{}])[0].get("properties", {}) if isinstance(parsed, dict) else {}
+                    raise RuntimeError(f"live USGS smoke failed: {name} parameter {parameter} HTTP {status}, "
+                                       f"parsed receipts={len(rows)}, sample_properties={json.dumps(sample_props, sort_keys=True)[:1200]}")
                 print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}", "http_status": status,
                                   "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date,
                                   "optional_unavailable": optional_direct_datum and not rows}))
