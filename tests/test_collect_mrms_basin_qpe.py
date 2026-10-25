@@ -114,9 +114,9 @@ class TestMRMSBasinAggregation(unittest.TestCase):
         def opener(request, timeout=30):
             return Response(payloads[request.full_url])
 
-        decoded = ([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
-                   [[0.5, 0.5, 0.5, 0.5], [1.5, 1.5, 1.5, 1.5]],
-                   [[0.5, 1.5, 2.5, 3.5], [0.5, 1.5, 2.5, 3.5]],
+        decoded = ([[1.0] * 7, [1.0] * 7],
+                   [[0.5] * 7, [1.5] * 7],
+                   [[0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25]] * 2,
                    "2026-10-25T13:00:00Z", "2026-10-25T12:00:00Z",
                    {"grid_type": "regular_ll", "generating_process": 42})
         with patch.object(mrms, "_decode_mrms", return_value=decoded):
