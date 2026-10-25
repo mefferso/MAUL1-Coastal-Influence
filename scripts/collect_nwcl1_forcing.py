@@ -16,6 +16,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
 from validate_forcing_archive import validate
 
@@ -84,7 +85,7 @@ def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_da
                    "provider_http_date": provider_date, "value": value,
                    "status": "predicted" if prediction else "provisional",
                    "raw_id": f"coops:8761927:{product}:{entry['t']}:{variable}",
-                   "qc_flags": [f"provider_flag:{entry['f']}"] if entry.get("f") else [],
+                   "qc_flags": [f"provider_flag:{entry['f']}"] if entry.get("f") not in (None, "", "0") else [],
                    "product": product, "provider_url": url, "raw_sha256": digest, "raw_path": raw_path,
                    "source_metadata": {"direction_convention": "degrees clockwise from true north, direction from",
                                        "water_level_datum": "MLLW" if product in {"water_level", "predictions"} else None}}
@@ -261,7 +262,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
                 item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
             results.append(item)
     receipt_file, added = append_receipts(receipts_dir, all_rows)
-    run_id = now.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+    run_id = now.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     report = {"schema_version": "forcing-run-1", "run_id": run_id, "started_at": iso(now),
               "completed_at": iso(dt.datetime.now(UTC)), "sources": results,
               "records_seen": len(all_rows), "records_added": added,
