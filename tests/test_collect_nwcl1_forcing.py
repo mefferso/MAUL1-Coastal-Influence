@@ -60,11 +60,12 @@ class TestNWCL1Collector(unittest.TestCase):
     def test_usgs_cubic_feet_unit_from_live_ogc_spelling_is_preserved(self):
         data = {"features": [{"properties": {"monitoring_location_id": "USGS-07378500",
                 "parameter_code": "00060", "time": "2026-10-25T12:00:00Z", "value": "314",
-                "unit_of_measure": "ft^3/s", "approval_status": "Provisional", "qualifier": None}}]}
+                "unit_of_measure": "ft^3/s", "approval_status": "Provisional", "qualifier": "A"}}]}
         row = collector.usgs_records(data, self.received, "d", "url", "raw/x")[0]
         self.assertEqual(row["unit"], "cfs")
         self.assertEqual(row["provider_unit"], "ft^3/s")
         self.assertIn("approval_status:Provisional", row["qc_flags"])
+        self.assertIn("qualifier:A", row["qc_flags"])
 
     def test_raw_payload_content_addressed_and_deduplicated(self):
         import tempfile
