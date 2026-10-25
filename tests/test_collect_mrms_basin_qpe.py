@@ -128,6 +128,19 @@ class TestMRMSBasinAggregation(unittest.TestCase):
             "MRMS-MAUL1-UPSTREAM-BASIN", "MRMS-DENL1-UPSTREAM-BASIN"})
         self.assertEqual(len(raw_geometries), 2)
 
+        # A topology sliver below the documented limit is clipped to the
+        # downstream outline before forming the incremental catchment.
+        near_den = rectangle(0.0, 0.0, 1.5, 2.00001)
+        payloads[mrms.NLDI_URLS["DENL1"]] = json.dumps({
+            "type": "Feature", "properties": {}, "geometry": near_den}).encode()
+        with patch.object(mrms, "_decode_mrms", return_value=decoded):
+            near_report, near_rows, _ = mrms._acquire(opener)
+        self.assertEqual(near_report["incremental_basin_status"], "available_with_small_geometry_tolerance")
+        self.assertLessEqual(near_report["basin_relationship"]["denl1_fraction_outside_maul1"],
+                             mrms.MAX_DENL1_OUTSIDE_MAUL1_FRACTION)
+        self.assertEqual(near_report["status"], "success", near_report.get("error"))
+        self.assertIn("MRMS-MAUL1-BELOW-DENL1-BASIN", {row["station_id"] for row in near_rows})
+
     def test_basin_receipt_preserves_interval_grid_and_geometry_provenance(self):
         summary = {"status": "success", "mean_mm": 2.25, "valid_cell_count": 8,
                    "expected_cell_count": 10, "coverage_fraction": 0.8,

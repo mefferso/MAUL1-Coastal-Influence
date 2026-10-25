@@ -150,7 +150,7 @@
       "aggregation": "USGS NLDI upstream basins at MAUL1 and DENL1, plus their verified nested difference. Cell-center polygon inclusion, cos(latitude) area weighting and an 80% valid-cell gate; geometry and grid hashes retained.",
       "cost": "free public NOAA data; GitHub Actions can query recent files and retain only watershed aggregates",
       "url": "https://registry.opendata.aws/noaa-mrms-pds/",
-      "live_status": "Hosted check 2026-10-25: both NLDI basin requests HTTP 200, but DENL1 polygon was not contained by MAUL1; incremental basin withheld. The MRMS grid request was not reached in that run. Individual basin aggregation remains pending a new hosted check."
+      "live_status": "Hosted check 2026-10-25: NLDI returned HTTP 200 for both stations. DENL1 area was 3529.77 km2, MAUL1 4907.96 km2, with DENL1 99.9989% inside MAUL1 (about 0.038 km2 outside). MRMS current file body downloaded, but cfgrib reported QPE units as unknown and the decoder rejected it; no aggregate receipt was produced. The updated decoder checks GRIB_units as an alternative metadata key and awaits hosted verification."
     },
     {
       "id": "usgs-07378500-denham-springs-existing-network",
@@ -163,7 +163,7 @@
   ],
   "implementation_status": {
     "usgs_candidates": "Verified currently reporting by hosted PR smoke on 2026-10-25; one current row per listed parameter.",
-    "mrms_basin_qpe": "Research proof of concept implemented. Live NLDI polygons responded but were nonnested; incremental basin withheld. MRMS product and individual basin aggregation not yet live-verified.",
+    "mrms_basin_qpe": "Research proof of concept implemented; NLDI delineations are near-nested and a bounded 0.1% geometry tolerance is applied with clipping. Current MRMS file download verified, but decoded QPE units were unknown so no aggregate has yet been validated.",
     "forecast_use": "None; Phase 6 models and authentic forecast/verification archives are unchanged."
   }
 }

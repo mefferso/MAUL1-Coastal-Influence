@@ -28,6 +28,7 @@ NLDI_URLS = {
     "DENL1": "https://api.water.usgs.gov/nldi/linked-data/nwissite/USGS-07378500/basin?f=json",
 }
 MIN_GRID_COVERAGE = 0.80
+MAX_DENL1_OUTSIDE_MAUL1_FRACTION = 0.001
 USER_AGENT_MRMS = USER_AGENT.replace("observation-archive", "rainfall-archive")
 
 
@@ -312,9 +313,10 @@ def _decode_mrms(body: bytes) -> tuple[Any, Any, Any, str, str, dict]:
                 raise ValueError(f"expected one 2-D MRMS field, found {len(candidates)}")
             dataset, name, field = candidates[0]
             attrs = dict(field.attrs)
-            units = str(attrs.get("units", "")).strip().lower().replace("**", "^")
+            units = str(attrs.get("units") or attrs.get("GRIB_units") or "").strip().lower().replace("**", "^")
             if units not in {"mm", "kg m^-2", "kg m-2", "kg/m^2"}:
-                raise ValueError(f"unsupported MRMS QPE units {attrs.get('units')!r}")
+                raise ValueError(f"unsupported MRMS QPE units {attrs.get('units')!r}; "
+                                 f"GRIB_units={attrs.get('GRIB_units')!r}; field={name!r}; attrs={attrs!r}")
             period = validate_accumulation_period(attrs.get("GRIB_stepType"), attrs.get("GRIB_stepRange"))
             valid_coord = dataset.coords.get("valid_time")
             if valid_coord is None:
@@ -328,7 +330,7 @@ def _decode_mrms(body: bytes) -> tuple[Any, Any, Any, str, str, dict]:
             if lat is None or lon is None:
                 raise ValueError("MRMS GRIB has no latitude/longitude grid coordinates")
             grid_type = str(attrs.get("GRIB_gridType") or dataset.attrs.get("GRIB_gridType") or "")
-            metadata = {"field_name": name, "provider_units": attrs.get("units"),
+            metadata = {"field_name": name, "provider_units": attrs.get("units") or attrs.get("GRIB_units"),
                         "step_type": attrs.get("GRIB_stepType"), "step_range": attrs.get("GRIB_stepRange"),
                         "grid_type": grid_type, "long_name": attrs.get("long_name"),
                         "generating_process": attrs.get("GRIB_generatingProcessIdentifier"),
@@ -387,16 +389,22 @@ def _acquire(opener=None) -> tuple[dict, list[dict], list[tuple[bytes, str]]]:
             "denl1_area_km2": _geometry_area_km2(den),
             "intersection_area_km2": _geometry_area_km2(overlap),
             "denl1_fraction_inside_maul1": (overlap.area / den.area if den.area else 0.0),
+            "denl1_fraction_outside_maul1": (1.0 - overlap.area / den.area if den.area else 1.0),
             "maul1_fraction_inside_denl1": (overlap.area / maul.area if maul.area else 0.0),
+            "maximum_denl1_outside_fraction": MAX_DENL1_OUTSIDE_MAUL1_FRACTION,
             "method": "NLDI polygon intersection; planar overlap fraction in shared GeoJSON coordinate system",
         }
         report["basin_relationship"] = nesting
-        nested = maul.buffer(1e-7).covers(den)
-        incremental = maul.difference(den) if nested else None
+        nested = nesting["denl1_fraction_outside_maul1"] <= MAX_DENL1_OUTSIDE_MAUL1_FRACTION
+        # Clip the upstream polygon to the downstream outline before differencing;
+        # tolerated coordinate/topology slivers cannot subtract area outside MAUL1.
+        clipped_den = overlap if nested else None
+        incremental = maul.difference(clipped_den) if clipped_den is not None else None
         if incremental is not None and (incremental.is_empty or not incremental.is_valid):
             incremental = None
             nested = False
-        report["incremental_basin_status"] = "available" if nested else "withheld_nldi_basins_not_nested"
+        report["incremental_basin_status"] = (
+            "available_with_small_geometry_tolerance" if nested else "withheld_nldi_basins_not_nested")
 
         body, received, server_date, last_modified, etag, status, attempts = _fetch_source(PRODUCT_URL, opener)
         if status != 200:
