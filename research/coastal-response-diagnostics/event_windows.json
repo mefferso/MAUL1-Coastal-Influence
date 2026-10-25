@@ -1,0 +1,210 @@
+[
+  {
+    "id": "alberto_2024",
+    "label": "Alberto period and subsequent response",
+    "response_catalog": {
+      "event_id": "maul1-response-0147",
+      "onset_utc": "2024-06-10T01:00:00Z",
+      "onset_known": true,
+      "peak_utc": "2024-06-21T04:00:00Z",
+      "recovery_end_utc": "2024-06-24T15:00:00Z",
+      "rise_native_gage_height_ft": 2.2,
+      "trough_utc": "2024-06-09T21:00:00Z"
+    },
+    "wind_site": "NWCL1 shoreline/CO-OPS; not WeatherFlow Mid-Lake open-water observations",
+    "phases": [
+      {
+        "id": "alberto_antecedent",
+        "start_utc": "2024-06-08T00:00:00Z",
+        "end_utc": "2024-06-15T00:00:00Z",
+        "role": "antecedent_reference",
+        "attribution": "pre_named_storm_context"
+      },
+      {
+        "id": "alberto_pre_named_context",
+        "start_utc": "2024-06-15T00:00:00Z",
+        "end_utc": "2024-06-19T12:00:00Z",
+        "role": "disturbed_weather_context",
+        "attribution": "regional_disturbance_context_not_locally_attributed"
+      },
+      {
+        "id": "alberto_named_interval",
+        "start_utc": "2024-06-19T12:00:00Z",
+        "end_utc": "2024-06-20T09:00:00Z",
+        "role": "named_storm_interval",
+        "attribution": "NHC_Alberto_formation_to_reported_landfall"
+      },
+      {
+        "id": "alberto_post_landfall_recession",
+        "start_utc": "2024-06-20T09:00:00Z",
+        "end_utc": "2024-06-27T00:00:00Z",
+        "role": "response_and_recession",
+        "attribution": "post_landfall_context_not_causal"
+      },
+      {
+        "id": "transition_unattributed",
+        "start_utc": "2024-06-27T00:00:00Z",
+        "end_utc": "2024-07-01T00:00:00Z",
+        "role": "transition_response_only",
+        "attribution": "unresolved"
+      }
+    ],
+    "lag_source_phase_ids": [
+      "alberto_pre_named_context",
+      "alberto_named_interval"
+    ]
+  },
+  {
+    "id": "beryl_2024",
+    "label": "Beryl chronology separated from transition pulse",
+    "response_catalog": {
+      "event_id": "maul1-response-0148",
+      "onset_utc": "2024-06-28T08:00:00Z",
+      "onset_known": true,
+      "peak_utc": "2024-07-09T06:00:00Z",
+      "recovery_end_utc": "2024-07-13T08:00:00Z",
+      "rise_native_gage_height_ft": 1.475,
+      "trough_utc": "2024-06-28T03:00:00Z"
+    },
+    "wind_site": "NWCL1 shoreline/CO-OPS; not a lake-wide wind field",
+    "phases": [
+      {
+        "id": "beryl_transition_unattributed",
+        "start_utc": "2024-06-27T00:00:00Z",
+        "end_utc": "2024-07-01T00:00:00Z",
+        "role": "ongoing_response_before_local_gulf_phase",
+        "attribution": "unresolved_excluded_from_Beryl_local_forcing"
+      },
+      {
+        "id": "beryl_remote_phase",
+        "start_utc": "2024-07-01T00:00:00Z",
+        "end_utc": "2024-07-05T00:00:00Z",
+        "role": "remote_storm_context",
+        "attribution": "Beryl_before_Gulf_entry"
+      },
+      {
+        "id": "beryl_gulf_approach_landfall",
+        "start_utc": "2024-07-05T00:00:00Z",
+        "end_utc": "2024-07-09T00:00:00Z",
+        "role": "Gulf_approach_and_landfall",
+        "attribution": "Beryl_Gulf_transit_context"
+      },
+      {
+        "id": "beryl_post_landfall_recovery",
+        "start_utc": "2024-07-09T00:00:00Z",
+        "end_utc": "2024-07-13T08:00:00Z",
+        "role": "post_event_recovery",
+        "attribution": "post_landfall_context_not_causal"
+      }
+    ],
+    "lag_source_phase_ids": [
+      "beryl_remote_phase",
+      "beryl_gulf_approach_landfall"
+    ]
+  },
+  {
+    "id": "may_2021",
+    "label": "May 2021 elevated water response",
+    "response_catalog": {
+      "event_id": "maul1-response-0094",
+      "onset_utc": "2021-05-08T16:00:00Z",
+      "onset_known": true,
+      "peak_utc": "2021-05-22T02:00:00Z",
+      "recovery_end_utc": "2021-05-27T07:00:00Z",
+      "rise_native_gage_height_ft": 4.38,
+      "trough_utc": "2021-05-08T08:00:00Z"
+    },
+    "presentation_reference": "CO-OPS New Canal chart May 12\u201327, 2021 GMT; not a forcing interval",
+    "phases": [
+      {
+        "id": "may2021_antecedent",
+        "start_utc": "2021-05-01T00:00:00Z",
+        "end_utc": "2021-05-08T16:00:00Z",
+        "role": "antecedent_before_catalog_onset",
+        "attribution": "forcing_onset_not_independently_identified"
+      },
+      {
+        "id": "may2021_response_buildup",
+        "start_utc": "2021-05-08T16:00:00Z",
+        "end_utc": "2021-05-22T02:00:00Z",
+        "role": "MAUL1_response_buildup",
+        "attribution": "catalog_response_window_not_forcing_label"
+      },
+      {
+        "id": "may2021_recession",
+        "start_utc": "2021-05-22T02:00:00Z",
+        "end_utc": "2021-05-27T07:00:00Z",
+        "role": "peak_and_recession",
+        "attribution": "catalog_recovery_window_not_forcing_label"
+      }
+    ],
+    "lag_source_phase_ids": [
+      "may2021_antecedent"
+    ]
+  },
+  {
+    "id": "august_2016",
+    "label": "August 2016 MAUL1 high-water response; forcing source undetermined",
+    "response_catalog": {
+      "event_id": "maul1-response-0007",
+      "onset_utc": "2016-08-14T00:00:00Z",
+      "onset_known": false,
+      "peak_utc": "2016-08-17T17:00:00Z",
+      "recovery_end_utc": "2016-08-22T14:00:00Z",
+      "rise_native_gage_height_ft": 3.25,
+      "status": "left_censored",
+      "trough_utc": "2016-08-13T19:00:00Z"
+    },
+    "phases": [
+      {
+        "id": "aug2016_antecedent",
+        "start_utc": "2016-08-11T00:00:00Z",
+        "end_utc": "2016-08-14T00:00:00Z",
+        "role": "catalog_antecedent",
+        "attribution": "onset_uncertain"
+      },
+      {
+        "id": "aug2016_rise",
+        "start_utc": "2016-08-14T00:00:00Z",
+        "end_utc": "2016-08-17T17:00:00Z",
+        "role": "catalog_response",
+        "attribution": "unresolved_rainfall_and_river_context"
+      },
+      {
+        "id": "aug2016_recovery",
+        "start_utc": "2016-08-17T17:00:00Z",
+        "end_utc": "2016-08-22T14:00:00Z",
+        "role": "recovery",
+        "attribution": "catalog_recovery_window"
+      }
+    ],
+    "lag_source_phase_ids": [
+      "aug2016_antecedent"
+    ]
+  },
+  {
+    "id": "quiet_control_2021_07",
+    "label": "Phase 3B quiet-low-variation control candidate",
+    "response_catalog": {
+      "control_candidate_id": "control-candidate-00289",
+      "start_utc": "2021-07-09T00:00:00Z",
+      "end_utc": "2021-07-16T00:00:00Z",
+      "status": "eligible_control_candidate",
+      "categories": [
+        "quiet_low_variation"
+      ]
+    },
+    "phases": [
+      {
+        "id": "quiet_control_window",
+        "start_utc": "2021-07-09T00:00:00Z",
+        "end_utc": "2021-07-16T00:00:00Z",
+        "role": "no_qualifying_MAUL1_response_control",
+        "attribution": "outcome_defined_phase3b_control_candidate"
+      }
+    ],
+    "lag_source_phase_ids": [
+      "quiet_control_window"
+    ]
+  }
+]
