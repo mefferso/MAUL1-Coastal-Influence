@@ -18,6 +18,8 @@ REQUIRED = {
     "valid_time", "retrieved_at", "value", "status", "raw_id", "qc_flags",
 }
 VARIABLE_UNITS = {
+    "wind_speed": {"knots"},
+    "wind_direction": {"degrees"},
     "wind_u": {"knots"},
     "wind_v": {"knots"},
     "water_level": {"ft"},
@@ -26,7 +28,7 @@ VARIABLE_UNITS = {
     "gage_height": {"ft"},
     "precipitation": {"mm", "in"},
 }
-ALLOWED_STATUS = {"observed", "provisional", "missing", "rejected"}
+ALLOWED_STATUS = {"observed", "provisional", "predicted", "missing", "rejected"}
 
 
 def parse_utc(value: str) -> dt.datetime:
@@ -59,10 +61,17 @@ def validate(record: dict) -> None:
         raise ValueError("qc_flags must be a list of strings")
     valid = parse_utc(record["valid_time"])
     received = parse_utc(record["retrieved_at"])
-    if received < valid:
+    record_type = record.get("record_type", "observation")
+    if record_type not in {"observation", "prediction"}:
+        raise ValueError("record_type must be observation or prediction")
+    if record_type == "prediction" and record["variable"] != "tide_prediction":
+        raise ValueError("only tide_prediction may be a prediction record")
+    if record_type == "observation" and record["status"] == "predicted":
+        raise ValueError("predicted status requires prediction record_type")
+    if received < valid and record_type != "prediction":
         raise ValueError("receipt timestamp predates valid time; check time basis")
     val = record["value"]
-    if record["status"] in {"observed", "provisional"}:
+    if record["status"] in {"observed", "provisional", "predicted"}:
         if not isinstance(val, (float, int)) or isinstance(val, bool) or not math.isfinite(val):
             raise ValueError("observed/provisional values must be finite numbers")
     elif val is not None:
@@ -106,3 +115,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
