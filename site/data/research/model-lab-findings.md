@@ -55,11 +55,11 @@ Same-row MAE deltas below compare each Phase 5A/5B family with MAUL1-only; negat
 | 24 h | Full multivariable | 32,406 | 0.1911 | -0.0243 |
 | 24 h | NOAA future-valid retrospective sensitivity † | 32,406 | 0.2157 | +0.0002 |
 
-### Phase 6 independent qualifying-rise groups
+### Phase 6 qualifying-rise groups (physical independence unproven)
 
-The existing Phase 6 rule groups outcome-defined 24-hour rises ≥0.50 ft when qualifying target times are no more than 24 hours apart. Lead is to the first qualifying verification target, not physical onset.
+The existing Phase 6 rule groups outcome-defined 24-hour rises ≥0.50 ft when qualifying target times are no more than 24 hours apart. These target-time groups are not established independent hydrologic events. Lead is to the first qualifying verification target, not physical onset.
 
-| Model | Independent rise groups | Detected / missed | Detection fraction | Median lead to first qualifying verification target |
+| Model | Grouped rises (not proven independent) | Detected / missed | Detection fraction | Median lead to first qualifying verification target |
 |---|---:|---:|---:|---:|
 | Persistence | 109 | 0 / 109 | 0.0% | — |
 | Phase 5A MAUL1-only | 109 | 1 / 108 | 0.9% | 20.0 h |
