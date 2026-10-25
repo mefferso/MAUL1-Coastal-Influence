@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MAUL1 timestamped coastal observation",
+  "description": "Adapter boundary for prospective research archives. valid_time_utc is the provider observation time; received_time_utc is the time this archive actually received it. Never synthesize receipt time for historical bins.",
+  "type": "object",
+  "required": [
+    "source_id",
+    "station",
+    "variable",
+    "valid_time_utc",
+    "received_time_utc",
+    "value",
+    "unit",
+    "datum",
+    "quality_status"
+  ],
+  "properties": {
+    "source_id": {"type": "string", "minLength": 1},
+    "station": {"type": "string", "minLength": 1},
+    "variable": {"type": "string", "minLength": 1},
+    "valid_time_utc": {"type": "string", "format": "date-time"},
+    "received_time_utc": {"type": "string", "format": "date-time"},
+    "value": {"type": "number"},
+    "unit": {"type": "string", "minLength": 1},
+    "datum": {"type": "string", "minLength": 1},
+    "quality_status": {"type": "string", "minLength": 1},
+    "provider_qc": {"type": ["string", "array", "object", "null"]},
+    "local_qc": {"type": ["string", "array", "object", "null"]},
+    "sensor_id": {"type": ["string", "null"]},
+    "sensor_epoch": {"type": ["string", "null"]},
+    "coverage": {"type": ["integer", "number", "null"], "minimum": 0},
+    "source_record_id": {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}
