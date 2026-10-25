@@ -134,7 +134,7 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
         status = "observed" if str(props.get("approval_status", "")).lower() in {"approved", "approved for publication"} else "provisional"
         datum = "NAVD88" if parameter == "63160" else f"native_gage_datum:{station}"
         flags = []
-        for key in ("qualifiers", "approval_status", "grade", "method_id"):
+        for key in ("qualifier", "qualifiers", "approval_status", "grade", "method_id"):
             if props.get(key) not in (None, "", []):
                 flags.append(f"{key}:{props[key]}")
         row = {"schema_version": "forcing-1", "record_type": "observation", "station_id": station_name,
