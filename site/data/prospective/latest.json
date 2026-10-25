@@ -1,13 +1,13 @@
 {
   "schema": "phase6.forecast.v2",
-  "issuance_id": "f17f313254af9471",
+  "issuance_id": "749a0eedb7ee7115",
   "mode": "authentic",
-  "nominal_issue_time_utc": "2026-10-25T11:17:00Z",
-  "actual_issue_time_utc": "2026-10-25T11:29:34Z",
+  "nominal_issue_time_utc": "2026-10-25T11:46:53Z",
+  "actual_issue_time_utc": "2026-10-25T11:46:57Z",
   "latest_maul1_native_stage_ft": 3.07,
   "forecasts": {
     "12": {
-      "effective_lead_hours": 11.507222,
+      "effective_lead_hours": 11.2175,
       "models": {
         "persistence": {
           "interval_lower_ft": null,
@@ -57,7 +57,7 @@
       "valid_time_utc": "2026-10-25T23:00:00Z"
     },
     "24": {
-      "effective_lead_hours": 23.507222,
+      "effective_lead_hours": 23.2175,
       "models": {
         "persistence": {
           "interval_lower_ft": null,
@@ -88,26 +88,26 @@
         "phase5b_coastal_tidal": {
           "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
           "imputed_feature_count": 2,
-          "interval_lower_ft": 3.6462737766324382,
-          "interval_upper_ft": 4.259209452305468,
-          "predicted_change_ft": 0.8827416144689533,
-          "predicted_stage_native_ft": 3.952741614468953,
+          "interval_lower_ft": 3.6458271328659486,
+          "interval_upper_ft": 4.258762808538979,
+          "predicted_change_ft": 0.8822949707024637,
+          "predicted_stage_native_ft": 3.9522949707024635,
           "status": "issued"
         },
         "phase5b_full_multivariable": {
           "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
           "imputed_feature_count": 5,
-          "interval_lower_ft": 3.6321212986009073,
-          "interval_upper_ft": 4.25052361546594,
-          "predicted_change_ft": 0.8713224570334237,
-          "predicted_stage_native_ft": 3.9413224570334235,
+          "interval_lower_ft": 3.6315624117427143,
+          "interval_upper_ft": 4.249964728607747,
+          "predicted_change_ft": 0.8707635701752308,
+          "predicted_stage_native_ft": 3.9407635701752306,
           "status": "issued"
         }
       },
       "valid_time_utc": "2026-10-26T11:00:00Z"
     },
     "6": {
-      "effective_lead_hours": 5.507222,
+      "effective_lead_hours": 5.2175,
       "models": {
         "persistence": {
           "interval_lower_ft": null,
@@ -161,15 +161,15 @@
     "availability": {
       "DENL1": {
         "status": "eligible",
-        "age_hours": 0.7427777777777778
+        "age_hours": 1.0325
       },
       "MAUL1_00065": {
         "status": "eligible",
-        "age_hours": 0.7427777777777778
+        "age_hours": 1.0325
       },
       "MAUL1_63160": {
         "status": "eligible",
-        "age_hours": 0.7427777777777778
+        "age_hours": 1.0325
       },
       "MCHL1": {
         "status": "missing",
@@ -177,21 +177,21 @@
       },
       "MDLL1": {
         "status": "eligible",
-        "age_hours": 0.7427777777777778
+        "age_hours": 1.0325
       },
       "NWCL1": {
         "status": "eligible",
-        "age_hours": 1.1927777777777777
+        "age_hours": 1.4825
       }
     },
     "feature_diagnostics": {
       "expected_latest_bin_utc": "2026-10-25T10:00:00Z",
       "mchl1_shadow": {
-        "candidate_observation_count": 381,
+        "candidate_observation_count": 383,
         "features": {
-          "mchl1_stage_change_24h_native_ft": 0.29499999999999993,
-          "mchl1_stage_change_6h_native_ft": 0.09499999999999975,
-          "mchl1_stage_change_72h_native_ft": 0.5149999999999999
+          "mchl1_stage_change_24h_native_ft": 0.2974999999999999,
+          "mchl1_stage_change_6h_native_ft": 0.0974999999999997,
+          "mchl1_stage_change_72h_native_ft": 0.5174999999999998
         },
         "forecast_eligible": false,
         "latest_completed_bin_present": true,
@@ -251,5 +251,5 @@
     }
   },
   "model_anchor_time_utc": "2026-10-25T11:00:00Z",
-  "run_id": "40189063418-1"
+  "run_id": "40190281213-1"
 }
