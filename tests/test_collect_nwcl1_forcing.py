@@ -39,7 +39,7 @@ class TestNWCL1Collector(unittest.TestCase):
             collector.records_for_payload("wind", {"error": "unavailable"}, self.received, "d", "u", "p")
 
     def test_tide_predictions_allow_future_times_and_keep_datum(self):
-        p = {"data": [{"t": "2026-10-25 14:00", "v": "2.1"}]}
+        p = {"predictions": [{"t": "2026-10-25 14:00", "v": "2.1"}]}
         rows = collector.noaa_records("predictions", p, self.received, "d", "u", "raw/x")
         self.assertEqual(rows[0]["record_type"], "prediction")
         self.assertEqual(rows[0]["datum"], "MLLW")
