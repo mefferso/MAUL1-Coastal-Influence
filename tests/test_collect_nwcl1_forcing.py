@@ -32,6 +32,10 @@ class TestNWCL1Collector(unittest.TestCase):
         payload = {"data": [{"t": "2026-10-25 14:00", "v": "2.1"}]}
         self.assertEqual(collector.records_for_payload("water_level", payload, self.received, "digest", "url", "raw/x"), [])
 
+    def test_observation_collection_uses_provider_recent_window_for_recovery(self):
+        self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlparse(collector.noaa_url("wind", "recent")).query)["date"], ["recent"])
+        self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlparse(collector.noaa_url("predictions", "latest")).query)["date"], ["latest"])
+
     def test_water_datum_explicit(self):
         payload = {"data": [{"t": "2026-10-25 12:00", "v": "2.1"}]}
         rows = collector.records_for_payload("water_level", payload, self.received, "digest", "url", "raw/x")
