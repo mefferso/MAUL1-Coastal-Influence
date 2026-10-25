@@ -116,7 +116,9 @@ class TestNWCL1Collector(unittest.TestCase):
             def __exit__(self, *args): return False
             def read(self): return json.dumps(self.payload).encode()
 
+        requested_urls = []
         def opener(request, timeout=30):
+            requested_urls.append(request.full_url)
             query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
             if "product" in query:
                 product = query["product"][0]
@@ -139,10 +141,12 @@ class TestNWCL1Collector(unittest.TestCase):
             self.assertEqual(first["critical_failures"], [], json.dumps(first["sources"], indent=2))
             self.assertGreater(first["records_added"], 0)
             self.assertEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 8)
+            self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
             self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
             self.assertEqual(next(r for r in first["sources"] if "63160" in r["source"])["status"], "empty")
             second = collector.collect(temp, now=now + dt.timedelta(minutes=1), opener=opener, sleeper=lambda _: None)
             self.assertEqual(second["records_added"], 0)
+            self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
 
 
 if __name__ == "__main__":
