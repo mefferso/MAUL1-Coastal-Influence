@@ -82,6 +82,16 @@ class TestForcingArchive(unittest.TestCase):
             path.write_text(json.dumps(row1) + "\n" + json.dumps(row2) + "\n")
             self.assertEqual(archive.validate_file(path), 2)
 
+    def test_future_tide_prediction_is_not_an_observation(self):
+        row = sample()
+        row.update(record_type="prediction", variable="tide_prediction", unit="ft", datum="MLLW",
+                   status="predicted", valid_time="2026-10-25T14:00:00Z")
+        archive.validate(row)
+        row["record_type"] = "observation"
+        with self.assertRaises(ValueError):
+            archive.validate(row)
+
 
 if __name__ == "__main__":
     unittest.main()
+
