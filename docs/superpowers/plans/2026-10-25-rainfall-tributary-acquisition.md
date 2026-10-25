@@ -2,7 +2,7 @@
 
 **Worktree:** `/tmp/maul1-rainfall-tributary-observations`  
 **Branch:** `feature/rainfall-tributary-observations`  
-**Base:** current main `6f110d3852d5473d2ff65942b2018bc04d38578f`  
+**Base:** current main after PR #62 `efccc944a9ba850d97256fd91cdee6c059eb1588`
 **Spec:** `docs/superpowers/specs/2026-10-25-rainfall-tributary-acquisition-design.md`
 
 ## Global constraints
