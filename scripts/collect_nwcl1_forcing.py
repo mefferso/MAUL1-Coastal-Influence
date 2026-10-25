@@ -22,13 +22,17 @@ from validate_forcing_archive import validate
 
 UTC = dt.timezone.utc
 NOAA_API = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
+AWC_API = "https://aviationweather.gov/api/data/metar"
 USGS_API = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/latest-continuous/items"
 NOAA_STATION = "8761927"
+AWC_STATION = "KNEW"
 SOURCES = {
-    "NWCL1": {"provider": "NOAA CO-OPS", "station": NOAA_STATION, "products": ["wind", "water_level", "predictions"]},
-    "DENL1": {"provider": "USGS", "station": "USGS-07378500", "parameters": ["00060", "00065"]},
-    "MDLL1": {"provider": "USGS", "station": "USGS-301200090072400", "parameters": ["00065"]},
-    "MAUL1": {"provider": "USGS", "station": "USGS-07380215", "parameters": ["00065", "63160"]},
+    "NWCL1": {"provider": "NOAA CO-OPS", "station": NOAA_STATION, "products": ["wind", "water_level", "predictions"], "category": "core"},
+    "KNEW": {"provider": "NOAA Aviation Weather Center", "station": AWC_STATION, "products": ["METAR wind"], "category": "shadow"},
+    "DENL1": {"provider": "USGS", "station": "USGS-07378500", "parameters": ["00060", "00065"], "category": "core"},
+    "MDLL1": {"provider": "USGS", "station": "USGS-301200090072400", "parameters": ["00065"], "category": "core"},
+    "MAUL1": {"provider": "USGS", "station": "USGS-07380215", "parameters": ["00065", "63160"], "category": "core"},
+    "MCHL1-USGS": {"provider": "USGS", "station": "USGS-073802302", "parameters": ["00065"], "category": "shadow"},
 }
 USER_AGENT = "MAUL1-research-observation-archive/1.0 (nonoperational; public data research)"
 
@@ -47,6 +51,63 @@ def noaa_url(product: str, date: str = "latest") -> str:
     if product in {"water_level", "predictions"}:
         query["datum"] = "MLLW"
     return NOAA_API + "?" + urllib.parse.urlencode(query)
+
+
+def awc_url(hours=2):
+    return AWC_API + "?" + urllib.parse.urlencode({"ids": AWC_STATION, "format": "json", "hours": str(hours)})
+
+
+def awc_wind_records(payload, retrieved, digest, url, raw_path, provider_date=None):
+    """Parse official AWC METAR JSON; METAR wind uses knots and direction-from."""
+    if not isinstance(payload, list):
+        raise ValueError("AWC METAR: expected a JSON array")
+    station_reports = [r for r in payload if isinstance(r, dict) and r.get("icaoId") == AWC_STATION]
+    if not station_reports:
+        raise ValueError("AWC METAR: no KNEW report in response")
+    out = []
+    for report in station_reports:
+        try:
+            valid = dt.datetime.fromtimestamp(int(report["obsTime"]), UTC)
+            if valid > retrieved:
+                continue
+            speed = float(report["wspd"])
+            if not math.isfinite(speed) or speed < 0:
+                continue
+            direction = report.get("wdir")
+            values = [("wind_speed", speed, "knots")]
+            if direction is not None and int(direction) != 0x7fffffff:
+                direction = float(direction)
+                if not math.isfinite(direction) or not 0 <= direction <= 360:
+                    continue
+                theta = math.radians(direction)
+                values.extend([("wind_direction", direction, "degrees"),
+                               ("wind_u", -speed * math.sin(theta), "knots"),
+                               ("wind_v", -speed * math.cos(theta), "knots")])
+            gust = report.get("wgst")
+            if gust is not None:
+                gust = float(gust)
+                if math.isfinite(gust) and gust >= speed:
+                    values.append(("wind_gust", gust, "knots"))
+        except (KeyError, TypeError, ValueError, OverflowError, OSError):
+            continue
+        for variable, value, unit in values:
+            row = {"schema_version": "forcing-1", "record_type": "observation", "station_id": "KNEW",
+                   "source": "NOAA AWC METAR KNEW", "sensor_id": "KNEW-ASOS", "source_category": "shadow",
+                   "variable": variable, "unit": unit, "datum": "not_applicable", "valid_time": iso(valid),
+                   "retrieved_at": iso(retrieved), "provider_http_date": provider_date, "value": value,
+                   "status": "observed", "raw_id": f"awc:KNEW:{report['obsTime']}:{variable}",
+                   "qc_flags": [], "provider_report_time": report.get("reportTime"),
+                   "provider_url": url, "raw_sha256": digest, "raw_path": raw_path,
+                   "source_metadata": {"wind_direction_convention": "degrees clockwise from true north, direction from",
+                                       "wind_average_period": "ASOS/METAR standard 2-minute average",
+                                       "sensor_height_m": None, "exposure": "airport; not over-water",
+                                       "station_latitude": report.get("lat"), "station_longitude": report.get("lon"),
+                                       "station_elevation_m": report.get("elev"), "raw_metar": report.get("rawOb")}}
+            validate(row)
+            out.append(row)
+    if not out:
+        raise ValueError("AWC METAR: no valid wind values")
+    return out
 
 
 def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_date=None):
@@ -85,8 +146,10 @@ def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_da
                    "provider_http_date": provider_date, "value": value,
                    "status": "predicted" if prediction else "provisional",
                    "raw_id": f"coops:8761927:{product}:{entry['t']}:{variable}",
-                   "qc_flags": [f"provider_flag:{entry['f']}"] if entry.get("f") not in (None, "", "0") else [],
+                   "qc_flags": [f"provider_flag:{flag}" for flag in str(entry.get("f", "")).split(",")
+                                if flag.strip() not in ("", "0")],
                    "product": product, "provider_url": url, "raw_sha256": digest, "raw_path": raw_path,
+                   "source_category": "core",
                    "source_metadata": {"direction_convention": "degrees clockwise from true north, direction from",
                                        "water_level_datum": "MLLW" if product in {"water_level", "predictions"} else None}}
             validate(row)
@@ -114,7 +177,7 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
         unit = props.get("unit_of_measure") or props.get("unit")
         if not station or not t or value is None or not unit:
             continue
-        station_name = next((name for name, meta in SOURCES.items() if meta["station"] == station), None)
+        station_name = next((name for name, meta in SOURCES.items() if meta.get("provider") == "USGS" and meta["station"] == station), None)
         if station_name is None:
             continue
         try:
@@ -144,6 +207,7 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
                "provider_updated_at": props.get("last_modified"), "value": number, "status": status,
                "raw_id": f"usgs:{station}:{parameter}:{t}:{props.get('time_series_id','')}",
                "qc_flags": flags, "parameter_code": parameter, "provider_url": url,
+               "source_category": SOURCES[station_name]["category"],
                "raw_sha256": digest, "raw_path": raw_path}
         validate(row)
         out.append(row)
@@ -248,6 +312,23 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         directory.mkdir(parents=True, exist_ok=True)
     results = []
     all_rows = []
+    # Airport METAR is useful regional context, but not a substitute for lake wind.
+    url = awc_url()
+    item = {"source": "NOAA AWC METAR KNEW", "critical": False, "category": "shadow", "url": url}
+    try:
+        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
+        digest, raw_path = write_immutable_raw(raw_dir, body)
+        payload = json.loads(body)
+        rows = awc_wind_records(payload, received, digest, url, raw_path, http_date)
+        newest = max(r["valid_time"] for r in rows)
+        newest_stamp = dt.datetime.fromisoformat(newest.replace("Z", "+00:00"))
+        item.update(status="success", response_code=status, attempts=attempts, count=len(rows),
+                    provider_item_count=len(payload), retrieved_at=iso(received), valid_time_max=newest,
+                    newest_valid_age_seconds=max(0, int((received - newest_stamp).total_seconds())))
+        all_rows.extend(rows)
+    except Exception as exc:
+        item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+    results.append(item)
     for product in ("wind", "water_level", "predictions"):
         # Keep hourly raw responses small. Once daily, also retrieve NOAA's
         # recent window for outage recovery and provisional-value revisions.
@@ -278,12 +359,14 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
             except Exception as exc:
                 item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
             results.append(item)
-    for name in ("DENL1", "MDLL1", "MAUL1"):
-        meta = SOURCES[name]
+    for name, meta in SOURCES.items():
+        if meta.get("provider") != "USGS":
+            continue
         for parameter in meta["parameters"]:
             url = usgs_url(meta["station"], parameter)
             item = {"source": f"USGS {name} {meta['station']} parameter {parameter}",
-                    "critical": not (name == "MAUL1" and parameter == "63160"), "url": url}
+                    "critical": meta["category"] == "core" and not (name == "MAUL1" and parameter == "63160"),
+                    "category": meta["category"], "url": url}
             try:
                 body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
                 digest, raw_path = write_immutable_raw(raw_dir, body)
@@ -311,7 +394,8 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
               "completed_at": iso(dt.datetime.now(UTC)), "sources": results,
               "records_seen": len(all_rows), "records_added": added,
               "receipt_file": str(receipt_file) if receipt_file else None,
-              "critical_failures": [r["source"] for r in results if r["critical"] and r["status"] != "success"]}
+              "critical_failures": [r["source"] for r in results if r["critical"] and r["status"] != "success"],
+              "shadow_failures": [r["source"] for r in results if r.get("category") == "shadow" and r["status"] != "success"]}
     health_path = health_dir / f"{run_id}.json"
     with health_path.open("x", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2, sort_keys=True)
@@ -325,6 +409,22 @@ def main():
     parser.add_argument("--live-smoke", action="store_true", help="retrieve official NOAA and USGS current feeds without saving archive")
     args = parser.parse_args()
     if args.live_smoke:
+        url = awc_url()
+        body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
+        parsed = json.loads(body)
+        digest = hashlib.sha256(body).hexdigest()
+        rows = awc_wind_records(parsed, received, digest, url, f"raw/{digest}.json", date)
+        newest = max(r["valid_time"] for r in rows)
+        age = int((received - dt.datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds())
+        station_metadata = next(r["source_metadata"] for r in rows if r["variable"] == "wind_speed")
+        if status != 200 or age > 2 * 3600 or station_metadata["station_latitude"] is None or station_metadata["station_longitude"] is None:
+            raise RuntimeError(f"live KNEW METAR smoke failed: HTTP {status}, newest observation age={age}s")
+        print(json.dumps({"source": "NOAA AWC METAR KNEW", "http_status": status, "parsed_receipts": len(rows),
+                          "newest_valid_time": newest, "newest_valid_age_seconds": age,
+                          "retrieved_at": iso(received), "http_date": date, "category": "shadow",
+                          "station_latitude": station_metadata["station_latitude"],
+                          "station_longitude": station_metadata["station_longitude"],
+                          "station_elevation_m": station_metadata["station_elevation_m"]}))
         for product in ("wind", "water_level", "predictions"):
             url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
             body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
@@ -335,7 +435,7 @@ def main():
                 raise RuntimeError(f"live NOAA smoke failed: {url} HTTP {status}, parsed receipts={len(rows)}")
             print(json.dumps({"source": f"NOAA CO-OPS 8761927 {product}", "http_status": status,
                               "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date}))
-        for name in ("DENL1", "MDLL1", "MAUL1"):
+        for name in ("DENL1", "MDLL1", "MAUL1", "MCHL1-USGS"):
             meta = SOURCES[name]
             for parameter in meta["parameters"]:
                 url = usgs_url(meta["station"], parameter)
@@ -345,13 +445,16 @@ def main():
                 rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
                 rows = [r for r in rows if r["station_id"] == name and r["parameter_code"] == parameter]
                 optional_direct_datum = name == "MAUL1" and parameter == "63160"
-                if status != 200 or (not rows and not optional_direct_datum):
+                shadow_source = SOURCES[name]["category"] == "shadow"
+                if status != 200 or (not rows and not optional_direct_datum and not shadow_source):
                     sample_props = (parsed.get("features") or [{}])[0].get("properties", {}) if isinstance(parsed, dict) else {}
                     raise RuntimeError(f"live USGS smoke failed: {name} parameter {parameter} HTTP {status}, "
                                        f"parsed receipts={len(rows)}, sample_properties={json.dumps(sample_props, sort_keys=True)[:1200]}")
                 print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}", "http_status": status,
                                   "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date,
-                                  "optional_unavailable": optional_direct_datum and not rows}))
+                                  "optional_unavailable": (optional_direct_datum or shadow_source) and not rows,
+                                  "category": SOURCES[name]["category"],
+                                  "newest_valid_time": max((r["valid_time"] for r in rows), default=None)}))
         return
     report = collect(args.out_dir)
     print(json.dumps(report, indent=2, sort_keys=True))
