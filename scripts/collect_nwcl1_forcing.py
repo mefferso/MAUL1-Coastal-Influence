@@ -219,6 +219,24 @@ def append_receipts(receipts_dir, rows):
     return path, len(new)
 
 
+def noaa_recent_window_due(health_dir, product, now):
+    """Fetch NOAA's larger recovery window at least daily; retry it until successful."""
+    target = f"NOAA CO-OPS 8761927 {product}"
+    for path in sorted(pathlib.Path(health_dir).glob("*.json"), reverse=True):
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for source in report.get("sources", []):
+            if source.get("source") != target or source.get("request_window") != "recent" or source.get("status") != "success":
+                continue
+            retrieved = source.get("retrieved_at")
+            if retrieved:
+                last = dt.datetime.fromisoformat(retrieved.replace("Z", "+00:00")).astimezone(UTC)
+                return now.astimezone(UTC) - last >= dt.timedelta(hours=24)
+    return True
+
+
 def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
     now = now or dt.datetime.now(UTC)
     opener = opener or urllib.request.urlopen
@@ -231,31 +249,35 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
     results = []
     all_rows = []
     for product in ("wind", "water_level", "predictions"):
-        # Re-request the recent observed window so a missed scheduled run or
-        # delayed provisional update can be recovered. Tide predictions stay
-        # on `latest` because that product is deterministic for its valid times.
-        url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
-        item = {"source": f"NOAA CO-OPS 8761927 {product}", "critical": True, "url": url}
-        try:
-            body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
-            digest, raw_path = write_immutable_raw(raw_dir, body)
-            payload = json.loads(body)
-            rows = noaa_records(product, payload, received, digest, url, raw_path, http_date)
-            provider_items = len(payload.get("predictions" if product == "predictions" else "data", []))
-            accepted_items = len(rows) // (4 if product == "wind" else 1)
-            item_status = "success" if accepted_items == provider_items and accepted_items else (
-                "partial" if accepted_items else "invalid" if provider_items else "empty")
-            item.update(status=item_status, response_code=status, attempts=attempts, count=len(rows),
-                        provider_item_count=provider_items, invalid_or_unmapped_item_count=max(0, provider_items - accepted_items),
-                        retrieved_at=iso(received),
-                        valid_time_min=min((r["valid_time"] for r in rows), default=None),
-                        valid_time_max=max((r["valid_time"] for r in rows), default=None),
-                        newest_valid_age_seconds=max(0, int((received - max(dt.datetime.fromisoformat(r["valid_time"].replace("Z", "+00:00")) for r in rows)).total_seconds())) if rows and product != "predictions" else None,
-                        qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
-            all_rows.extend(rows)
-        except Exception as exc:
-            item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
-        results.append(item)
+        # Keep hourly raw responses small. Once daily, also retrieve NOAA's
+        # recent window for outage recovery and provisional-value revisions.
+        windows = ["latest"]
+        if product in {"wind", "water_level"} and noaa_recent_window_due(health_dir, product, now):
+            windows.append("recent")
+        for window in windows:
+            url = noaa_url(product, window)
+            source_name = f"NOAA CO-OPS 8761927 {product}"
+            item = {"source": source_name, "request_window": window, "critical": True, "url": url}
+            try:
+                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
+                digest, raw_path = write_immutable_raw(raw_dir, body)
+                payload = json.loads(body)
+                rows = noaa_records(product, payload, received, digest, url, raw_path, http_date)
+                provider_items = len(payload.get("predictions" if product == "predictions" else "data", []))
+                accepted_items = len(rows) // (4 if product == "wind" else 1)
+                item_status = "success" if accepted_items == provider_items and accepted_items else (
+                    "partial" if accepted_items else "invalid" if provider_items else "empty")
+                item.update(status=item_status, response_code=status, attempts=attempts, count=len(rows),
+                            provider_item_count=provider_items, invalid_or_unmapped_item_count=max(0, provider_items - accepted_items),
+                            retrieved_at=iso(received),
+                            valid_time_min=min((r["valid_time"] for r in rows), default=None),
+                            valid_time_max=max((r["valid_time"] for r in rows), default=None),
+                            newest_valid_age_seconds=max(0, int((received - max(dt.datetime.fromisoformat(r["valid_time"].replace("Z", "+00:00")) for r in rows)).total_seconds())) if rows and product != "predictions" else None,
+                            qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
+                all_rows.extend(rows)
+            except Exception as exc:
+                item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+            results.append(item)
     for name in ("DENL1", "MDLL1", "MAUL1"):
         meta = SOURCES[name]
         for parameter in meta["parameters"]:
