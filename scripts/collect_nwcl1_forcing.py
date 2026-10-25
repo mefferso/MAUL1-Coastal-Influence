@@ -416,11 +416,15 @@ def main():
         rows = awc_wind_records(parsed, received, digest, url, f"raw/{digest}.json", date)
         newest = max(r["valid_time"] for r in rows)
         age = int((received - dt.datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds())
-        if status != 200 or age > 2 * 3600:
+        station_metadata = next(r["source_metadata"] for r in rows if r["variable"] == "wind_speed")
+        if status != 200 or age > 2 * 3600 or station_metadata["station_latitude"] is None or station_metadata["station_longitude"] is None:
             raise RuntimeError(f"live KNEW METAR smoke failed: HTTP {status}, newest observation age={age}s")
         print(json.dumps({"source": "NOAA AWC METAR KNEW", "http_status": status, "parsed_receipts": len(rows),
                           "newest_valid_time": newest, "newest_valid_age_seconds": age,
-                          "retrieved_at": iso(received), "http_date": date, "category": "shadow"}))
+                          "retrieved_at": iso(received), "http_date": date, "category": "shadow",
+                          "station_latitude": station_metadata["station_latitude"],
+                          "station_longitude": station_metadata["station_longitude"],
+                          "station_elevation_m": station_metadata["station_elevation_m"]}))
         for product in ("wind", "water_level", "predictions"):
             url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
             body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
