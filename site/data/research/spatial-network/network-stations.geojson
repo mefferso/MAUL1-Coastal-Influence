@@ -90,7 +90,7 @@
         "exposure": "midlake/crossover installation",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "Project event windows since 2016",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "USGS/HADS qualifiers; coordinates differ across directories, resolve sensor coordinate",
@@ -100,7 +100,15 @@
         "independence_note": "Existing central-lake context; no splicing historic USGS 073802330",
         "relevance": "Existing central-lake context; no splicing historic USGS 073802330",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG"
+        ],
+        "data_interval_minutes": {
+          "HG": 15
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "USGS01"
       }
     },
     {
@@ -123,17 +131,25 @@
         "exposure": "pass/channel gauge",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "IEM/HADS history since Dec 2022; project windows",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
-        "qc_status": "15-min; 479/479 paired exact values with USGS 073802302 in two windows",
+        "qc_status": "15-min; exact matches at 373 valid times (Dec 2022) and 479 (Nov 2024); first window MCHL1 coverage 77.7% (373/480), second 99.8% (479/480).",
         "datum_status": "Native gage height; datum unresolved",
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
         "independence_note": "Keep shadow-only; possible duplicate telemetry",
         "relevance": "Keep shadow-only; possible duplicate telemetry",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG"
+        ],
+        "data_interval_minutes": {
+          "HG": 15
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "CEMVN1"
       }
     },
     {
@@ -156,7 +172,7 @@
         "exposure": "river gauge",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "00065 historical; 63160 GEOID18 from 2026-06-14",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "USGS qualifiers; parameter-specific",
@@ -166,7 +182,17 @@
         "independence_note": "Target station",
         "relevance": "Target station",
         "source_url": "https://waterdata.usgs.gov/monitoring-location/USGS-07380215",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG",
+          "PC"
+        ],
+        "data_interval_minutes": {
+          "HG": 15,
+          "PC": 15
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "USGS01"
       }
     },
     {
@@ -348,7 +374,7 @@
         "station_id": "073802302",
         "name": "Pass Manchac near Lake Maurepas",
         "family": "spatial_water_level",
-        "network_role": "priority_candidate",
+        "network_role": "shadow_duplicate",
         "source": "USGS 073802302",
         "status": "shadow_duplicate",
         "exposure": "USGS river/pass gauge",
@@ -387,7 +413,7 @@
         "exposure": "near Maurepas/Amite approach",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "60-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "HADS interval hourly; period unknown",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "Identity, QC and missingness unknown",
@@ -397,7 +423,19 @@
         "independence_note": "Do not presume CRMS H01 or independence",
         "relevance": "Do not presume CRMS H01 or independence",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "TW",
+          "HG",
+          "WC"
+        ],
+        "data_interval_minutes": {
+          "TW": 60,
+          "HG": 60,
+          "WC": 60
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "USGS01"
       }
     },
     {
@@ -486,7 +524,7 @@
         "exposure": "river gauge",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "HADS period and active status require confirmation",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "Typically 15-min sampled/hourly transmission per directory; verify exact site",
@@ -494,9 +532,29 @@
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
         "independence_note": "Potential additional Amite flow; test DENL1 redundancy",
-        "relevance": "Potential additional Amite flow; test DENL1 redundancy",
+        "relevance": "Near-target Amite stream; HADS lists precipitation accumulator PC plus stage and weather elements HG, WV, HB, TW, US, UD. Decode units/duration and verify live history.",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG",
+          "PC",
+          "WV",
+          "HB",
+          "TW",
+          "US",
+          "UD"
+        ],
+        "data_interval_minutes": {
+          "HG": 15,
+          "PC": 15,
+          "WV": 15,
+          "HB": 15,
+          "TW": 15,
+          "US": 15,
+          "UD": 15
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "USGS01"
       }
     },
     {
@@ -519,7 +577,7 @@
         "exposure": "river gauge",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "HADS period requires confirmation",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "Timing and QC site-specific unknown",
@@ -527,9 +585,19 @@
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
         "independence_note": "Potential basin runoff context",
-        "relevance": "Potential basin runoff context",
+        "relevance": "Tangipahoa tributary candidate; HADS lists stage HG and precipitation accumulator PC; exact USGS station relationship/history to verify.",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG",
+          "PC"
+        ],
+        "data_interval_minutes": {
+          "HG": 15,
+          "PC": 15
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "USGS01"
       }
     },
     {
@@ -552,7 +620,7 @@
         "exposure": "river gauge",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "60-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "HADS period requires confirmation",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "Timing and QC site-specific unknown",
@@ -560,9 +628,29 @@
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
         "independence_note": "Potential Lake Maurepas tributary; routing and value to test",
-        "relevance": "Potential Lake Maurepas tributary; routing and value to test",
+        "relevance": "Tickfaw tributary candidate; HADS lists HG, TW, US, UD, TA, PC and PA with 60-minute data/transmit intervals; exposure/height unknown.",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG",
+          "TW",
+          "US",
+          "UD",
+          "TA",
+          "PC",
+          "PA"
+        ],
+        "data_interval_minutes": {
+          "HG": 60,
+          "TW": 60,
+          "US": 60,
+          "UD": 60,
+          "TA": 60,
+          "PC": 60,
+          "PA": 60
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "CEMVN1"
       }
     },
     {
@@ -585,7 +673,7 @@
         "exposure": "bayou gauge",
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
-        "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
+        "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
         "period_of_record": "HADS period requires confirmation",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "Timing and QC site-specific unknown",
@@ -593,9 +681,19 @@
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
         "independence_note": "Watershed discovery; likely not direct Maurepas inflow",
-        "relevance": "Watershed discovery; likely not direct Maurepas inflow",
+        "relevance": "Bayou Manchac watershed candidate; HADS lists stage HG and precipitation accumulator PC; routing to Lake Maurepas not assumed.",
         "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "elements": [
+          "HG",
+          "PC"
+        ],
+        "data_interval_minutes": {
+          "HG": 15,
+          "PC": 15
+        },
+        "transmit_interval_minutes": 60,
+        "dcp_owner": "USGS01"
       }
     },
     {
@@ -629,6 +727,39 @@
         "relevance": "Approximate context marker; not open-water station",
         "source_url": "https://www.thecauseway.us/",
         "coordinate_status": "Approximate context marker; station identity not confirmed"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "KASD",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -89.8208,
+          30.3463
+        ]
+      },
+      "properties": {
+        "station_id": "KASD",
+        "name": "Slidell Airport ASOS",
+        "family": "wind_field",
+        "network_role": "candidate",
+        "source": "NWS/FAA ASOS; NCEI archive",
+        "status": "candidate",
+        "exposure": "airport runway/land",
+        "height_m": null,
+        "height_reason": "Actual station wind-sensor height not verified; typical ASOS height is not site-specific.",
+        "cadence": "NCEI 1-minute, 5-minute and hourly products; exact station history to query.",
+        "period_of_record": "NCEI archive; exact KASD span and maintenance epochs to verify.",
+        "coverage_status": "Missingness not quantified for this study.",
+        "qc_status": "NCEI QA/archive; site and sensor history need review.",
+        "datum_status": "Not applicable; wind.",
+        "receipt_latency": "Product-specific; archive valid and retrieval time separately.",
+        "access": "Public NCEI archive and operational ASOS/METAR feeds.",
+        "independence_note": "Northshore airport weather control, not over-water wind.",
+        "relevance": "Regional northshore control; land/airport exposure is not a lake-wind surrogate.",
+        "source_url": "https://www.ncei.noaa.gov/products/land-based-station/automated-surface-weather-observing-systems",
+        "coordinate_status": "Airport reference coordinate, not verified anemometer location."
       }
     }
   ]
