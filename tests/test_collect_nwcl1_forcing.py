@@ -131,7 +131,7 @@ class TestNWCL1Collector(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             now = dt.datetime(2026, 10, 25, 15, 0, tzinfo=UTC)
             first = collector.collect(temp, now=now, opener=opener, sleeper=lambda _: None)
-            self.assertEqual(first["critical_failures"], [])
+            self.assertEqual(first["critical_failures"], [], json.dumps(first["sources"], indent=2))
             self.assertGreater(first["records_added"], 0)
             self.assertEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 8)
             self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
