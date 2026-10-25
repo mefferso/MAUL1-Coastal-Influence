@@ -49,10 +49,11 @@ def noaa_url(product: str, date: str = "latest") -> str:
 
 
 def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_date=None):
-    if not isinstance(payload, dict) or "error" in payload or not isinstance(payload.get("data"), list):
+    list_key = "predictions" if product == "predictions" else "data"
+    if not isinstance(payload, dict) or "error" in payload or not isinstance(payload.get(list_key), list):
         raise ValueError(f"NOAA {product}: provider error or absent data list")
     out = []
-    for entry in payload["data"]:
+    for entry in payload[list_key]:
         try:
             valid = parse_noaa_time(entry["t"])
             prediction = product == "predictions"
@@ -271,13 +272,30 @@ def main():
     parser.add_argument("--live-smoke", action="store_true", help="retrieve official NOAA and USGS current feeds without saving archive")
     args = parser.parse_args()
     if args.live_smoke:
-        for url in (noaa_url("wind"), noaa_url("water_level"), usgs_url(SOURCES["DENL1"]["station"], ["00060", "00065"])):
+        for product in ("wind", "water_level", "predictions"):
+            url = noaa_url(product)
             body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
             parsed = json.loads(body)
-            count = len(parsed.get("data", parsed.get("features", [])))
-            if status != 200 or count == 0:
-                raise RuntimeError(f"live smoke failed: {url} HTTP {status}, items={count}")
-            print(json.dumps({"url": url, "http_status": status, "items": count, "retrieved_at": iso(received), "http_date": date}))
+            digest = hashlib.sha256(body).hexdigest()
+            rows = noaa_records(product, parsed, received, digest, url, f"raw/{digest}.json", date)
+            if status != 200 or not rows:
+                raise RuntimeError(f"live NOAA smoke failed: {url} HTTP {status}, parsed receipts={len(rows)}")
+            print(json.dumps({"source": f"NOAA CO-OPS 8761927 {product}", "http_status": status,
+                              "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date}))
+        for name in ("DENL1", "MDLL1", "MAUL1"):
+            meta = SOURCES[name]
+            url = usgs_url(meta["station"], meta["parameters"])
+            body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
+            parsed = json.loads(body)
+            digest = hashlib.sha256(body).hexdigest()
+            rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
+            params = {r["parameter_code"] for r in rows if r["station_id"] == name}
+            required = {"00060", "00065"} if name == "DENL1" else {"00065"}
+            if status != 200 or not required.issubset(params):
+                raise RuntimeError(f"live USGS smoke failed: {name} HTTP {status}, parsed parameters={sorted(params)}")
+            print(json.dumps({"source": f"USGS {name} {meta['station']}", "http_status": status,
+                              "parsed_receipts": len(rows), "parameters": sorted(params),
+                              "retrieved_at": iso(received), "http_date": date}))
         return
     report = collect(args.out_dir)
     print(json.dumps(report, indent=2, sort_keys=True))
