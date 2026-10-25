@@ -8,6 +8,7 @@ From the repository root:
 
 ```sh
 python research/directional-wind-memory/analyze_wind_memory.py
+python research/directional-wind-memory/event_periods.py
 python -m unittest discover -s research/directional-wind-memory -v
 ```
 
@@ -17,8 +18,13 @@ The script reads only committed `site/data/history/hourly/*.json.gz` records and
 
 - `report.md`: findings, feature audit, case and failure analysis, interpretations, data limitations, and recommendations.
 - `analyze_wind_memory.py`: reproducible issue-time descriptor calculations.
+- `event_periods.py`: fixed Alberto/transition/Beryl chronology and same-station historical context diagnostics.
 - `test_analyze_wind_memory.py`: cutoff, missingness/run, and low coverage tests.
+- `test_event_periods.py`: event-window separation and same-station change tests.
+- `presentation_claims.json`: structured transcription of the presentation's annotated event claims and visible metadata.
+- `test_presentation_claims.py`: arithmetic checks for the stated wind/duration and delay claims.
 - `wind_memory_summary.json`: generated episode descriptor cohort summaries.
+- `event_period_diagnostics.json`: generated fixed-window metrics and source/datum notes.
 - `wind_memory_groups.svg`: cohort median and IQR figure.
 - `sources.md`: repository and public source provenance.
 
