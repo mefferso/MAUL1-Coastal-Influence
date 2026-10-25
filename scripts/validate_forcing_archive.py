@@ -20,6 +20,7 @@ REQUIRED = {
 VARIABLE_UNITS = {
     "wind_speed": {"knots"},
     "wind_direction": {"degrees"},
+    "wind_gust": {"knots"},
     "wind_u": {"knots"},
     "wind_v": {"knots"},
     "water_level": {"ft"},
