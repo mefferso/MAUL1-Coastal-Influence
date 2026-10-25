@@ -127,8 +127,8 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
         variable = {"00060": "discharge", "00065": "gage_height", "63160": "water_level"}.get(parameter)
         if not variable:
             continue
-        expected_units = {"discharge": {"ft3/s", "cfs"}, "gage_height": {"ft", "feet"}, "water_level": {"ft", "feet"}}
-        normalized = "cfs" if unit in {"ft3/s", "cfs"} else "ft" if unit in {"ft", "feet"} else unit
+        expected_units = {"discharge": {"ft3/s", "ft^3/s", "cfs"}, "gage_height": {"ft", "feet"}, "water_level": {"ft", "feet"}}
+        normalized = "cfs" if unit in {"ft3/s", "ft^3/s", "cfs"} else "ft" if unit in {"ft", "feet"} else unit
         if normalized not in expected_units[variable]:
             continue
         status = "observed" if str(props.get("approval_status", "")).lower() in {"approved", "approved for publication"} else "provisional"
