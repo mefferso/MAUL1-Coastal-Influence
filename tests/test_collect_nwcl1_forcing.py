@@ -71,6 +71,41 @@ class TestNWCL1Collector(unittest.TestCase):
         self.assertIn("approval_status:Provisional", row["qc_flags"])
         self.assertIn("qualifier:A", row["qc_flags"])
 
+    def test_knew_awc_metar_preserves_identity_timestamp_and_wind_vector(self):
+        payload = [{"icaoId": "KNEW", "obsTime": 1792929600, "reportTime": "2026-10-25T12:00:00Z",
+                    "lat": 30.05, "lon": -90.03, "elev": 1, "wdir": 90, "wspd": 10, "wgst": 15,
+                    "rawOb": "METAR KNEW 251200Z 09010G15KT"}]
+        rows = collector.awc_wind_records(payload, self.received, "d", "url", "raw/x")
+        self.assertEqual({row["variable"] for row in rows}, {"wind_speed", "wind_direction", "wind_u", "wind_v", "wind_gust"})
+        by_var = {row["variable"]: row for row in rows}
+        self.assertEqual(by_var["wind_speed"]["unit"], "knots")
+        self.assertEqual(by_var["wind_u"]["value"], -10)
+        self.assertEqual(by_var["wind_direction"]["valid_time"], "2026-10-25T12:00:00Z")
+        self.assertEqual(by_var["wind_speed"]["station_id"], "KNEW")
+        self.assertEqual(by_var["wind_speed"]["source_category"], "shadow")
+        self.assertEqual(by_var["wind_speed"]["source_metadata"]["station_longitude"], -90.03)
+
+    def test_awc_rejects_wrong_station_and_does_not_make_calm_direction(self):
+        payload = [{"icaoId": "KMSY", "obsTime": 1792929600, "wdir": 90, "wspd": 5}]
+        with self.assertRaises(ValueError):
+            collector.awc_wind_records(payload, self.received, "d", "url", "raw/x")
+        payload = [{"icaoId": "KNEW", "obsTime": 1792929600, "wdir": None, "wspd": 0}]
+        rows = collector.awc_wind_records(payload, self.received, "d", "url", "raw/x")
+        self.assertEqual([row["variable"] for row in rows], ["wind_speed"])
+
+    def test_usgs_mchl1_stage_is_shadow_and_retains_native_datum(self):
+        data = {"features": [{"properties": {"monitoring_location_id": "USGS-073802302",
+                "parameter_code": "00065", "time": "2026-10-25T12:00:00Z", "value": "1.1",
+                "unit_of_measure": "ft", "approval_status": "Provisional", "time_series_id": "mchl1"}}]}
+        row = collector.usgs_records(data, self.received, "d", "url", "raw/x")[0]
+        self.assertEqual(row["datum"], "native_gage_datum:USGS-073802302")
+        self.assertEqual(row["source_category"], "shadow")
+
+    def test_noaa_zero_quality_codes_are_not_reported_as_flags(self):
+        payload = {"data": [{"t": "2026-10-25 12:00", "v": "2.1", "f": "0,0"}]}
+        row = collector.noaa_records("water_level", payload, self.received, "d", "url", "raw/x")[0]
+        self.assertEqual(row["qc_flags"], [])
+
     def test_raw_payload_content_addressed_and_deduplicated(self):
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
@@ -120,6 +155,9 @@ class TestNWCL1Collector(unittest.TestCase):
         def opener(request, timeout=30):
             requested_urls.append(request.full_url)
             query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
+            if "ids" in query:
+                return Response([{"icaoId": "KNEW", "obsTime": 1792929600, "reportTime": "2026-10-25T12:00:00Z",
+                                  "wdir": 180, "wspd": 5, "rawOb": "METAR KNEW"}])
             if "product" in query:
                 product = query["product"][0]
                 if product == "wind": payload = {"data": [{"t": "2026-10-25 12:00", "s": "10", "d": "180", "f": "0"}]}
@@ -140,7 +178,7 @@ class TestNWCL1Collector(unittest.TestCase):
             first = collector.collect(temp, now=now, opener=opener, sleeper=lambda _: None)
             self.assertEqual(first["critical_failures"], [], json.dumps(first["sources"], indent=2))
             self.assertGreater(first["records_added"], 0)
-            self.assertEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 8)
+            self.assertEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 10)
             self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
             self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
             self.assertEqual(next(r for r in first["sources"] if "63160" in r["source"])["status"], "empty")
