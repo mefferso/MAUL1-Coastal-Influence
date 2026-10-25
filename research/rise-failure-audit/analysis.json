@@ -1,0 +1,253 @@
+{
+  "all_case_mae_context": {
+    "metric_selection_context": "Phase 5B ridge penalties were selected on calibration forward-fold MAE for continuous target stage change; no significant-rise classification or event-recall objective was used.",
+    "phase5b_coastal_tidal_vs_persistence": {
+      "12": {
+        "coastal_tidal_mae_ft": 0.12186239971740924,
+        "coastal_tidal_skill_vs_persistence": 0.4954152021706345,
+        "paired_n": 32445,
+        "persistence_mae_ft": 0.24151024811218988
+      },
+      "24": {
+        "coastal_tidal_mae_ft": 0.19018142260842813,
+        "coastal_tidal_skill_vs_persistence": 0.20842725259110217,
+        "paired_n": 32406,
+        "persistence_mae_ft": 0.24025766833302473
+      },
+      "6": {
+        "coastal_tidal_mae_ft": 0.06262061226856765,
+        "coastal_tidal_skill_vs_persistence": 0.640593545433513,
+        "paired_n": 32475,
+        "persistence_mae_ft": 0.17423341031562742
+      }
+    }
+  },
+  "archive_coverage": {
+    "event_analysis_rows_24h_holdout": 32406,
+    "first_24h_issue_utc": "2023-01-07T00:00:00Z",
+    "last_24h_target_utc": "2026-10-20T12:00:00Z",
+    "maul1_source": "USGS station 07380215 parameter 00065, ft, native gage height; no NAVD88 conversion",
+    "phase5a_issue_feature_rows": 32406,
+    "phase5b_rows_across_6_12_24h_holdout": 99546,
+    "phase5b_target_observation_missing_n": 776,
+    "receipt_time_coverage": "source receipt times are not archived; valid-time bins are retrospective as-of approximations only"
+  },
+  "causal_safeguards": {
+    "astronomical_forecasts": "not used as issue-time evidence; archive is retrospective valid-time only",
+    "maul1_datum": "native gage height",
+    "mchl1": "reported as availability only; unverified and excluded from trusted inference",
+    "no_future_observation_features_used": true,
+    "no_new_models_trained": true,
+    "nwcl1_residual_datum": "MLLW",
+    "outcome_defined_events_used_as_predictors": false
+  },
+  "definition_reproduction": {
+    "all_alert_clusters": 78,
+    "cluster_note": "False-alert clusters are temporal groups of overlapping hourly forecast opportunities, not independent storm samples.",
+    "detected_groups": 28,
+    "eligible_target_windows": 32406,
+    "false_positive_target_windows": 305,
+    "issue_time_cluster_rule": "Sort predicted >=0.50-ft 24h target windows by issue time; one cluster continues while adjacent issue times differ by <=24 h. A cluster is false only when none of its own linked target windows has an observed >=0.50-ft rise.",
+    "matches_existing_model_lab_false_clusters": true,
+    "matches_existing_model_lab_groups": true,
+    "missed_groups": 81,
+    "missed_rise_target_windows": 1657,
+    "observed_target_rise_frequency": 0.05736591989137814,
+    "phase5b_false_alert_clusters": 48,
+    "phase6_groups": 109,
+    "predicted_alert_target_windows": 507,
+    "published_model_lab_counts": {
+      "all_alert_clusters": 78,
+      "detected_groups": 28,
+      "false_alert_clusters": 48,
+      "false_positive_target_windows": 305,
+      "missed_groups": 81,
+      "phase6_groups": 109
+    },
+    "qualifying_observed_target_windows": 1859,
+    "target_window_critical_success_index": 0.0933456561922366,
+    "target_window_false_alarm_ratio": 0.6015779092702169,
+    "target_window_probability_of_detection": 0.10866057019903173,
+    "true_positive_target_windows": 202
+  },
+  "event_feature_comparison": {
+    "phase6_detected": {
+      "groups_with_any_nwcl1_residual_setup_ge_0_50ft": 18,
+      "groups_with_any_phase4_coastal_support": 9,
+      "groups_with_any_phase4_river_support": 1,
+      "groups_with_any_wind_speed_ge_5knots": 28,
+      "max_observed_target_change_ft_median": 0.8024999999999999,
+      "max_phase5b_coastal_tidal_target_change_ft_median": 0.6527898380263318,
+      "median_denl1_log_discharge_median": 6.463332463513212,
+      "median_group_median_denl1_log_change_24h": -0.04463565314396356,
+      "median_group_median_maul1_acceleration_6h_ft_per_h2": 0.0015625000000000014,
+      "median_group_median_maul1_change_24h_ft": 0.10249999999999998,
+      "median_group_median_maul1_change_6h_ft": 0.10999999999999999,
+      "median_group_median_mdll1_stage_change_24h_ft": 0.09375,
+      "median_group_median_nwcl1_residual_change_6h_ft": 0.11699999999999997,
+      "median_group_median_nwcl1_wind_directional_persistence_6h": 0.9776653396943752,
+      "median_nwcl1_residual_mllw_ft_median": 0.28075,
+      "median_nwcl1_wind_speed_knots_median": 9.30721345112419,
+      "n_groups": 28
+    },
+    "phase6_not_detected": {
+      "groups_with_any_nwcl1_residual_setup_ge_0_50ft": 43,
+      "groups_with_any_phase4_coastal_support": 3,
+      "groups_with_any_phase4_river_support": 4,
+      "groups_with_any_wind_speed_ge_5knots": 68,
+      "max_observed_target_change_ft_median": 0.6499999999999999,
+      "max_phase5b_coastal_tidal_target_change_ft_median": 0.31870205031461785,
+      "median_denl1_log_discharge_median": 6.633318433280377,
+      "median_group_median_denl1_log_change_24h": -0.04598650985649222,
+      "median_group_median_maul1_acceleration_6h_ft_per_h2": 0.0016666666666666809,
+      "median_group_median_maul1_change_24h_ft": 0.11500000000000021,
+      "median_group_median_maul1_change_6h_ft": 0.022500000000000075,
+      "median_group_median_mdll1_stage_change_24h_ft": 0.09500000000000003,
+      "median_group_median_nwcl1_residual_change_6h_ft": 0.0685,
+      "median_group_median_nwcl1_wind_directional_persistence_6h": 0.959968853099095,
+      "median_nwcl1_residual_mllw_ft_median": 0.32,
+      "median_nwcl1_wind_speed_knots_median": 4.6152925681426735,
+      "n_groups": 81
+    }
+  },
+  "event_level_summary": {
+    "large_subthreshold_forecast_not_causal": {
+      "denl1_discharge_available_fraction": 1.0,
+      "mdll1_24h_available_fraction": 1.0,
+      "median_max_observed_change_ft": 0.6400000000000001,
+      "median_max_predicted_change_ft": 0.23279516485735874,
+      "median_underforecast_gap_ft": 0.39600064881915853,
+      "n_groups": 57,
+      "nwcl1_residual_available_fraction": 1.0
+    },
+    "near_threshold_underforecast_not_causal": {
+      "denl1_discharge_available_fraction": 1.0,
+      "mdll1_24h_available_fraction": 1.0,
+      "median_max_observed_change_ft": 0.6824999999999999,
+      "median_max_predicted_change_ft": 0.4732414168133009,
+      "median_underforecast_gap_ft": 0.23351923474757674,
+      "n_groups": 22,
+      "nwcl1_residual_available_fraction": 1.0
+    },
+    "target_alert_matched": {
+      "denl1_discharge_available_fraction": 1.0,
+      "mdll1_24h_available_fraction": 1.0,
+      "median_max_observed_change_ft": 0.8024999999999999,
+      "median_max_predicted_change_ft": 0.6527898380263318,
+      "median_underforecast_gap_ft": 0.11254587473273026,
+      "n_groups": 28,
+      "nwcl1_residual_available_fraction": 1.0
+    },
+    "threshold_target_after_first_qualifying_target_not_physical_onset": {
+      "denl1_discharge_available_fraction": 1.0,
+      "mdll1_24h_available_fraction": 1.0,
+      "median_max_observed_change_ft": 1.165,
+      "median_max_predicted_change_ft": 0.857783442495873,
+      "median_underforecast_gap_ft": 0.307216557504127,
+      "n_groups": 2,
+      "nwcl1_residual_available_fraction": 1.0
+    }
+  },
+  "failure_mechanism_counts": {
+    "large_subthreshold_forecast_not_causal": 57,
+    "near_threshold_underforecast_not_causal": 22,
+    "target_alert_matched": 28,
+    "threshold_target_after_first_qualifying_target_not_physical_onset": 2
+  },
+  "false_vs_true_alert_cluster_comparison": {
+    "false_cluster_count": 48,
+    "false_clusters_with_phase6_group_first_target_in_next_72h": 10,
+    "false_median_denl1_log_discharge": 6.6983470514193275,
+    "false_median_max_forecast_change_ft": 0.5912913305118835,
+    "false_median_nwcl1_residual_mllw_ft": 0.55925,
+    "false_median_wind_speed_knots": 15.777848844411192,
+    "interpretation": "Descriptive comparison across alert episodes; these clusters are serially dependent and covariate co-occurrence is not causation.",
+    "true_cluster_count": 30,
+    "true_median_denl1_log_discharge": 6.48513236235098,
+    "true_median_max_forecast_change_ft": 0.6964847285649413,
+    "true_median_nwcl1_residual_mllw_ft": 0.5569999999999999,
+    "true_median_wind_speed_knots": 16.17322277780955
+  },
+  "group_independence_audit": {
+    "interpretation": "The 109 groups are temporally declumped target episodes, not proven independent physical hydrologic events. Overlap with the separate Phase 3B >=1-ft response catalog is descriptive only; non-overlap does not establish physical independence.",
+    "phase3b_response_catalog_event_count": 189,
+    "phase3b_response_catalog_status_counts": {
+      "left_censored": 10,
+      "observed_response": 145,
+      "recovery_right_censored": 34
+    },
+    "phase3b_response_events_overlapping_multiple_phase6_groups": 21,
+    "phase3b_response_events_touched": 60,
+    "phase6_group_count": 109,
+    "phase6_groups_overlapping_multiple_phase3b_response_windows": 0,
+    "phase6_groups_overlapping_one_phase3b_response_window": 88,
+    "phase6_groups_with_no_phase3b_response_window_overlap": 21
+  },
+  "label": "Research / Shadow Evaluation / Not Operational; retrospective diagnostics only",
+  "phase6_definition": "24-hour native-stage target rise >=0.50 ft; qualifying target times separated by <=24 hours are grouped. Forecast alerts must be issued before the group's first qualifying valid target and occur on a qualifying target row.",
+  "precipitation_and_tributary_availability": {
+    "noaa_radar_candidate": {
+      "limitation": "Spatial gridded precipitation requires watershed aggregation, retrospective continuity and version/QC audit; availability in product archive does not prove real-time receipt at historic issue times.",
+      "product": "MRMS precipitation",
+      "published_period_seen": "operational viewer/archive dating to 2020-10",
+      "url": "https://www.nssl.noaa.gov/projects/mrms/MRMS_data.php"
+    },
+    "other_usgs_candidates": [
+      {
+        "name": "Bayou Manchac at Alligator Bayou near Kleinpeter",
+        "station": "07378746",
+        "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378746/"
+      },
+      {
+        "name": "Dawson Creek at Bluebonnet Blvd",
+        "station": "07379960",
+        "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07379960/"
+      },
+      {
+        "name": "Amite River near French Settlement",
+        "station": "07380200",
+        "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07380200/"
+      }
+    ],
+    "selection_guidance": "First validate station period-of-record, parameter, datum, drainage location, hourly continuity, and timing; none is accepted as an existing model predictor in this audit.",
+    "status": "candidate sources identified; not downloaded or entered into model/event scores",
+    "usgs_local_precipitation": {
+      "limitation": "USGS notes temporary precipitation data may be available only for 120 days; do not assume full stable retrospective availability without direct retrieval/archive validation.",
+      "parameter": "00045",
+      "published_period_seen": "2021-08-19 through 2026-10-14",
+      "source": "USGS Water Data",
+      "station": "301828090363100",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-301828090363100"
+    },
+    "usgs_tributary_candidate": {
+      "limitation": "A local tributary stage series, not rainfall and not yet joined to event windows; verify stage-to-flow utility and representativeness before use.",
+      "name": "Bayou Fountain at Bluebonnet Blvd",
+      "published_period_seen": "gage-height series 2007-10-01 through 2026-10-18",
+      "station": "07378810",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378810/"
+    }
+  },
+  "provenance": {
+    "analysis_script_sha256": "cbd2d9969246226e9a3b8772eeb5a29fa873af1dca3bf0d90e89c879ee978d61",
+    "model_lab_archives_modified": false,
+    "prospective_archives_modified": false,
+    "source_archive": "committed Phase 5A features, Phase 5B hindcast predictions, Phase 3B response-event catalog, existing Model Lab report",
+    "source_sha256": {
+      "docs/model-lab-findings.md": "7b4035240fbc53091e6f4db083f0eb78bc7dec6b64c64d0e7eee77f3557a8c52",
+      "docs/model-lab-methodology.md": "6ff4e21b4d3d312fb6f555eb8b4deb625fca340df0fe878096348587d9dc9cb6",
+      "docs/phase5b-methodology.md": "bd912e0fc48359dfe0ae8d4c5e3e0a08dc1bb5bbac8f71ce6e0a49d1d49b5155",
+      "research/rise-failure-audit/test_audit.py": "80ad7a9a9ecd55bf6a7161e1de70c6c5a16cb4528bee6bc0a667125da3972768",
+      "scripts/model_lab.py": "3d61818c51214920aaa43e69f45ecabfab317f75a4614a1cf9b3f32f5a1d4ee2",
+      "scripts/phase5a.py": "7f4f0f2767e5c513321ed351ecf188fd01a3b1a13ef8dfc0926631009344032c",
+      "scripts/phase5b.py": "3b1c009af75a3be33e67575c76759cf25a2687d9c78c5e0abdd5a9e563d65cf2",
+      "scripts/phase6_metrics.py": "51923e2c7b93b8a9850e71173b9d9ac6e787aecad48fedec1e713d7ad20a1a41",
+      "site/data/history/phase3b/response-events.csv": "0ec3a23e772fcd94fda54dc0b0cbd248f807cac810fe13f8e58cd7c252ddeff6",
+      "site/data/history/phase5a/features.csv.gz": "8518e768198f9bc374ead006faa29e2ff9509bf2c0743ecbd0b02f136ac0ef0f",
+      "site/data/history/phase5a/predictions.csv.gz": "13dc8200fd151e36fc301eb496520c2cd9e804bb843b31db5abde92b39ff467b",
+      "site/data/history/phase5b/predictions.csv.gz": "c5020ab00abab075be6aeb2dda26167346be57660ad8ef71ba8335e053bffbbf",
+      "site/data/research/model-lab.json": "f6fb17a05d96fc2abaa820800bf84eb7b3ad25d81130d61e842fde1355676a5f"
+    }
+  },
+  "schema": "maul1.rise-failure-audit.v1",
+  "threshold_ft": 0.5
+}
