@@ -159,6 +159,12 @@ def fetch(url, opener, retries=3, sleeper=time.sleep):
                 body = response.read()
                 received = dt.datetime.now(UTC)
                 return body, received, response.headers.get("Date"), response.status, attempt
+        except urllib.error.HTTPError as exc:
+            if exc.code != 429 and not 500 <= exc.code < 600:
+                raise RuntimeError(f"non-retryable HTTP {exc.code}: {exc.reason}") from exc
+            last = exc
+            if attempt < retries:
+                sleeper(min(2 ** (attempt - 1), 8))
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             last = exc
             if attempt < retries:
