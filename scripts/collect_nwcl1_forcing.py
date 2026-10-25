@@ -238,9 +238,16 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
             digest, raw_path = write_immutable_raw(raw_dir, body)
             payload = json.loads(body)
             rows = noaa_records(product, payload, received, digest, url, raw_path, http_date)
-            item.update(status="success" if rows else "empty", response_code=status, attempts=attempts, count=len(rows), retrieved_at=iso(received),
+            provider_items = len(payload.get("predictions" if product == "predictions" else "data", []))
+            accepted_items = len(rows) // (4 if product == "wind" else 1)
+            item_status = "success" if accepted_items == provider_items and accepted_items else (
+                "partial" if accepted_items else "invalid" if provider_items else "empty")
+            item.update(status=item_status, response_code=status, attempts=attempts, count=len(rows),
+                        provider_item_count=provider_items, invalid_or_unmapped_item_count=max(0, provider_items - accepted_items),
+                        retrieved_at=iso(received),
                         valid_time_min=min((r["valid_time"] for r in rows), default=None),
                         valid_time_max=max((r["valid_time"] for r in rows), default=None),
+                        newest_valid_age_seconds=max(0, int((received - max(dt.datetime.fromisoformat(r["valid_time"].replace("Z", "+00:00")) for r in rows)).total_seconds())) if rows and product != "predictions" else None,
                         qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
             all_rows.extend(rows)
         except Exception as exc:
@@ -257,11 +264,17 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
                 digest, raw_path = write_immutable_raw(raw_dir, body)
                 rows = usgs_records(json.loads(body), received, digest, url, raw_path, http_date)
                 rows = [row for row in rows if row["station_id"] == name and row["parameter_code"] == parameter]
-                item.update(status="success" if rows else "empty", response_code=status, attempts=attempts,
-                            count=len(rows), parameters_returned=sorted({r["parameter_code"] for r in rows}),
+                provider_items = len(json.loads(body).get("features", []))
+                item_status = "success" if len(rows) == provider_items and rows else (
+                    "partial" if rows else "invalid" if provider_items else "empty")
+                item.update(status=item_status, response_code=status, attempts=attempts,
+                            count=len(rows), provider_item_count=provider_items,
+                            invalid_or_unmapped_item_count=max(0, provider_items - len(rows)),
+                            parameters_returned=sorted({r["parameter_code"] for r in rows}),
                             retrieved_at=iso(received),
                             valid_time_min=min((r["valid_time"] for r in rows), default=None),
                             valid_time_max=max((r["valid_time"] for r in rows), default=None),
+                            newest_valid_age_seconds=max(0, int((received - dt.datetime.fromisoformat(max(r["valid_time"] for r in rows).replace("Z", "+00:00"))).total_seconds())) if rows else None,
                             qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
                 all_rows.extend(rows)
             except Exception as exc:
