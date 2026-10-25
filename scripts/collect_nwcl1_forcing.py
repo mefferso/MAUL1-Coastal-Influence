@@ -231,7 +231,10 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
     results = []
     all_rows = []
     for product in ("wind", "water_level", "predictions"):
-        url = noaa_url(product)
+        # Re-request the recent observed window so a missed scheduled run or
+        # delayed provisional update can be recovered. Tide predictions stay
+        # on `latest` because that product is deterministic for its valid times.
+        url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
         item = {"source": f"NOAA CO-OPS 8761927 {product}", "critical": True, "url": url}
         try:
             body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
@@ -301,7 +304,7 @@ def main():
     args = parser.parse_args()
     if args.live_smoke:
         for product in ("wind", "water_level", "predictions"):
-            url = noaa_url(product)
+            url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
             body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
             parsed = json.loads(body)
             digest = hashlib.sha256(body).hexdigest()
