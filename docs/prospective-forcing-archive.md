@@ -2,7 +2,7 @@
 
 **Research / Shadow Evaluation / Not Operational**
 
-This is the first safety-critical building block for an **actual, issue-time auditable** forcing archive. It is **not** yet a live collector, a historical reconstruction, or a forecast change. In particular, the existence of these files does not mean observations have been fetched or archived.
+This is a research archive separate from published Phase 6 forecast and verification records. The collector runs hourly through free GitHub Actions, with an additional manual dispatch. It records actual retrievals only; this does not establish uninterrupted operation until scheduled runs, stored payloads, and health reports have accumulated and been inspected. No forecast or advisory is generated.
 
 ## Scope and priority
 
@@ -27,9 +27,21 @@ Each newline in a dated JSONL batch is an independent **provider receipt**, not 
 | `valid_time` | Actual observation/forecast valid time, UTC ISO8601 |
 | `retrieved_at` | Actual provider retrieval time, UTC ISO8601 — never reconstructed from valid time |
 | `value` | Finite numeric reading, or null if missing/rejected |
-| `status`, `qc_flags` | Provisional/observed/missing/rejected and explicit QC annotations |
+| `status`, `qc_flags` | Provisional/observed/predicted/missing/rejected and explicit QC annotations |
 
-Optional fields for implementation: `product`, `provider_updated_at`, `sensor_id`, `sensor_metadata_version`, `observation_period_seconds`, `provider_url`, `raw_sha256`, `raw_path`, `fetch_status`, `retrieval_run_id`. Retain original provider payloads in immutable content-addressed raw files rather than silently normalizing away revisions.
+NOAA wind records include speed and direction as well as east/north vector components. CO-OPS direction is the direction the wind is from; the code uses `u=-speed*sin(direction)` and `v=-speed*cos(direction)`. CO-OPS observed water levels and predictions explicitly request MLLW. Predictions are `record_type=prediction`, `status=predicted`; future valid times are permitted only in that class. They are never treated as observations.
+
+USGS OGC latest-continuous responses are preserved as received. `00060` is discharge, `00065` is station-native gage height, and `63160` is NAVD88 elevation only when that exact direct parameter is returned. The collector does not derive discharge from stage or convert a native gage datum. It preserves provider units, quality qualifiers, approval information, the server HTTP `Date` header, and available source modification metadata. An HTTP `Date` is not a publication timestamp.
+
+Raw response bytes are SHA-256 addressed under `raw/`; receipt lines are append-only in UTC-day files. Exact repeated station-variable-valid-time-value-QC observations are skipped. A changed reported value or QC state is retained as a new receipt with its own actual `retrieved_at`. Every run writes a `health/` JSON report with per-feed status, response code, attempts, record counts, valid-time coverage, and QC flag counts. Critical feed failure or empty responses cause the collection command to exit unsuccessfully after writing health. GitHub Actions persists that report and the raw/receipt evidence before marking the run failed.
+
+## Automated operation and limits
+
+`.github/workflows/forcing-archive.yml` schedules hourly at minute 43, separate from Phase 6. It commits only `research/prospective-forcing-archive/`; its schedule does not consume forecast archives or rewrite issue times. GitHub Actions is free for public repositories subject to GitHub service availability, usage limits, and scheduled-run delays. Its default repository branch storage is persistent Git storage, not a guaranteed database or immutable/WORM store: Git history preserves committed prior bytes, while repository administrators can still rewrite history. Runs are serialized only by scheduler cadence, and concurrent workflow pushes may need retry/reconciliation if GitHub rejects a push.
+
+The live smoke command retrieves current NOAA wind, NOAA water level, and USGS DENL1 current continuous data, checks for nonempty JSON feeds, and prints real HTTP and collector receipt metadata. Fixture tests validate deterministic parsing but are not proof of provider availability. In this environment, external network requests were blocked by the outbound proxy (403 CONNECT), so live provider verification must come from the GitHub Actions PR check before claiming endpoint availability. The public-data source schemas, units and actual availability need continued verification against each response; missing `63160` is shown as absent in run health and never synthesized.
+
+Provider times (`valid_time`), collector times (`retrieved_at`), HTTP server `Date`, and any source-provided modification field are stored as different fields. None of these reconstructs when an observation first became publicly available. Backfilled historical source records must not be merged into the prospective receipt archive.
 
 **Important:** a `retrieved_at` timestamp proves only when *our collector saw the value*, not when it first became available. A provider publication timestamp, if reported, is additional evidence; don't fabricate it. For historical datasets without real receipts, use an explicitly different historical archive namespace and never populate `retrieved_at` with guessed dates.
 
@@ -42,13 +54,13 @@ python scripts/validate_forcing_archive.py path/to/actual-observations.jsonl
 
 No fictitious observation records are committed. Validation rejects missing provenance, improper units, unzoned dates, duplicate receipt keys within a batch, invalid values, and receipt times before valid times. Source-specific collector code must additionally enforce provider-specific QC and sensor/datum lineage; this validator does not certify physical validity.
 
-## Next implementation increment — acquire, persist, and schedule real observations
+## Data contract and operations review
 
-- Build a small standard-library collector for the official NWCL1 provider endpoint, persisting raw response bytes, HTTP/retrieval status, actual receipt timestamp, explicit valid times, provenance/version metadata, and checked `forcing-1` receipts.
-- Run live endpoint integration checks **before** claiming the connector is operational.
-- Establish reliable recurring collection with failure/coverage diagnostics and a clear missed-run policy. If using GitHub Actions, verify scheduling, artifact retention, storage growth, permissions, deployment segregation and API rate limits. Do not fabricate observations for outages.
-- In a subsequent increment, include MDLL1, DENL1, MAUL1, and verified independent wind feeds with distinct source metadata.
-- Archive model issuance timestamps and receipts independently; permitted issue-time features may only consume actual receipts recorded by issuance.
-- Only after coverage and QC testing: predeclare directional wind-duration/stress/relaxation features, compare against frozen baselines on a future evaluation period, and report missed rises **and** false alerts.
+- The collector only queries current NOAA products and USGS latest-continuous data; it does not backfill source observations or assert historical receipt time.
+- The archive is research-only and must remain disjoint from Phase 6 model inputs until prospective receipt coverage and QC have been reviewed.
+- For production-grade durability beyond free GitHub storage, a later decision would need a separate public immutable archive. No paid or external cloud storage is configured here.
+- Before model experimentation, inspect scheduled health reports for missing runs, latency, source metadata and datum lineage, and compare only observations actually received by each issuance time.
+- Wind vector conventions, sensor metadata, NOAA MLLW datum availability, and USGS OGC field names must be verified against successful live source payloads before treating records as physically validated.
 
 Never modify frozen Phase 6 forecast artifacts or genuine issuance/verification logs. No operational thresholds or advisory recommendations.
+
