@@ -783,9 +783,9 @@ def write_markdown(report, path):
             lines.append(f"| {horizon} h | {label} | {score['n']:,} | {mae} | {delta} |")
     alert = report["horizons"]["24"]["underforecast_and_false_alarm"]["bounded_damped_trend_ft"]
     rise_groups = report["phase6_qualifying_rise_groups_24h"]
-    lines.extend(["", "### Phase 6 independent qualifying-rise groups", "",
-                  "The existing Phase 6 rule groups outcome-defined 24-hour rises ≥0.50 ft when qualifying target times are no more than 24 hours apart. Lead is to the first qualifying verification target, not physical onset.", "",
-                  "| Model | Independent rise groups | Detected / missed | Detection fraction | Median lead to first qualifying verification target |", "|---|---:|---:|---:|---:|"])
+    lines.extend(["", "### Phase 6 qualifying-rise groups (physical independence unproven)", "",
+                  "The existing Phase 6 rule groups outcome-defined 24-hour rises ≥0.50 ft when qualifying target times are no more than 24 hours apart. These target-time groups are not established independent hydrologic events. Lead is to the first qualifying verification target, not physical onset.", "",
+                  "| Model | Grouped rises (not proven independent) | Detected / missed | Detection fraction | Median lead to first qualifying verification target |", "|---|---:|---:|---:|---:|"])
     phase6_model_rows = model_rows + (("bounded_damped_trend_ft", "Bounded damped-trend challenger"),)
     for key, label in phase6_model_rows:
         result = rise_groups[key]

@@ -41,6 +41,15 @@ jobs:
           cmp "$MODEL_LAB_REPRO_DIR/report-one.json" "$MODEL_LAB_REPRO_DIR/report-two.json"
           cmp "$MODEL_LAB_REPRO_DIR/findings.md" "$MODEL_LAB_REPRO_DIR/findings-two.md"
           git diff --exit-code -- site/data/history site/data/prospective
+      - name: Rebuild the significant-rise audit and compact Model Lab payload
+        run: |
+          audit_dir="$(mktemp -d)"
+          python research/rise-failure-audit/audit.py --root . --output-dir "$audit_dir" > /dev/null
+          for report in analysis.json event-diagnostics.csv false-alert-clusters.csv representative-timelines.json report.md; do
+            cmp "$audit_dir/$report" "research/rise-failure-audit/$report"
+          done
+          python scripts/build_significant_rise_site_data.py --check
+          git diff --exit-code -- site/data/history site/data/prospective
       - run: python scripts/analyze.py > /dev/null
       - run: python scripts/analyze.py > /dev/null
       - run: python -m unittest discover -s tests -v
@@ -68,6 +77,7 @@ jobs:
       - run: node --check site/performance-data.js
       - run: node --check site/performance-explorer.js
       - run: node --check site/model-lab.js
+      - run: node --check site/significant-rise.js
       - run: python -m py_compile scripts/maul1_observation_context.py
       - run: python -m py_compile scripts/model_lab.py
       - run: node tests/navigation-forecast-smoke.cjs
@@ -78,6 +88,8 @@ jobs:
       - run: node tests/performance-explorer-smoke.cjs
       - run: node tests/test_model_lab_ui.js
       - run: node tests/model-lab-smoke.cjs
+      - run: node tests/significant-rise-smoke.cjs
+      - run: python -m unittest discover -s research/rise-failure-audit -v
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

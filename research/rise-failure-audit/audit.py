@@ -637,7 +637,7 @@ def write_outputs(root=ROOT, output_dir=None):
         fields = list(rows[0]) if rows else []
         fields = [f for f in fields if f != "rows"]
         with (output_dir / filename).open("w", newline="", encoding="utf-8") as stream:
-            writer = csv.DictWriter(stream, fieldnames=fields)
+            writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
             writer.writeheader()
             writer.writerows(_csv_safe({k: v for k, v in row.items() if k != "rows"}) for row in rows)
     write_markdown(output_dir / "report.md", report, events, clusters)
