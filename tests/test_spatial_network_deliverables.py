@@ -12,6 +12,10 @@ class SpatialNetworkDeliverableTests(unittest.TestCase):
     def test_geojson_has_existing_and_candidate_network(self):
         doc = json.loads(DATA.read_text())
         self.assertEqual(doc["type"], "FeatureCollection")
+        by_id = {f["properties"]["station_id"]: f["properties"] for f in doc["features"]}
+        for station in ("DENL1", "NWCL1", "MDLL1", "MCHL1"):
+            self.assertNotIn("selected-window only", by_id[station]["qc_status"])
+        self.assertIn("full UTC monthly queries", by_id["NWCL1"]["period_of_record"])
         ids = {f["properties"]["station_id"] for f in doc["features"]}
         self.assertTrue({"DENL1", "NWCL1", "MDLL1", "MCHL1", "MAUL1"} <= ids)
         self.assertTrue({"FREL1", "BCFL1", "LKPL1", "WEGL1", "85575LA", "073802302", "KASD"} <= ids)
