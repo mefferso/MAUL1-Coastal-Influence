@@ -33,6 +33,24 @@ SOURCES = {
     "MDLL1": {"provider": "USGS", "station": "USGS-301200090072400", "parameters": ["00065"], "category": "core"},
     "MAUL1": {"provider": "USGS", "station": "USGS-07380215", "parameters": ["00065", "63160"], "category": "core"},
     "MCHL1-USGS": {"provider": "USGS", "station": "USGS-073802302", "parameters": ["00065"], "category": "shadow"},
+    # Candidate local rainfall and tributary context. These are optional feeds:
+    # operational 00045 precip may be temporary and site-stage feeds can lapse.
+    "USGS-301828090363100": {"provider": "USGS", "station": "USGS-301828090363100",
+                              "parameters": ["00045"], "critical": False, "category": "shadow",
+                              "site_name": "Precip at Amite River at Maurepas, Louisiana",
+                              "hydrologic_role": "point precipitation near the MAUL1 lower-basin outlet"},
+    "USGS-07379960": {"provider": "USGS", "station": "USGS-07379960",
+                      "parameters": ["00045", "00065"], "critical": False, "category": "shadow",
+                      "site_name": "Dawson Creek at Bluebonnet Blvd near Baton Rouge, Louisiana",
+                      "hydrologic_role": "urban tributary stage and temporary point precipitation"},
+    "USGS-07378810": {"provider": "USGS", "station": "USGS-07378810",
+                      "parameters": ["00045", "00065"], "critical": False, "category": "shadow",
+                      "site_name": "Bayou Fountain at Bluebonnet Blvd near Baton Rouge, Louisiana",
+                      "hydrologic_role": "tributary stage and temporary point precipitation"},
+    "USGS-07378746": {"provider": "USGS", "station": "USGS-07378746",
+                      "parameters": ["00045", "00065"], "critical": False, "category": "shadow",
+                      "site_name": "Bayou Manchac at Alligator Bayou near Kleinpeter, Louisiana",
+                      "hydrologic_role": "downstream boundary/backwater stage and temporary point precipitation"},
 }
 USER_AGENT = "MAUL1-research-observation-archive/1.0 (nonoperational; public data research)"
 
@@ -181,17 +199,28 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
         if station_name is None:
             continue
         try:
-            valid = dt.datetime.fromisoformat(str(t).replace("Z", "+00:00")).astimezone(UTC)
+            valid = dt.datetime.fromisoformat(str(t).replace("Z", "+00:00"))
+            if valid.tzinfo is None:
+                continue
+            valid = valid.astimezone(UTC)
             number = float(value)
             if not math.isfinite(number) or valid > retrieved:
                 continue
+            # USGS operational precipitation uses negative sentinels for missing
+            # or invalid accumulations; zero is a valid dry reading.
+            if parameter == "00045" and number < 0:
+                continue
         except (TypeError, ValueError):
             continue
-        variable = {"00060": "discharge", "00065": "gage_height", "63160": "water_level"}.get(parameter)
+        variable = {"00045": "precipitation", "00060": "discharge", "00065": "gage_height", "63160": "water_level"}.get(parameter)
         if not variable:
             continue
-        expected_units = {"discharge": {"ft3/s", "ft^3/s", "cfs"}, "gage_height": {"ft", "feet"}, "water_level": {"ft", "feet"}}
-        normalized = "cfs" if unit in {"ft3/s", "ft^3/s", "cfs"} else "ft" if unit in {"ft", "feet"} else unit
+        expected_units = {"discharge": {"ft3/s", "ft^3/s", "cfs"}, "gage_height": {"ft", "feet"},
+                          "water_level": {"ft", "feet"}, "precipitation": {"in", "inch", "inches", "mm", "millimeter", "millimeters", "millimetre", "millimetres"}}
+        normalized = ("cfs" if unit in {"ft3/s", "ft^3/s", "cfs"} else
+                      "ft" if unit in {"ft", "feet"} else
+                      "in" if unit in {"in", "inch", "inches"} else
+                      "mm" if unit in {"mm", "millimeter", "millimeters", "millimetre", "millimetres"} else unit)
         if normalized not in expected_units[variable]:
             continue
         status = "observed" if str(props.get("approval_status", "")).lower() in {"approved", "approved for publication"} else "provisional"
@@ -209,6 +238,13 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
                "qc_flags": flags, "parameter_code": parameter, "provider_url": url,
                "source_category": SOURCES[station_name]["category"],
                "raw_sha256": digest, "raw_path": raw_path}
+        if parameter == "00045":
+            interval = props.get("accumulation_period_seconds")
+            if not isinstance(interval, int) or isinstance(interval, bool) or interval <= 0:
+                interval = None
+            row.update(measurement_semantics="reported_accumulation",
+                       accumulation_period_seconds=interval,
+                       valid_time_semantics="provider observation timestamp; accumulation interval endpoint is not otherwise inferred")
         validate(row)
         out.append(row)
     return out
@@ -265,12 +301,12 @@ def append_receipts(receipts_dir, rows):
         for line in path.read_text(encoding="utf-8").splitlines():
             try:
                 r = json.loads(line)
-                existing.add((r.get("source"), r.get("station_id"), r.get("variable"), r.get("valid_time"), r.get("value"), tuple(r.get("qc_flags", []))))
+                existing.add(_receipt_identity(r))
             except json.JSONDecodeError:
                 raise RuntimeError(f"corrupt existing archive file: {path}")
     new = []
     for row in rows:
-        key = (row["source"], row["station_id"], row["variable"], row["valid_time"], row["value"], tuple(row["qc_flags"]))
+        key = _receipt_identity(row)
         if key not in existing:
             new.append(row)
             existing.add(key)
@@ -281,6 +317,13 @@ def append_receipts(receipts_dir, rows):
         for row in new:
             stream.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
     return path, len(new)
+
+
+def _receipt_identity(row):
+    """Keep separate provider series/sensors even when readings happen to match."""
+    return (row.get("source"), row.get("station_id"), row.get("variable"), row.get("valid_time"),
+            row.get("value"), tuple(row.get("qc_flags", [])), row.get("sensor_id"),
+            row.get("parameter_code"), row.get("accumulation_period_seconds"))
 
 
 def noaa_recent_window_due(health_dir, product, now):
@@ -322,9 +365,11 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         rows = awc_wind_records(payload, received, digest, url, raw_path, http_date)
         newest = max(r["valid_time"] for r in rows)
         newest_stamp = dt.datetime.fromisoformat(newest.replace("Z", "+00:00"))
-        item.update(status="success", response_code=status, attempts=attempts, count=len(rows),
+        age_seconds = max(0, int((received - newest_stamp).total_seconds()))
+        item.update(status="success" if status == 200 and age_seconds <= 2 * 3600 else "stale",
+                    response_code=status, attempts=attempts, count=len(rows),
                     provider_item_count=len(payload), retrieved_at=iso(received), valid_time_max=newest,
-                    newest_valid_age_seconds=max(0, int((received - newest_stamp).total_seconds())))
+                    newest_valid_age_seconds=age_seconds, freshness_limit_seconds=2 * 3600)
         all_rows.extend(rows)
     except Exception as exc:
         item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
@@ -365,8 +410,9 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         for parameter in meta["parameters"]:
             url = usgs_url(meta["station"], parameter)
             item = {"source": f"USGS {name} {meta['station']} parameter {parameter}",
-                    "critical": meta["category"] == "core" and not (name == "MAUL1" and parameter == "63160"),
-                    "category": meta["category"], "url": url}
+                    "critical": meta.get("critical", meta["category"] == "core") and not (name == "MAUL1" and parameter == "63160"),
+                    "category": meta["category"], "url": url,
+                    "hydrologic_role": meta.get("hydrologic_role")}
             try:
                 body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
                 digest, raw_path = write_immutable_raw(raw_dir, body)
@@ -406,25 +452,32 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=pathlib.Path, default=pathlib.Path("research/prospective-forcing-archive"))
-    parser.add_argument("--live-smoke", action="store_true", help="retrieve official NOAA and USGS current feeds without saving archive")
+    parser.add_argument("--live-smoke", action="store_true", help="retrieve current NOAA and USGS feeds without saving archive")
     args = parser.parse_args()
     if args.live_smoke:
+        # KNEW is shadow context: report a stale/failed feed but keep checking
+        # the core NWCL1 and USGS feeds regardless of its status.
         url = awc_url()
-        body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
-        parsed = json.loads(body)
-        digest = hashlib.sha256(body).hexdigest()
-        rows = awc_wind_records(parsed, received, digest, url, f"raw/{digest}.json", date)
-        newest = max(r["valid_time"] for r in rows)
-        age = int((received - dt.datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds())
-        station_metadata = next(r["source_metadata"] for r in rows if r["variable"] == "wind_speed")
-        if status != 200 or age > 2 * 3600 or station_metadata["station_latitude"] is None or station_metadata["station_longitude"] is None:
-            raise RuntimeError(f"live KNEW METAR smoke failed: HTTP {status}, newest observation age={age}s")
-        print(json.dumps({"source": "NOAA AWC METAR KNEW", "http_status": status, "parsed_receipts": len(rows),
-                          "newest_valid_time": newest, "newest_valid_age_seconds": age,
-                          "retrieved_at": iso(received), "http_date": date, "category": "shadow",
-                          "station_latitude": station_metadata["station_latitude"],
-                          "station_longitude": station_metadata["station_longitude"],
-                          "station_elevation_m": station_metadata["station_elevation_m"]}))
+        try:
+            body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
+            parsed = json.loads(body)
+            digest = hashlib.sha256(body).hexdigest()
+            rows = awc_wind_records(parsed, received, digest, url, f"raw/{digest}.json", date)
+            newest = max(r["valid_time"] for r in rows)
+            age = int((received - dt.datetime.fromisoformat(newest.replace("Z", "+00:00"))).total_seconds())
+            station = next(r["source_metadata"] for r in rows if r["variable"] == "wind_speed")
+            current = (status == 200 and age <= 2 * 3600 and station["station_latitude"] is not None
+                       and station["station_longitude"] is not None)
+            print(json.dumps({"source": "NOAA AWC METAR KNEW", "status": "success" if current else "stale_or_invalid",
+                              "http_status": status, "parsed_receipts": len(rows), "newest_valid_time": newest,
+                              "newest_valid_age_seconds": age, "retrieved_at": iso(received), "http_date": date,
+                              "category": "shadow", "station_latitude": station["station_latitude"],
+                              "station_longitude": station["station_longitude"], "station_elevation_m": station["station_elevation_m"]}))
+        except Exception as exc:
+            print(json.dumps({"source": "NOAA AWC METAR KNEW", "status": "failed", "category": "shadow",
+                              "error": f"{type(exc).__name__}: {exc}"}))
+
+        # NWCL1 CO-OPS products are critical to the established core archive.
         for product in ("wind", "water_level", "predictions"):
             url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
             body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
@@ -434,27 +487,42 @@ def main():
             if status != 200 or not rows:
                 raise RuntimeError(f"live NOAA smoke failed: {url} HTTP {status}, parsed receipts={len(rows)}")
             print(json.dumps({"source": f"NOAA CO-OPS 8761927 {product}", "http_status": status,
-                              "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date}))
-        for name in ("DENL1", "MDLL1", "MAUL1", "MCHL1-USGS"):
-            meta = SOURCES[name]
+                              "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date,
+                              "category": "core"}))
+
+        # Verify every configured USGS source. Candidate/shadow feeds remain
+        # optional: their failures are visible but cannot mask or block core.
+        for name, meta in SOURCES.items():
+            if meta.get("provider") != "USGS":
+                continue
             for parameter in meta["parameters"]:
                 url = usgs_url(meta["station"], parameter)
-                body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
-                parsed = json.loads(body)
-                digest = hashlib.sha256(body).hexdigest()
-                rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
-                rows = [r for r in rows if r["station_id"] == name and r["parameter_code"] == parameter]
-                optional_direct_datum = name == "MAUL1" and parameter == "63160"
-                shadow_source = SOURCES[name]["category"] == "shadow"
-                if status != 200 or (not rows and not optional_direct_datum and not shadow_source):
-                    sample_props = (parsed.get("features") or [{}])[0].get("properties", {}) if isinstance(parsed, dict) else {}
+                optional_datum = name == "MAUL1" and parameter == "63160"
+                critical = meta.get("critical", meta["category"] == "core") and not optional_datum
+                try:
+                    body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
+                    parsed = json.loads(body)
+                    digest = hashlib.sha256(body).hexdigest()
+                    rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
+                    rows = [r for r in rows if r["station_id"] == name and r["parameter_code"] == parameter]
+                except Exception as exc:
+                    print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}",
+                                      "status": "failed", "category": meta["category"], "critical": critical,
+                                      "error": f"{type(exc).__name__}: {exc}"}))
+                    if critical:
+                        raise
+                    continue
+                if (status != 200 or not rows) and critical:
+                    sample = (parsed.get("features") or [{}])[0].get("properties", {}) if isinstance(parsed, dict) else {}
                     raise RuntimeError(f"live USGS smoke failed: {name} parameter {parameter} HTTP {status}, "
-                                       f"parsed receipts={len(rows)}, sample_properties={json.dumps(sample_props, sort_keys=True)[:1200]}")
-                print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}", "http_status": status,
-                                  "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date,
-                                  "optional_unavailable": (optional_direct_datum or shadow_source) and not rows,
-                                  "category": SOURCES[name]["category"],
-                                  "newest_valid_time": max((r["valid_time"] for r in rows), default=None)}))
+                                       f"parsed receipts={len(rows)}, sample_properties={json.dumps(sample, sort_keys=True)[:1200]}")
+                print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}",
+                                  "status": "success" if status == 200 and rows else "empty_or_failed",
+                                  "http_status": status, "parsed_receipts": len(rows),
+                                  "newest_valid_time": max((r["valid_time"] for r in rows), default=None),
+                                  "retrieved_at": iso(received), "http_date": date,
+                                  "optional_unavailable": not rows and not critical,
+                                  "category": meta["category"], "critical": critical}))
         return
     report = collect(args.out_dir)
     print(json.dumps(report, indent=2, sort_keys=True))

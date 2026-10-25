@@ -14,6 +14,19 @@ UTC = dt.timezone.utc
 
 
 class TestNWCL1Collector(unittest.TestCase):
+    def test_existing_core_feed_registry_remains_unchanged(self):
+        self.assertEqual((collector.SOURCES["NWCL1"]["station"], collector.SOURCES["NWCL1"]["products"]),
+                         ("8761927", ["wind", "water_level", "predictions"]))
+        self.assertEqual((collector.SOURCES["DENL1"]["station"], collector.SOURCES["DENL1"]["parameters"]),
+                         ("USGS-07378500", ["00060", "00065"]))
+        self.assertEqual((collector.SOURCES["MDLL1"]["station"], collector.SOURCES["MDLL1"]["parameters"]),
+                         ("USGS-301200090072400", ["00065"]))
+        self.assertEqual((collector.SOURCES["MAUL1"]["station"], collector.SOURCES["MAUL1"]["parameters"]),
+                         ("USGS-07380215", ["00065", "63160"]))
+        self.assertEqual(collector.SOURCES["NWCL1"]["category"], "core")
+        self.assertEqual(collector.SOURCES["KNEW"]["category"], "shadow")
+        self.assertEqual(collector.SOURCES["MCHL1-USGS"]["category"], "shadow")
+
     def setUp(self):
         self.received = dt.datetime(2026, 10, 25, 13, 0, tzinfo=UTC)
 
@@ -71,6 +84,59 @@ class TestNWCL1Collector(unittest.TestCase):
         self.assertIn("approval_status:Provisional", row["qc_flags"])
         self.assertIn("qualifier:A", row["qc_flags"])
 
+    def test_local_usgs_registry_adds_precipitation_and_stage_without_inventing_discharge(self):
+        expected = {
+            "USGS-301828090363100": ["00045"],
+            "USGS-07379960": ["00045", "00065"],
+            "USGS-07378810": ["00045", "00065"],
+            "USGS-07378746": ["00045", "00065"],
+        }
+        for station, parameters in expected.items():
+            with self.subTest(station=station):
+                self.assertEqual(collector.SOURCES[station]["station"], station)
+                self.assertEqual(collector.SOURCES[station]["parameters"], parameters)
+                self.assertFalse(collector.SOURCES[station]["critical"])
+                self.assertNotIn("00060", collector.SOURCES[station]["parameters"])
+
+    def test_usgs_00045_is_retained_as_accumulated_precipitation_with_provider_metadata(self):
+        data = {"features": [{"properties": {
+            "monitoring_location_id": "USGS-301828090363100", "parameter_code": "00045",
+            "time": "2026-10-25T12:00:00Z", "value": "0.12", "unit_of_measure": "inches",
+            "approval_status": "Provisional", "qualifier": "P", "time_series_id": "series-rain-1",
+            "accumulation_period_seconds": 900,
+        }}]}
+        rows = collector.usgs_records(data, self.received, "digest", "url", "raw/digest.json")
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["variable"], "precipitation")
+        self.assertEqual(row["unit"], "in")
+        self.assertEqual(row["provider_unit"], "inches")
+        self.assertEqual(row["parameter_code"], "00045")
+        self.assertEqual(row["measurement_semantics"], "reported_accumulation")
+        self.assertEqual(row["accumulation_period_seconds"], 900)
+        self.assertEqual(row["sensor_id"], "series-rain-1")
+        self.assertEqual(row["status"], "provisional")
+        self.assertIn("qualifier:P", row["qc_flags"])
+        self.assertEqual(row["raw_sha256"], "digest")
+
+    def test_usgs_00045_does_not_assume_an_accumulation_interval_or_rate(self):
+        data = {"features": [{"properties": {
+            "monitoring_location_id": "USGS-301828090363100", "parameter_code": "00045",
+            "time": "2026-10-25T12:00:00Z", "value": "0.0", "unit_of_measure": "in",
+        }}]}
+        row = collector.usgs_records(data, self.received, "digest", "url", "raw/digest.json")[0]
+        self.assertEqual(row["measurement_semantics"], "reported_accumulation")
+        self.assertIsNone(row["accumulation_period_seconds"])
+        self.assertNotIn("precipitation_rate", row["variable"])
+
+    def test_usgs_precipitation_rejects_negative_sentinel_and_timezone_free_valid_time(self):
+        base = {"monitoring_location_id": "USGS-301828090363100", "parameter_code": "00045",
+                "unit_of_measure": "in", "approval_status": "Provisional"}
+        payload = {"features": [
+            {"properties": {**base, "time": "2026-10-25T12:00:00Z", "value": "-999"}},
+            {"properties": {**base, "time": "2026-10-25T12:00:00", "value": "0.1"}},
+        ]}
+        self.assertEqual(collector.usgs_records(payload, self.received, "d", "u", "p"), [])
     def test_knew_awc_metar_preserves_identity_timestamp_and_wind_vector(self):
         payload = [{"icaoId": "KNEW", "obsTime": 1792929600, "reportTime": "2026-10-25T12:00:00Z",
                     "lat": 30.05, "lon": -90.03, "elev": 1, "wdir": 90, "wspd": 10, "wgst": 15,
@@ -156,7 +222,7 @@ class TestNWCL1Collector(unittest.TestCase):
             requested_urls.append(request.full_url)
             query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
             if "ids" in query:
-                return Response([{"icaoId": "KNEW", "obsTime": 1792929600, "reportTime": "2026-10-25T12:00:00Z",
+                return Response([{"icaoId": "KNEW", "obsTime": 1792940400, "reportTime": "2026-10-25T15:00:00Z",
                                   "wdir": 180, "wspd": 5, "rawOb": "METAR KNEW"}])
             if "product" in query:
                 product = query["product"][0]
@@ -178,13 +244,82 @@ class TestNWCL1Collector(unittest.TestCase):
             first = collector.collect(temp, now=now, opener=opener, sleeper=lambda _: None)
             self.assertEqual(first["critical_failures"], [], json.dumps(first["sources"], indent=2))
             self.assertGreater(first["records_added"], 0)
-            self.assertEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 10)
+            self.assertGreaterEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 8)
+            knew = next(item for item in first["sources"] if item["source"] == "NOAA AWC METAR KNEW")
+            self.assertEqual(knew["category"], "shadow")
+            self.assertEqual(knew["status"], "success")
+            self.assertLessEqual(knew["newest_valid_age_seconds"], knew["freshness_limit_seconds"])
             self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
             self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
             self.assertEqual(next(r for r in first["sources"] if "63160" in r["source"])["status"], "empty")
             second = collector.collect(temp, now=now + dt.timedelta(minutes=1), opener=opener, sleeper=lambda _: None)
             self.assertEqual(second["records_added"], 0)
             self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
+
+    def test_new_local_feeds_are_collected_as_optional_and_keep_empty_status(self):
+        class Response:
+            status = 200
+            headers = {"Date": "Sun, 25 Oct 2026 13:00:00 GMT"}
+            def __init__(self, payload): self.payload = payload
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self): return json.dumps(self.payload).encode()
+
+        urls = []
+        def opener(request, timeout=30):
+            urls.append(request.full_url)
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
+            if "ids" in query:
+                raise OSError("optional AWC feed unavailable")
+            if "product" in query:
+                product = query["product"][0]
+                payload = ({"data": [{"t": "2026-10-25 12:00", "s": "10", "d": "180", "f": "0"}]}
+                           if product == "wind" else
+                           {"data": [{"t": "2026-10-25 12:00", "v": "1.2", "f": "0"}]}
+                           if product == "water_level" else
+                           {"predictions": [{"t": "2026-10-25 14:00", "v": "1.4"}]})
+                return Response(payload)
+            station, parameter = query["monitoring_location_id"][0], query["parameter_code"][0]
+            if parameter == "00045" and station == "USGS-301828090363100":
+                return Response({"features": []})
+            if parameter == "00060":
+                unit, value = "ft^3/s", "100"
+            elif parameter == "00045":
+                unit, value = "in", "0.02"
+            else:
+                unit, value = "ft", "2.5"
+            return Response({"features": [{"properties": {"monitoring_location_id": station,
+                "parameter_code": parameter, "time": "2026-10-25T12:00:00Z", "value": value,
+                "unit_of_measure": unit, "approval_status": "Provisional", "time_series_id": station+parameter}}]})
+
+        with tempfile.TemporaryDirectory() as temp:
+            report = collector.collect(temp, now=self.received + dt.timedelta(hours=2), opener=opener, sleeper=lambda _: None)
+            requested = {(urllib.parse.parse_qs(urllib.parse.urlparse(url).query).get("monitoring_location_id", [None])[0],
+                          urllib.parse.parse_qs(urllib.parse.urlparse(url).query).get("parameter_code", [None])[0])
+                         for url in urls}
+            self.assertIn(("USGS-07379960", "00045"), requested)
+            self.assertIn(("USGS-07379960", "00065"), requested)
+            self.assertIn(("USGS-07378810", "00045"), requested)
+            self.assertIn(("USGS-07378746", "00065"), requested)
+            self.assertNotIn(("USGS-07379960", "00060"), requested)
+            self.assertEqual(report["critical_failures"], [])
+            self.assertIn("NOAA AWC METAR KNEW", report["shadow_failures"])
+            knew = next(item for item in report["sources"] if item["source"] == "NOAA AWC METAR KNEW")
+            self.assertEqual(knew["status"], "failed")
+            self.assertFalse(knew["critical"])
+            rain = next(item for item in report["sources"] if item["source"].endswith("USGS-301828090363100 parameter 00045"))
+            self.assertEqual(rain["status"], "empty")
+            self.assertFalse(rain["critical"])
+
+    def test_receipt_deduplication_keeps_distinct_sensor_and_parameter_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            row = {"source": "USGS USGS-301828090363100", "station_id": "USGS-301828090363100",
+                   "variable": "precipitation", "valid_time": "2026-10-25T12:00:00Z", "value": 0.1,
+                   "qc_flags": [], "sensor_id": "sensor-a", "parameter_code": "00045"}
+            other_sensor = {**row, "sensor_id": "sensor-b"}
+            path, count = collector.append_receipts(pathlib.Path(temp) / "receipts", [row, other_sensor])
+            self.assertEqual(count, 2)
+            self.assertEqual(len(path.read_text().splitlines()), 2)
 
 
 if __name__ == "__main__":
