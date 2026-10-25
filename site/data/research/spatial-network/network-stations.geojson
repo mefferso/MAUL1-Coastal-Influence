@@ -25,7 +25,7 @@
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
         "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
-        "period_of_record": "Core hourly history includes full UTC monthly queries Jan 2016\u2013Oct 2026; station record is longer.",
+        "period_of_record": "Core hourly history includes full UTC monthly queries Jan 2016–Oct 2026; station record is longer.",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "USGS qualifiers per parameter/time; monthly archive includes hour-level gaps, not an event-only sample.",
         "datum_status": "Native gage/discharge; no lake subtraction",
@@ -58,7 +58,7 @@
         "height_m": 9.9,
         "height_reason": null,
         "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
-        "period_of_record": "Core hourly history includes full UTC monthly queries Jan 2016\u2013Oct 2026; product-specific gaps vary.",
+        "period_of_record": "Core hourly history includes full UTC monthly queries Jan 2016–Oct 2026; product-specific gaps vary.",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "CO-OPS quality flags; 94,018/94,968 hourly wind slots populated, 676 absent and 274 not-yet-observed.",
         "datum_status": "Water/predictions MLLW; sensor epochs apply",
@@ -91,7 +91,7 @@
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
         "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
-        "period_of_record": "Core hourly history queried over full UTC months Jan 2016\u2013Oct 2026; actual valid observations and source gaps vary.",
+        "period_of_record": "Core hourly history queried over full UTC months Jan 2016–Oct 2026; actual valid observations and source gaps vary.",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "USGS/HADS qualifiers; coordinate disagreement across directories requires resolution.",
         "datum_status": "Native gage height; no absolute comparison absent datum certificate",
@@ -132,7 +132,7 @@
         "height_m": null,
         "height_reason": "Not documented or not applicable; verify before stress or elevation conversion.",
         "cadence": "15-minute parameter data interval; 60-minute DCP transmit interval (HADS directory; actual receipt must be logged).",
-        "period_of_record": "HADS/IEM site history is listed from Dec 2022; core archive queried full UTC months Jan 2016\u2013Oct 2026, with actual valid MCH observations only in available intervals.",
+        "period_of_record": "HADS/IEM site history is listed from Dec 2022; core archive queried full UTC months Jan 2016–Oct 2026, with actual valid MCH observations only in available intervals.",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
         "qc_status": "15-min; exact matches at 373 valid times (Dec 2022) and 479 (Nov 2024); first comparison window MCHL1 coverage 77.7% (373/480), second 99.8% (479/480).",
         "datum_status": "Native gage height; datum unresolved",
@@ -209,7 +209,7 @@
         "station_id": "FREL1",
         "name": "Frenier Landing",
         "family": "wind_field",
-        "network_role": "priority_candidate",
+        "network_role": "historical_candidate",
         "source": "NOAA CO-OPS 8762484 / NDBC FREL1",
         "status": "archive_candidate",
         "exposure": "western south-shore/landing",
@@ -218,14 +218,15 @@
         "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
         "period_of_record": "NDBC 2015-2021; IEM Aug 2016-Sep 2021; NOAA products to 2023-03-31",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
-        "qc_status": "Missingness/current status unverified; height unknown",
+        "qc_status": "NDBC meteorological record ends 2021; no recent reports; CO-OPS product catalog evidence through 2023-03-31 only. No current observation verified.",
         "datum_status": "Water datum/product epoch to verify",
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
-        "independence_note": "Priority west-lake wind/rain; shore exposure, not open water",
-        "relevance": "Priority west-lake wind/rain; shore exposure, not open water",
+        "independence_note": "Historical western shore wind/rain; exclude prospective acquisition pending a genuinely current source.",
+        "relevance": "Historical only; not a current forecast network source.",
         "source_url": "https://tidesandcurrents.noaa.gov/stationhome.html?id=8762484",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "observation_status": "historically available but inactive"
       }
     },
     {
@@ -240,9 +241,9 @@
       },
       "properties": {
         "station_id": "BCFL1",
-        "name": "I-10 Bonnet Carr\u00e9 Floodway",
+        "name": "I-10 Bonnet Carré Floodway",
         "family": "spatial_water_level",
-        "network_role": "priority_candidate",
+        "network_role": "discovery",
         "source": "NOAA CO-OPS 8762483",
         "status": "candidate",
         "exposure": "bridge/floodway structure",
@@ -251,14 +252,15 @@
         "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
         "period_of_record": "Installed 2015; element periods require query",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
-        "qc_status": "QC/latency/wind height unknown",
+        "qc_status": "Current feed activity and element availability not independently verified; no prospective acquisition until a recent genuine observation and accessible feed are demonstrated.",
         "datum_status": "Benchmark exists; datum/sensor epoch gate",
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
-        "independence_note": "Western lake/floodway water context",
-        "relevance": "Western lake/floodway water context",
+        "independence_note": "Potential western lake/floodway context; status gate blocks prospective prioritization.",
+        "relevance": "Unverified; do not acquire prospectively until live feed proven.",
         "source_url": "https://api.tidesandcurrents.noaa.gov/mdapi/prod/",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "observation_status": "unverified"
       }
     },
     {
@@ -317,14 +319,16 @@
         "cadence": "See source feasibility memo; site/product specific and unverified where stated.",
         "period_of_record": "Hourly/current stage; record epoch split",
         "coverage_status": "Known period is not a completeness measure; missingness not quantified unless explicitly stated.",
-        "qc_status": "Raw values subject to change; gaps not computed",
+        "qc_status": "NWPS displayed actual OBS timestamp 2026-10-12 11:00 CDT; page update 17:09 UTC is not observation time. No timely follow-up/current series extraction in this review.",
         "datum_status": "NAVD88 (2004.65) from 2006-12-19; earlier NGVD29",
         "receipt_latency": "Not measured historically; archive valid time and receipt/retrieval time separately.",
         "access": "See linked official provider endpoint; token or terms may apply where noted.",
-        "independence_note": "Close to NWCL1; redundancy comparator",
+        "independence_note": "Distinct USACE water-level sensor ~0.7 km from CO-OPS NWCL1; spatially redundant likely, exact duplicate not demonstrated.",
         "relevance": "Close to NWCL1; redundancy comparator",
         "source_url": "https://rivergages.mvr.army.mil/WaterControl/stationinfo2.cfm?sid=85625",
-        "coordinate_status": "Provider/site coordinate; WGS84"
+        "coordinate_status": "Provider/site coordinate; WGS84",
+        "observation_status": "unverified",
+        "last_genuine_observation": "2026-10-12 11:00 CDT (NWPS page snapshot; stale by memo date)"
       }
     },
     {
@@ -760,6 +764,178 @@
         "relevance": "Regional northshore control; land/airport exposure is not a lake-wind surrogate.",
         "source_url": "https://www.ncei.noaa.gov/products/land-based-station/automated-surface-weather-observing-systems",
         "coordinate_status": "Airport reference coordinate, not verified anemometer location."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "LRLL1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -89.9562,
+          30.2649
+        ]
+      },
+      "properties": {
+        "station_id": "LRLL1",
+        "name": "Bayou Lacombe below Lacombe",
+        "family": "spatial_water_level",
+        "network_role": "discovery",
+        "source": "St. Tammany Parish gauge; observation displayed by NOAA NWPS",
+        "status": "unverified",
+        "observation_status": "unverified",
+        "last_genuine_observation": "2026-10-13 16:42 CDT",
+        "exposure": "shoreline/bridge or channel gauge; exact sensor mounting/exposure not documented in reviewed metadata",
+        "height_m": null,
+        "height_reason": "Water-level sensor installation height is not a wind measurement height.",
+        "cadence": "NWPS latest genuine OBS 2026-10-13 16:42 CDT; HADS cadence not confirmed; currentness unverified",
+        "period_of_record": "IEM LA_DCP archive starts 2013-06-16; endpoint completeness/end date not verified",
+        "coverage_status": "Actual retrievable completeness not computed; directory metadata and secondary archive index are not proof of complete raw series.",
+        "qc_status": "NWPS page reports OBS 2026-10-13 16:42 CDT; page updated 23:05 UTC. As of 2026-10-25 this is stale for current status. Parish says owner/maintainer; instrument type and QC history unavailable.",
+        "datum_status": "Datum/units/sensor epochs not certified; use native changes only",
+        "receipt_latency": "Not measured. HADS transmit schedule is distinct from provider receipt; prospectively log observation and receipt timestamps.",
+        "access": "Free NOAA NWPS display/API for current observations; NWPS API has no general historical archive. HADS provisional SHEF and IEM LA_DCP archive are possible secondary retrieval paths; station-specific historical completeness not verified.",
+        "independence_note": "Distinct northwestern tributary/shore approach; potential early local hydrology, not lake level. Independence from baseline plausible, timing/coverage unknown.",
+        "relevance": "Could supply Bayou Lacombe response upstream of lake edge, but local tributary influence and propagation to MAUL1 unmeasured.",
+        "source_url": "https://water.noaa.gov/gauges/lrll1",
+        "coordinate_status": "HADS directory coordinate (WGS84), station installation position not survey-verified",
+        "dcp_owner": null,
+        "elements": [
+          "HG"
+        ],
+        "data_interval_minutes": {
+          "HG": 15
+        },
+        "transmit_interval_minutes": 60
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "PLAL1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -90.03083,
+          30.05306
+        ]
+      },
+      "properties": {
+        "station_id": "PLAL1",
+        "name": "Lake Pontchartrain at Lakefront Airport",
+        "family": "spatial_water_level",
+        "network_role": "discovery",
+        "source": "NOAA NWPS / HADS DCP CE969758",
+        "status": "unverified",
+        "observation_status": "unverified",
+        "last_genuine_observation": null,
+        "exposure": "shoreline/bridge or channel gauge; exact sensor mounting/exposure not documented in reviewed metadata",
+        "height_m": null,
+        "height_reason": "Water-level sensor installation height is not a wind measurement height.",
+        "cadence": "HADS lists HG 60-minute data and 60-minute GOES transmission; actual receipt not checked",
+        "period_of_record": "HADS metadata present; retrievable series period and missingness not established",
+        "coverage_status": "Actual retrievable completeness not computed; directory metadata and secondary archive index are not proof of complete raw series.",
+        "qc_status": "HADS directory lists CEMVN1 DCP CE969758 and HG; actual latest OBS, unit, sensor epochs and QC not established.",
+        "datum_status": "NWPS absolute datum not certified in retrieved station-specific record; use within-station changes only",
+        "receipt_latency": "Not measured. HADS transmit schedule is distinct from provider receipt; prospectively log observation and receipt timestamps.",
+        "access": "Free NOAA NWPS display/API for current observations; NWPS API has no general historical archive. HADS provisional SHEF and IEM LA_DCP archive are possible secondary retrieval paths; station-specific historical completeness not verified.",
+        "independence_note": "Eastern/southern lake shore; independent sensor from NWCL1 but potentially redundant with its nearby southern-shore response.",
+        "relevance": "Could distinguish lakefront/airport side from NWCL1; not a genuinely midlake measurement.",
+        "source_url": "https://hads.ncep.noaa.gov/states/LA_dcps.shtml",
+        "coordinate_status": "HADS directory coordinate (WGS84), station installation position not survey-verified",
+        "dcp_owner": "CEMVN1 (USACE New Orleans District)",
+        "elements": [
+          "HG"
+        ],
+        "data_interval_minutes": {
+          "HG": 60
+        },
+        "transmit_interval_minutes": 60
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RGTL1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -89.73444,
+          30.17028
+        ]
+      },
+      "properties": {
+        "station_id": "RGTL1",
+        "name": "The Rigolets at Highway 90",
+        "family": "spatial_water_level",
+        "network_role": "discovery",
+        "source": "NOAA NWPS / HADS DCP CE6665C8",
+        "status": "unverified",
+        "observation_status": "unverified",
+        "last_genuine_observation": null,
+        "exposure": "shoreline/bridge or channel gauge; exact sensor mounting/exposure not documented in reviewed metadata",
+        "height_m": null,
+        "height_reason": "Water-level sensor installation height is not a wind measurement height.",
+        "cadence": "HADS lists HG at 15-minute sampling, hourly GOES transmission",
+        "period_of_record": "IEM LA_DCP index contains a record date 2022-10-23; start/end and downloadable value completeness not established",
+        "coverage_status": "Actual retrievable completeness not computed; directory metadata and secondary archive index are not proof of complete raw series.",
+        "qc_status": "HADS lists DCP and 15-minute HG sample; no current dated OBS retrieved. HADS data are provisional, not QC-reviewed.",
+        "datum_status": "Absolute datum, units/gauge zero and sensor history not established for this source; native changes only",
+        "receipt_latency": "Not measured. HADS transmit schedule is distinct from provider receipt; prospectively log observation and receipt timestamps.",
+        "access": "Free NOAA NWPS display/API for current observations; NWPS API has no general historical archive. HADS provisional SHEF and IEM LA_DCP archive are possible secondary retrieval paths; station-specific historical completeness not verified.",
+        "independence_note": "Distinct USACE sensor; ~0.7 km from RFPL1 USGS-owned DCP; duplicate values not available for overlap test.",
+        "relevance": "Rigolets outlet can reflect eastern lake setup/outflow; possible same-hour response or boundary condition, no lead demonstrated.",
+        "source_url": "https://hads.ncep.noaa.gov/hsas/LIX_dcps.shtml",
+        "coordinate_status": "HADS directory coordinate (WGS84), station installation position not survey-verified",
+        "dcp_owner": "CEMVN1 (USACE New Orleans District)",
+        "elements": [
+          "HG"
+        ],
+        "data_interval_minutes": {
+          "HG": 15
+        },
+        "transmit_interval_minutes": 60
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RFPL1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -89.7406,
+          30.1669
+        ]
+      },
+      "properties": {
+        "station_id": "RFPL1",
+        "name": "Bayou Rigolets at Highway 90 near Slidell",
+        "family": "spatial_water_level",
+        "network_role": "discovery",
+        "source": "NOAA NWPS / HADS DCP DD51C416",
+        "status": "unverified",
+        "observation_status": "unverified",
+        "last_genuine_observation": null,
+        "exposure": "shoreline/bridge or channel gauge; exact sensor mounting/exposure not documented in reviewed metadata",
+        "height_m": null,
+        "height_reason": "Water-level sensor installation height is not a wind measurement height.",
+        "cadence": "HADS lists HG 15-minute data; TW/WC 30-minute data; hourly transmission",
+        "period_of_record": "IEM LA_DCP archive begins 2010-12-07; latest actual HG date not established; 2025/26 sampled daily summaries show missing HG",
+        "coverage_status": "Actual retrievable completeness not computed; directory metadata and secondary archive index are not proof of complete raw series.",
+        "qc_status": "HADS lists USGS01 DCP with HG/TW/WC; IEM history/archive exists but no recent genuine observation timestamp found; daily records with missing HG demonstrate gaps.",
+        "datum_status": "Datum, units/gauge zero and sensor epochs unresolved in retrieved HADS metadata; native changes only",
+        "receipt_latency": "Not measured. HADS transmit schedule is distinct from provider receipt; prospectively log observation and receipt timestamps.",
+        "access": "Free NOAA NWPS display/API for current observations; NWPS API has no general historical archive. HADS provisional SHEF and IEM LA_DCP archive are possible secondary retrieval paths; station-specific historical completeness not verified.",
+        "independence_note": "Different DCP owner/position from RGTL1, 0.7 km away. Do not call duplicate absent value-level overlap; compare raw series before selecting one.",
+        "relevance": "Potential eastern-lake boundary response near Rigolets; spatially close to RGTL1, likely redundant for broad setup; no advance lead established.",
+        "source_url": "https://hads.ncep.noaa.gov/hsas/LIX_dcps.shtml",
+        "coordinate_status": "HADS directory coordinate (WGS84), station installation position not survey-verified",
+        "dcp_owner": "USGS01 (USGS DCP owner code)",
+        "elements": [
+          "HG"
+        ],
+        "data_interval_minutes": {
+          "HG": 15
+        },
+        "transmit_interval_minutes": 60
       }
     }
   ]

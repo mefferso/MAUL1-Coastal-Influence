@@ -64,6 +64,22 @@ class SpatialNetworkDeliverableTests(unittest.TestCase):
         self.assertIn("373 valid times", pass_note)
         self.assertIn("479", pass_note)
 
+    def test_added_nwps_gauges_and_corrected_status_are_explicit(self):
+        doc = json.loads(DATA.read_text())
+        by_id = {f["properties"]["station_id"]: f["properties"] for f in doc["features"]}
+        self.assertTrue({"LRLL1", "PLAL1", "WEGL1", "RGTL1", "RFPL1"} <= set(by_id))
+        self.assertEqual(by_id["LRLL1"]["last_genuine_observation"], "2026-10-13 16:42 CDT")
+        self.assertEqual(by_id["WEGL1"]["last_genuine_observation"], "2026-10-12 11:00 CDT (NWPS page snapshot; stale by memo date)")
+        for station in ("LRLL1", "PLAL1", "WEGL1", "RGTL1", "RFPL1", "BCFL1"):
+            self.assertEqual(by_id[station]["observation_status"], "unverified")
+        self.assertEqual(by_id["FREL1"]["observation_status"], "historically available but inactive")
+        self.assertIn("duplicate values not available", by_id["RGTL1"]["independence_note"])
+        memo = MEMO.read_text().lower()
+        self.assertIn("none of the five added nwps gauges", memo)
+        self.assertIn("2026-10-13 16:42 cdt", memo)
+        self.assertIn("2026-10-12 11:00 cdt", memo)
+        self.assertIn("mchl1", memo)
+
     def test_map_is_static_feasibility_view_with_all_features(self):
         html = MAP.read_text()
         data = json.loads(DATA.read_text())
