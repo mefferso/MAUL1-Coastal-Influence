@@ -1,8 +1,11 @@
 """Deterministic tests for NWCL1 receipt ingestion; no internet or fake published archive."""
 import datetime as dt
+import json
 import pathlib
 import sys
+import tempfile
 import unittest
+import urllib.parse
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
 import collect_nwcl1_forcing as collector
@@ -79,6 +82,43 @@ class TestNWCL1Collector(unittest.TestCase):
         body, receipt, date, status, attempts = collector.fetch("https://example.invalid", opener, sleeper=waits.append)
         self.assertEqual((body, date, status, attempts), (b'{"data": []}', "Sun, 25 Oct 2026 13:00:00 GMT", 200, 2))
         self.assertEqual(waits, [1])
+
+    def test_collection_health_raw_provenance_and_cross_run_deduplication(self):
+        class Response:
+            status = 200
+            headers = {"Date": "Sun, 25 Oct 2026 13:00:00 GMT"}
+            def __init__(self, payload): self.payload = payload
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self): return json.dumps(self.payload).encode()
+
+        def opener(request, timeout=30):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
+            if "product" in query:
+                product = query["product"][0]
+                if product == "wind": payload = {"data": [{"t": "2026-10-25 12:00", "s": "10", "d": "180", "f": "0"}]}
+                elif product == "water_level": payload = {"data": [{"t": "2026-10-25 12:00", "v": "1.2", "f": "0"}]}
+                else: payload = {"predictions": [{"t": "2026-10-25 14:00", "v": "1.4"}]}
+                return Response(payload)
+            station, parameter = query["monitoring_location_id"][0], query["parameter_code"][0]
+            if station == "USGS-07380215" and parameter == "63160":
+                return Response({"features": []})
+            value = "100" if parameter == "00060" else "2.5"
+            return Response({"features": [{"properties": {"monitoring_location_id": station,
+                    "parameter_code": parameter, "time": "2026-10-25T12:00:00Z", "value": value,
+                    "unit_of_measure": "ft3/s" if parameter == "00060" else "ft",
+                    "approval_status": "approved", "time_series_id": "series-1"}}]})
+
+        with tempfile.TemporaryDirectory() as temp:
+            now = dt.datetime(2026, 10, 25, 15, 0, tzinfo=UTC)
+            first = collector.collect(temp, now=now, opener=opener, sleeper=lambda _: None)
+            self.assertEqual(first["critical_failures"], [])
+            self.assertGreater(first["records_added"], 0)
+            self.assertEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 8)
+            self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
+            self.assertEqual(next(r for r in first["sources"] if "63160" in r["source"])["status"], "empty")
+            second = collector.collect(temp, now=now + dt.timedelta(minutes=1), opener=opener, sleeper=lambda _: None)
+            self.assertEqual(second["records_added"], 0)
 
 
 if __name__ == "__main__":
