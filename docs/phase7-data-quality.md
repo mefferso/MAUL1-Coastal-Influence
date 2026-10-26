@@ -4,6 +4,8 @@
 
 Phase 7 adds a separate, reproducible research copy of the archived hourly input series. Original hourly archives, Phase 5A/5B datasets, frozen model artifacts, and authentic prospective records remain unchanged. The cleaner rejects only machine-identifiable non-finite values and the established MCHL1 HADS missing sentinel, including values contaminated when a sentinel was averaged into an hourly bin. It does not clip statistical outliers or large but finite values from the other stations.
 
+The formal MCHL1 disposition and objective reopening criteria are recorded in the [MCHL1 evidence determination](mchl1-determination.md). MCHL1 remains shadow-only and forecast-ineligible.
+
 Reproduce the data audit and cleaned copy with:
 
 ```sh
