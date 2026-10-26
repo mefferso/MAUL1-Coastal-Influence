@@ -11,14 +11,18 @@
     if (!record || record.mode !== 'authentic') return '<p>No authentic prospective issuance has been archived yet. Scheduled runs and source availability determine when the first issue can be made.</p>';
     const issueEpoch = Date.parse(record.actual_issue_time_utc);
     if (!Number.isFinite(issueEpoch) || issueEpoch > Date.now()) return '<p>Issue time is invalid or in the future; forecast guidance is withheld.</p>';
-    let html = `<p>Actual issue: <strong>${esc(record.actual_issue_time_utc)}</strong> · Native MAUL1 stage ${fmt(record.latest_maul1_native_stage_ft)}</p>`;
+    const featureAnchor=record.feature_anchor_time_utc || record.model_anchor_time_utc;
+    const legacyContract=!featureAnchor;
+    const anchorText=legacyContract ? 'not recorded; legacy actual-issue plus horizon' : featureAnchor;
+    let html = `<p>Nominal issue slot: <strong>${esc(record.nominal_issue_time_utc || 'not recorded')}</strong> · Feature anchor: <strong>${esc(anchorText)}</strong> · Actual issue: <strong>${esc(record.actual_issue_time_utc)}</strong> · Native MAUL1 stage ${fmt(record.latest_maul1_native_stage_ft)}</p>`;
     const availability = record.snapshot?.availability || {};
     html += '<p>Input availability: ' + Object.entries(availability).map(([k,v])=>`${esc(k)} ${esc(v.status)}${v.age_hours == null ? '' : ` (${Number(v.age_hours).toFixed(1)} h old)`}`).join(' · ') + '</p>';
-    html += '<div class="table-wrap" role="region" tabindex="0" aria-label="Forecast guidance by horizon and model"><table><thead><tr><th>Horizon</th><th>Valid time</th>' + models.map(m=>`<th>${esc(m.replaceAll('_',' '))}</th>`).join('') + '</tr></thead><tbody>';
+    html += '<div class="table-wrap" role="region" tabindex="0" aria-label="Forecast guidance by horizon and model"><table><thead><tr><th>Horizon</th><th>Valid time</th><th>Effective lead from actual issue</th>' + models.map(m=>`<th>${esc(m.replaceAll('_',' '))}</th>`).join('') + '</tr></thead><tbody>';
     for (const [h, forecast] of Object.entries(record.forecasts || {})) {
       const validEpoch = Date.parse(forecast.valid_time_utc);
-      if (!Number.isFinite(validEpoch) || validEpoch < issueEpoch) { html += `<tr><th>${esc(h)} h</th><td>Invalid valid time</td><td colspan="${models.length}">Forecast chronology unavailable</td></tr>`; continue; }
-      html += `<tr><th>${esc(h)} h</th><td>${esc(forecast.valid_time_utc)}</td>`;
+      if (!Number.isFinite(validEpoch) || validEpoch < issueEpoch) { html += `<tr><th>${esc(h)} h</th><td>Invalid valid time</td><td colspan="${models.length+1}">Forecast chronology unavailable</td></tr>`; continue; }
+      const effectiveLead=forecast.effective_lead_hours ?? (validEpoch-issueEpoch)/3600000;
+      html += `<tr><th>${esc(h)} h</th><td>${esc(forecast.valid_time_utc)}</td><td>${Number(effectiveLead).toFixed(2)} h</td>`;
       for (const name of models) { const m=forecast.models?.[name]; html += `<td>${m?.status === 'issued' ? `${fmt(m.predicted_stage_native_ft)}<br><small>Δ ${fmt(m.predicted_change_ft)}; 80% interval ${fmt(m.interval_lower_ft)}–${fmt(m.interval_upper_ft)}</small>` : esc(m?.status || 'unavailable')}</td>`; }
       html += '</tr>';
     }
@@ -67,7 +71,7 @@
       const delaySummary=latency.median==null?'—':`${Number(latency.median).toFixed(0)} min (n=${latency.n})`;
       rows.push(`<tr><th>${esc(model.replaceAll('_',' '))} / ${horizon} h</th><td>${esc(m.n)}</td><td>${fmt(m.mae_ft)}</td><td>${fmt(m.rmse_ft)}</td><td>${fmt(m.bias_ft)}</td><td>${fmt(m.mae_persistence_ft)}${m.skill_vs_persistence==null?'':`<br><small>skill ${(100*m.skill_vs_persistence).toFixed(1)}%</small>`}</td><td>${riseCounts}<br><small>hits/misses/false alarms</small></td><td>${m.intervals?.coverage==null?'—':`${(100*m.intervals.coverage).toFixed(0)}%`}<br><small>n=${esc(m.intervals?.n ?? 0)}</small></td><td>${m.intervals?.upper_bound_exceedance_frequency==null?'—':`${(100*m.intervals.upper_bound_exceedance_frequency).toFixed(0)}%`}</td><td>${ageSummary}</td><td>${delaySummary}</td><td>${esc(coverage)}</td><td>${esc(eventSummary)}</td></tr>`);
     }
-    return '<div class="table-wrap" role="region" tabindex="0" aria-label="Prospective forecast scorecard"><table><thead><tr><th>Model / horizon</th><th>Verified N</th><th>MAE</th><th>RMSE</th><th>Bias</th><th>Persistence MAE / skill</th><th>Rise hits / misses / false alarms at 0.25, 0.50, 1.00 ft</th><th>80% interval coverage</th><th>Upper bound exceeded</th><th>MAE by MAUL1 input age</th><th>Target observation delay</th><th>Verification coverage</th><th>Independent 0.50-ft 24h rise groups / lead</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div><p>Rise counts use individual overlapping forecasts. Observation delay is retrieval time minus observation valid time. Due-but-unverified targets are not assigned a cause. The 24-hour event row groups outcome-qualified windows; event skill stays withheld below five independent groups. Pending rows have no score yet.</p>';
+    return '<div class="table-wrap" role="region" tabindex="0" aria-label="Prospective forecast scorecard"><table><thead><tr><th>Model / horizon</th><th>Verified N</th><th>MAE</th><th>RMSE</th><th>Bias</th><th>Persistence MAE / skill</th><th>Rise hits / misses / false alarms at 0.25, 0.50, 1.00 ft</th><th>80% interval coverage</th><th>Upper bound exceeded</th><th>MAE by MAUL1 input age</th><th>Target observation delay</th><th>Verification coverage</th><th>Independent 0.50-ft 24h rise groups / lead</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div><p>For each model and horizon, Verified N counts archived issue-target pairs; maturity is shown as verified/matured, due unverified, and not yet due. These valid-time windows overlap across hourly issues and are not independent samples. Rise counts use individual overlapping forecasts. Observation delay is retrieval time minus observation valid time. Due-but-unverified targets are not assigned a cause. The 24-hour event row groups outcome-qualified windows; event skill stays withheld below five independent groups. Pending rows have no score yet.</p>';
   };
   const archive = window.MAUL1ResearchDashboard;
   const latestPromise = archive?.loadLatestIssue ? archive.loadLatestIssue(fetch) : Promise.resolve({latest:null,record:null});

@@ -239,9 +239,16 @@ class TestNWCL1Collector(unittest.TestCase):
                     "unit_of_measure": "ft3/s" if parameter == "00060" else "ft",
                     "approval_status": "approved", "time_series_id": "series-1"}}]})
 
+        from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temp:
             now = dt.datetime(2026, 10, 25, 15, 0, tzinfo=UTC)
-            first = collector.collect(temp, now=now, opener=opener, sleeper=lambda _: None)
+            receipt_clock = [now]
+            real_fetch = collector.fetch
+            def fetch_at_injected_clock(*args, **kwargs):
+                body, _received, http_date, status, attempts = real_fetch(*args, **kwargs)
+                return body, receipt_clock[0], http_date, status, attempts
+            with patch.object(collector, "fetch", side_effect=fetch_at_injected_clock):
+                first = collector.collect(temp, now=now, opener=opener, sleeper=lambda _: None)
             self.assertEqual(first["critical_failures"], [], json.dumps(first["sources"], indent=2))
             self.assertGreater(first["records_added"], 0)
             self.assertGreaterEqual(len(list((pathlib.Path(temp) / "raw").glob("*.json"))), 8)
@@ -252,7 +259,9 @@ class TestNWCL1Collector(unittest.TestCase):
             self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
             self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
             self.assertEqual(next(r for r in first["sources"] if "63160" in r["source"])["status"], "empty")
-            second = collector.collect(temp, now=now + dt.timedelta(minutes=1), opener=opener, sleeper=lambda _: None)
+            receipt_clock[0] = now + dt.timedelta(minutes=1)
+            with patch.object(collector, "fetch", side_effect=fetch_at_injected_clock):
+                second = collector.collect(temp, now=receipt_clock[0], opener=opener, sleeper=lambda _: None)
             self.assertEqual(second["records_added"], 0)
             self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
 

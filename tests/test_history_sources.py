@@ -55,6 +55,26 @@ class TestSourceAdapters(unittest.TestCase):
   self.assertEqual(result['rows'],[])
   self.assertEqual(result['error'],'HTTP 403')
 
+ def test_ndbc_missing_wind_fields_do_not_become_hourly_numeric_values(self):
+  payload='#YY MM DD hh mm WDIR WSPD GST\n2024 02 01 00 00 999 5.0 99.0\n'
+  result=history_sources.parse_ndbc_payload(payload,'2024-02')
+  by_variable={row['variable']:row['value'] for row in result['rows']}
+  self.assertAlmostEqual(by_variable['wind'],5.0*1.943844492,places=6)
+  self.assertNotIn('wind_direction',by_variable)
+  self.assertNotIn('wind_u',by_variable)
+  self.assertNotIn('wind_v',by_variable)
+  self.assertNotIn('gust',by_variable)
+
+ def test_ndbc_missing_wind_speed_preserves_valid_direction_and_gust(self):
+  payload='#YY MM DD hh mm WDIR WSPD GST\n2024 02 01 00 00 180 99.0 7.0\n'
+  result=history_sources.parse_ndbc_payload(payload,'2024-02')
+  by_variable={row['variable']:row['value'] for row in result['rows']}
+  self.assertEqual(by_variable['wind_direction'],180.0)
+  self.assertAlmostEqual(by_variable['gust'],7.0*1.943844492,places=6)
+  self.assertNotIn('wind',by_variable)
+  self.assertNotIn('wind_u',by_variable)
+  self.assertNotIn('wind_v',by_variable)
+
  def test_ndbc_archive_download_is_cached_once_per_year(self):
   history_sources._NDBC_RAW_BY_YEAR.clear()
   payload=b'#YY MM DD hh mm WDIR WSPD GST\n2024 02 01 00 00 180 5.0 7.0\n'

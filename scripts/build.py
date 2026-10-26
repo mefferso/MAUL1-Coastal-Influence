@@ -60,7 +60,7 @@ def parse_usgs(payload, station):
    for v in block.get('value', []):
     try: value = float(v['value'])
     except (ValueError, TypeError): continue
-    if value <= -9999: continue
+    if not math.isfinite(value) or value <= -9999: continue
     result.append(dict(time=iso(v['dateTime']), value=value, station=station, variable=variable, unit=unit, datum=datum, quality=v.get('qualifiers', []), source='USGS NWIS IV'))
  return result
 
@@ -70,6 +70,7 @@ def parse_coops(payload, variable, datum):
  for row in payload.get('data', payload.get('predictions', [])):
   try: value=float(row['v'])
   except (KeyError, ValueError, TypeError): continue
+  if not math.isfinite(value): continue
   result.append(dict(time=iso(row['t']+'+00:00'), value=value, station='NWCL1', variable=variable, unit='ft', datum=datum, quality=row.get('f', ''), source='NOAA CO-OPS 8761927'))
  return result
 
@@ -79,12 +80,14 @@ def parse_wind(payload):
  for row in payload.get('data', []):
   try:
    speed=float(row['s']); degrees=float(row['d'])
-   if speed<0 or not (0<=degrees<=360): continue
+   if not math.isfinite(speed) or not math.isfinite(degrees) or speed<0 or not (0<=degrees<=360): continue
   except (KeyError, ValueError, TypeError): continue
   stamp=iso(row['t']+'+00:00'); angle=math.radians(degrees)
   # Meteorological FROM direction; positive u points east, positive v north.
   values={'wind':speed,'wind_u':-speed*math.sin(angle),'wind_v':-speed*math.cos(angle),'wind_direction':degrees}
-  try: values['gust']=float(row['g'])
+  try:
+   gust=float(row['g'])
+   if math.isfinite(gust) and gust>=speed: values['gust']=gust
   except (KeyError, ValueError, TypeError): pass
   for variable,value in values.items():
    result.append(dict(time=stamp,value=value,station='NWCL1',variable=variable,unit='degrees from' if variable=='wind_direction' else 'knots',datum='none',quality=row.get('f',''),source='NOAA CO-OPS 8761927'))
