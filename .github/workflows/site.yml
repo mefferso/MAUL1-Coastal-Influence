@@ -25,6 +25,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements-phase5a.txt
       - name: Reproduce historical Phase 5A and Phase 5B baselines into temporary outputs
+        if: github.event_name != 'workflow_run'
         run: |
           temp_dir="$(mktemp -d)"
           mkdir -p "$temp_dir/phase5a" "$temp_dir/phase5b"
@@ -32,6 +33,7 @@ jobs:
           python scripts/phase5a.py --root . --outdir "$temp_dir/phase5a" > /dev/null
           python scripts/phase5b.py --root . --out "$temp_dir/phase5b" > /dev/null
       - name: Rebuild and compare deterministic Model Lab report
+        if: github.event_name != 'workflow_run'
         run: |
           python scripts/model_lab.py --root . --reproduction-dir "$MODEL_LAB_REPRO_DIR" --output "$MODEL_LAB_REPRO_DIR/report-one.json" --markdown "$MODEL_LAB_REPRO_DIR/findings.md" > /dev/null
           cmp "$MODEL_LAB_REPRO_DIR/report-one.json" site/data/research/model-lab.json
@@ -42,6 +44,7 @@ jobs:
           cmp "$MODEL_LAB_REPRO_DIR/findings.md" "$MODEL_LAB_REPRO_DIR/findings-two.md"
           git diff --exit-code -- site/data/history site/data/prospective
       - name: Rebuild the significant-rise audit and compact Model Lab payload
+        if: github.event_name != 'workflow_run'
         run: |
           audit_dir="$(mktemp -d)"
           python research/rise-failure-audit/audit.py --root . --output-dir "$audit_dir" > /dev/null

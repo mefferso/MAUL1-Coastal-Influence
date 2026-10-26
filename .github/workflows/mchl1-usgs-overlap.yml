@@ -1,14 +1,5 @@
 name: MCHL1 USGS historical overlap probe
 on:
-  pull_request:
-    paths:
-      - scripts/probe_mchl1_usgs_overlap.py
-      - tests/test_mchl1_usgs_overlap.py
-      - scripts/phase7_data.py
-      - scripts/phase7_experiment.py
-      - tests/test_phase7_data.py
-      - docs/phase7-data-quality.md
-      - .github/workflows/mchl1-usgs-overlap.yml
   workflow_dispatch:
 permissions:
   contents: read

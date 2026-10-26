@@ -1,16 +1,5 @@
 name: Phase 8 retrospective lead analysis
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/phase8-lead-analysis.yml'
-      - 'scripts/phase8_lead_analysis.py'
-      - 'scripts/evidence.py'
-      - 'scripts/phase4.py'
-      - 'tests/test_phase8_lead_analysis.py'
-      - 'docs/phase8-lead-results.md'
-      - 'site/data/history/hourly/**'
-      - 'site/data/history/phase3b/**'
-      - 'site/data/history/phase4/**'
   workflow_dispatch:
 permissions:
   contents: read
