@@ -4,9 +4,10 @@
   if (root && root.document) api.init(root.document, root);
 })(typeof window !== 'undefined' ? window : null, function () {
   'use strict';
+  const chartTheme = globalThis.MAUL1ChartTheme || (typeof require === 'function' ? require('./chart-theme.js') : null);
   const COLORS = {
-    persistence_ft: '#727b84', maul1_only_ft: '#287f8e', maul1_plus_coastal_ft: '#8064a2',
-    maul1_coastal_tidal: '#c17b16', full_multivariable: '#bd4c4c', bounded_damped_trend_ft: '#39916e'
+    persistence_ft: chartTheme.modelColors.persistence, maul1_only_ft: chartTheme.modelColors.phase5a_maul1_only, maul1_plus_coastal_ft: chartTheme.modelColors.phase5a_coastal,
+    maul1_coastal_tidal: chartTheme.modelColors.phase5b_coastal_tidal, full_multivariable: chartTheme.modelColors.phase5b_full_multivariable, bounded_damped_trend_ft: chartTheme.modelColors.challenger
   };
   const FIELDS = ['persistence_ft', 'maul1_only_ft', 'maul1_plus_coastal_ft', 'maul1_coastal_tidal', 'full_multivariable', 'bounded_damped_trend_ft'];
   const LABELS = {
@@ -84,7 +85,7 @@
         traces.push({name:LABELS[name],x:points.map(x=>x.valid_time_utc),y:points.map(x=>x.forecasts[name]),mode:'markers',marker:{color:COLORS[name],size:7,symbol:'circle'},customdata:points.map(x=>[x.issue_time_utc,x.observed_stage_ft]),hovertemplate:'Valid time: %{x}<br>Predicted: %{y:.3f} ft<br>Issued: %{customdata[0]}<br>Observed: %{customdata[1]:.3f} ft<extra>%{fullData.name}</extra>'});
       }
       const layout = {height:390,margin:{l:58,r:20,t:20,b:80},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',xaxis:{title:'UTC valid time',type:'date',gridcolor:'#e5e9ed'},yaxis:{title:'MAUL1 stage (ft, native gage height)',gridcolor:'#e5e9ed'},legend:{orientation:'h',y:-.28},hovermode:'closest',shapes:[{type:'line',x0:item.anchor_issue_time_utc,x1:item.anchor_issue_time_utc,y0:0,y1:1,yref:'paper',line:{color:'#606770',dash:'dash'}}],annotations:[{x:item.anchor_issue_time_utc,y:1,yref:'paper',text:'anchor issue time',showarrow:false,xanchor:'left',font:{size:10,color:'#606770'}}]};
-      window.Plotly.react('model-lab-case-chart', traces, layout, {responsive:true,displaylogo:false});
+      window.Plotly.react('model-lab-case-chart', traces, chartTheme.layout('', layout), chartTheme.chartConfig());
     }
     const load = async () => {
       if (initialized) { if (window.Plotly) window.Plotly.Plots.resize('model-lab-case-chart'); return; }

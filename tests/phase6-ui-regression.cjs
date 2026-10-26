@@ -80,8 +80,8 @@ missing.snapshot.availability.MAUL1_00065.observation = null;
 assert.match(forecast.renderGuidance(missing, now), /Unavailable or ineligible/);
 assert.equal(forecast.buildTraces(missing, now).some(trace => trace.name === 'Latest observation · USGS 00065'), false);
 
-assert.match(phase6, /displayModeBar\s*:\s*true/);
-assert.match(phase6, /scrollZoom\s*:\s*true/);
+assert.match(phase6, /theme\.chartConfig\(/);
+assert.match(phase6, /scrollZoom\s*:\s*false/);
 assert.match(phase6, /hovermode\s*:\s*['"]x unified['"]/);
 
 const captured = {};
@@ -100,6 +100,7 @@ chartIssue.forecasts['6'].valid_time_utc = new Date(Date.now() + 6 * 3600000).to
 chartIssue.forecasts['12'].valid_time_utc = new Date(Date.now() + 12 * 3600000).toISOString();
 chartIssue.forecasts['24'].valid_time_utc = new Date(Date.now() + 24 * 3600000).toISOString();
 const mockWindow = {
+  MAUL1ChartTheme: require('../site/chart-theme.js'),
   MAUL1ResearchDashboard: { loadLatestIssue: async () => ({ latest: chartIssue, record: chartIssue }) },
   MAUL1ForecastView: {
     ...forecast,
@@ -121,7 +122,8 @@ vm.runInContext(phase6, context);
   assert.equal(chartLayout.xaxis.title.text, 'Valid time · UTC');
   assert.equal(chartLayout.yaxis.title.text, 'MAUL1 native stage · ft');
   assert.equal(chartLayout.hovermode, 'x unified');
-  assert.equal(chartConfig.displayModeBar, true);
-  assert.equal(chartConfig.scrollZoom, true);
+  assert.equal(chartConfig.displayModeBar, 'hover');
+  assert.equal(chartConfig.scrollZoom, false);
+  assert.equal(chartConfig.responsive, true);
   console.log('Phase 6.18 UI regression checks passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

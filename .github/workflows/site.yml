@@ -73,6 +73,8 @@ jobs:
             done
           fi
       - run: node --check site/app.js
+      - run: node --check site/chart-theme.js
+      - run: node --check site/network-map.js
       - run: node --check site/phase6.js
       - run: node --check site/research-dashboard.js
       - run: node --check site/navigation.js
@@ -84,6 +86,7 @@ jobs:
       - run: python -m py_compile scripts/maul1_observation_context.py
       - run: python -m py_compile scripts/model_lab.py
       - run: node tests/navigation-forecast-smoke.cjs
+      - run: node tests/forecaster-console-ui.cjs
       - run: node tests/site-smoke.cjs
       - run: node tests/phase6-site-smoke.cjs
       - run: node tests/research-dashboard-smoke.cjs

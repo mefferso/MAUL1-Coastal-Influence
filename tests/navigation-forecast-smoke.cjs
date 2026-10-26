@@ -11,6 +11,8 @@ const scriptPosition = name => deferredScripts.findIndex(src => src.endsWith(`/$
 for (const [provider, consumer] of [
   ['https://cdn.plot.ly/plotly-2.35.2.min.js', 'app.js'],
   ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'app.js'],
+  ['chart-theme.js', 'phase6.js'],
+  ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'network-map.js'],
   ['forecast-view.js', 'phase6.js'],
   ['research-dashboard.js', 'phase6.js']
 ]) {
@@ -26,15 +28,17 @@ assert.match(html, /id="historical-research-view"[^>]*hidden/);
 for (const id of ['event', 'replay', 'phase6-content', 'research-current', 'map', 'phase3b-results', 'phase5a-results', 'phase5b-summary', 'phase4-summary']) {
   assert.ok(html.includes(`id="${id}"`), `preserved application element ${id}`);
 }
-assert.match(html, /Research \/ Shadow Evaluation \/ Not Operational/);
+assert.match(html, /RESEARCH \/ SHADOW EVALUATION \/ NOT OPERATIONAL/);
 assert.match(html, /v1\.1\.0 RC/);
-assert.match(fs.readFileSync('site/style.css','utf8'), /@media\s*\(max-width:\s*760px\)/);
+assert.match(fs.readFileSync('site/forecaster-console.css','utf8'), /@media\s*\(max-width:\s*640px\)/);
 assert.match(fs.readFileSync('site/style.css','utf8'), /\.app-view\[hidden\]\s*\{\s*display:\s*none\s*!important/);
 assert.match(html, /id="forecast-chart"[^>]*role="region"/);
 assert.match(html, /forecast-chart-description/);
 assert.match(html, /Current Forecast/);
 assert.match(html, /id="forecast-cycle-health"/);
-assert.match(html, /Station network and detailed current conditions/);
+assert.match(html, /id="console-network-map"/);
+assert.match(html, /id="console-network-list"/);
+assert.match(html, /Detailed source and datum notes/);
 assert.match(html, /Historical observations, events, and data quality/);
 assert.match(html, /Coastal and river physical evidence/);
 assert.match(html, /Experimental hindcasts and model research/);
@@ -56,7 +60,7 @@ function makeTab(id, selected, panel) {
   };
 }
 function element(id) { return { id, hidden: id !== 'current-forecast-view', attributes: {}, setAttribute(n,v){this.attributes[n]=v;} }; }
-const panels = ['current-forecast-view','forecast-verification-view','historical-research-view'].map(element);
+const panels = ['current-forecast-view','forecast-verification-view','historical-research-view','model-lab-view'].map(element);
 const tabs = panels.map((p,i)=>makeTab(`tab-${i}`,i===0,p));
 const byId = new Map(panels.map(p=>[p.id,p]));
 const winHandlers = {};
@@ -92,7 +96,8 @@ const issue = {
   }
 };
 const guidance=forecast.renderGuidance(issue);
-assert.match(guidance,/no preferred model/);
+assert.match(guidance,/fixed presentation label is not a skill ranking or endorsement/);
+assert.match(guidance,/no substitute model is selected/);
 assert.match(guidance,/output spread/);
 assert.match(guidance,/6-hour guidance/);
 assert.match(guidance,/24-hour guidance/);

@@ -88,18 +88,16 @@
         const traces = issue && view?.buildTraces(issue) || [];
         if (window.Plotly && traces.length) {
           const compact=chartRoot.clientWidth<560;
-          window.Plotly.react(chartRoot, traces, {
-            autosize:true,showlegend:true,paper_bgcolor:'#ffffff',plot_bgcolor:'#ffffff',
-            font:{family:'Inter, ui-sans-serif, system-ui, sans-serif',size:12,color:'#243f4b'},
+          const theme=window.MAUL1ChartTheme;
+          window.Plotly.react(chartRoot, traces, theme.layout('Experimental single-issuance forecast', {
             margin:{l:compact?52:68,r:compact?12:24,t:42,b:compact?86:74},
-            title:{text:'Experimental single-issuance forecast',x:0.02,xanchor:'left',font:{size:15,color:'#173b4b'}},
             legend:{orientation:'h',y:-0.28,x:0,xanchor:'left',font:{size:compact?10:11}},
-            xaxis:{type:'date',title:{text:'Valid time · UTC',font:{size:11}},showgrid:true,gridcolor:'#e8eef1',zeroline:true,automargin:true,tickfont:{size:compact?10:11}},
-            yaxis:{title:{text:'MAUL1 native stage · ft',font:{size:11}},tickformat:'.2f',rangemode:'normal',fixedrange:false,showgrid:true,gridcolor:'#e8eef1',zerolinecolor:'#c7d4da',automargin:true,tickfont:{size:compact?10:11}},
+            xaxis:{type:'date',title:{text:'Valid time · UTC',font:{size:11}},showgrid:true,gridcolor:'#e5ecee',zeroline:true,automargin:true,tickfont:{size:compact?10:11}},
+            yaxis:{title:{text:'MAUL1 native stage · ft',font:{size:11}},tickformat:'.2f',rangemode:'normal',fixedrange:false,showgrid:true,gridcolor:'#e5ecee',zerolinecolor:'#c7d4da',automargin:true,tickfont:{size:compact?10:11}},
             shapes:[{type:'line',xref:'x',yref:'paper',x0:issue.actual_issue_time_utc,x1:issue.actual_issue_time_utc,y0:0,y1:1,line:{color:'#71828a',width:1.5,dash:'dot'}}],
             annotations:[{xref:'x',yref:'paper',x:issue.actual_issue_time_utc,y:1,text:'Issued',showarrow:false,yshift:10,font:{size:10,color:'#526a73'}}],
             hovermode:'x unified',uirevision:issue.issuance_id||issue.actual_issue_time_utc
-          }, {responsive:true,displayModeBar:true,displaylogo:false,scrollZoom:true,modeBarButtonsToRemove:['lasso2d','select2d']});
+          }), theme.chartConfig({scrollZoom:false}));
         } else {
           chartRoot.textContent = 'A single-issuance UTC chart is unavailable. No forecast points are inferred.';
         }

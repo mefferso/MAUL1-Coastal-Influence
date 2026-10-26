@@ -1,9 +1,9 @@
 const fs=require('fs');const vm=require('vm');const zlib=require('zlib');const assert=require('assert/strict');
 const elements=new Map();const callbacks={};
 function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',innerHTML:'',removeAllListeners(){},on(){}});return elements.get(id)}
-const window={DecompressionStream:global.DecompressionStream,addEventListener:(name,callback)=>callbacks[name]=callback};
+const window={MAUL1ChartTheme:require('../site/chart-theme.js'),DecompressionStream:global.DecompressionStream,addEventListener:(name,callback)=>callbacks[name]=callback};
 const Plotly={react:async()=>{},relayout:()=>{}};
-const L={map:()=>({setView(){return this}}),tileLayer:()=>({addTo(){}}),marker:()=>({addTo(){return this},bindPopup(){}})};
+const L={map:()=>({setView(){return this}}),tileLayer:()=>({addTo(){}}),divIcon:options=>options,marker:()=>({addTo(){return this},bindPopup(){}})};
 const fetch=async(path)=>({ok:true,json:async()=>JSON.parse(fs.readFileSync('site/'+path,'utf8')),body:new ReadableStream({start(controller){controller.enqueue(fs.readFileSync('site/'+path));controller.close()}})});
 assert.match(fs.readFileSync('site/index.html','utf8'),/Experimental event onset/);
 assert.match(fs.readFileSync('site/index.html','utf8'),/Independent Event Verification/);

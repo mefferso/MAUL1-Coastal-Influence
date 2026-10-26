@@ -159,6 +159,12 @@ async function testArchiveHydration() {
   assert.match(guidance, /calibration not established here/);
   assert.match(guidance, /MCHL1 is unverified/i);
   assert.match(guidance, /Model skill during independent meaningful rises has not been established/);
+  assert.match(guidance, /Featured display model:[\s\S]*Phase 5B · full multivariable[\s\S]*fixed presentation label is not a skill ranking or endorsement/i);
+  assert.match(guidance, /Featured archived output · <strong>Phase 5B · full multivariable<\/strong>/);
+  const withheldFeatured = structuredClone(chronologyIssue);
+  withheldFeatured.forecasts['6'].models.phase5b_full_multivariable.status = 'withheld';
+  const withheldGuidance = forecast.renderGuidance(withheldFeatured, Date.parse('2026-10-24T06:00:00Z'));
+  assert.match(withheldGuidance, /withheld · no substitute selected/);
 
   const mismatched = await hydrateLatestIssue(compact, async path => ({
     ok: true,

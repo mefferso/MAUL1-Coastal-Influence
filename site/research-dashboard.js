@@ -146,12 +146,24 @@
   async function start(document, fetcher) {
     const target = document.getElementById('research-current');
     if (!target) return;
-    target.innerHTML = '<p class="research-empty">Loading the latest authentic source snapshot…</p>';
+    const details = document.getElementById('research-current-details');
+    const loading = '<p class="research-empty">Loading the latest authentic source snapshot…</p>';
+    target.innerHTML = loading;
+    if (details) details.innerHTML = loading;
     try {
       const {record} = await loadLatestIssue(fetcher);
-      target.innerHTML = record ? renderCurrentConditions(record) : '<p class="research-empty">The matching immutable authentic issue could not be verified. Current conditions and chart markers are withheld.</p>';
+      const markup = record ? renderCurrentConditions(record) : '<p class="research-empty">The matching immutable authentic issue could not be verified. Current conditions and chart markers are withheld.</p>';
+      if (details) details.innerHTML = markup;
+      if (record) {
+        const parsed = document.createElement('div');
+        parsed.innerHTML = markup;
+        const stationGrid = parsed.querySelector('.station-grid');
+        target.innerHTML = stationGrid ? stationGrid.outerHTML : markup;
+      } else target.innerHTML = markup;
     } catch (_) {
-      target.innerHTML = '<p class="research-empty">Prospective source snapshot is unavailable. No current value is inferred from historical charts.</p>';
+      const unavailable = '<p class="research-empty">Prospective source snapshot is unavailable. No current value is inferred from historical charts.</p>';
+      target.innerHTML = unavailable;
+      if (details) details.innerHTML = unavailable;
     }
   }
   return {renderCurrentConditions, hydrateLatestIssue, loadLatestIssue, start};
