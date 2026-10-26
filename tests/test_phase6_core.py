@@ -123,5 +123,59 @@ class Phase6CoreTests(unittest.TestCase):
         self.assertEqual(result["m:12h"]["not_yet_due"], 1)
 
 
+class Phase6EvidenceReadinessMetricTests(unittest.TestCase):
+    def test_comparison_metrics_count_only_complete_model_pairs(self):
+        rows = [
+            {"forecast_change_ft": 0.4, "observed_change_ft": 0.2, "persistence_change_ft": 0.0},
+            {"forecast_change_ft": 0.1, "observed_change_ft": 0.3, "persistence_change_ft": 0.0},
+            {"forecast_change_ft": 0.8, "observed_change_ft": None, "persistence_change_ft": 0.0},
+            {"forecast_change_ft": 0.6, "observed_change_ft": 0.1, "persistence_change_ft": None},
+        ]
+        metrics = phase6_metrics.compute_metrics(rows)
+        self.assertEqual(metrics["n"], 3)
+        self.assertAlmostEqual(metrics["mae_ft"], 0.3)
+        self.assertAlmostEqual(metrics["skill_vs_persistence"], 0.2)
+        self.assertAlmostEqual(metrics["mae_persistence_ft"], 0.25)
+        self.assertEqual(metrics["persistence_comparison"]["paired_n"], 2)
+        self.assertAlmostEqual(metrics["persistence_comparison"]["model_rmse_ft"], 0.2)
+        self.assertAlmostEqual(metrics["persistence_comparison"]["persistence_rmse_ft"], (0.065) ** 0.5)
+        self.assertAlmostEqual(metrics["persistence_comparison"]["rmse_difference_ft"], 0.2-(0.065)**0.5)
+        self.assertAlmostEqual(metrics["persistence_comparison"]["persistence_bias_ft"], -0.25)
+        self.assertAlmostEqual(metrics["persistence_comparison"]["bias_difference_ft"], 0.25)
+        self.assertEqual(metrics["rises"]["0.50"]["hits"], 0)
+
+    def test_readiness_maturity_excludes_simulations_and_separates_missing_predictions(self):
+        authentic = {"mode": "authentic", "issuance_id": "a", "forecasts": {
+            "6": {"valid_time_utc": "2026-10-23T10:00:00Z", "models": {
+                "paired": {"status": "issued"}, "abstained": {"status": "abstained"},
+                "unavailable": {"status": "unavailable"}}},
+            "12": {"valid_time_utc": "2026-10-23T18:00:00Z", "models": {
+                "paired": {"status": "issued"}}},
+        }}
+        simulation = {"mode": "simulation", "issuance_id": "s", "forecasts": {
+            "6": {"valid_time_utc": "2026-10-23T10:00:00Z", "models": {"paired": {"status": "issued"}}}}}
+        result = phase6_metrics.verification_completeness(
+            [authentic, simulation], {("a", 6, "paired")}, "2026-10-23T12:00:00Z")
+        self.assertEqual(result["paired:6h"], {
+            "forecast_slots": 1, "issued": 1, "abstained": 0, "other_unavailable": 0,
+            "matured": 1, "verified": 1, "due_unverified": 0, "not_yet_due": 0})
+        self.assertEqual(result["abstained:6h"]["abstained"], 1)
+        self.assertEqual(result["unavailable:6h"]["other_unavailable"], 1)
+        self.assertEqual(result["paired:12h"]["not_yet_due"], 1)
+
+    def test_existing_24_hour_group_boundary_and_threshold_are_retained(self):
+        rows = []
+        for stamp in ("2026-10-01T00:00:00Z", "2026-10-02T00:00:00Z",
+                      "2026-10-03T00:00:00Z", "2026-10-04T00:00:01Z"):
+            rows.append({"valid_time_utc": stamp, "actual_issue_time_utc": "2026-09-30T00:00:00Z",
+                         "observed_change_ft": 0.50, "forecast_change_ft": 0.0})
+        rows.append({"valid_time_utc": "2026-10-05T00:00:00Z", "actual_issue_time_utc": "2026-09-30T00:00:00Z",
+                     "observed_change_ft": 0.49, "forecast_change_ft": 1.0})
+        result = phase6_metrics.summarize_qualifying_events(rows)
+        self.assertEqual(result["event_count"], 2)
+        self.assertEqual(result["status"], "insufficient_independent_events")
+        self.assertNotIn("missed_events", result)
+
+
 if __name__ == "__main__":
     unittest.main()

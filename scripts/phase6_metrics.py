@@ -23,9 +23,24 @@ def compute_metrics(rows):
                 "absolute_error_p90_ft":sorted(abs(x) for x in errors)[min(len(errors)-1,int(.90*(len(errors)-1)))] if errors else None,
                 "absolute_error_p99_ft":sorted(abs(x) for x in errors)[min(len(errors)-1,int(.99*(len(errors)-1)))] if errors else None})
     paired=[r for r in valid if r.get("persistence_change_ft") is not None]
-    persistence_mae=sum(abs(float(r["persistence_change_ft"])-float(r["observed_change_ft"])) for r in paired)/len(paired) if paired else None
+    model_paired_errors=[float(r["forecast_change_ft"])-float(r["observed_change_ft"]) for r in paired]
+    persistence_errors=[float(r["persistence_change_ft"])-float(r["observed_change_ft"]) for r in paired]
+    persistence_mae=sum(abs(x) for x in persistence_errors)/len(persistence_errors) if persistence_errors else None
+    model_paired_mae=sum(abs(x) for x in model_paired_errors)/len(model_paired_errors) if model_paired_errors else None
+    model_paired_rmse=math.sqrt(sum(x*x for x in model_paired_errors)/len(model_paired_errors)) if model_paired_errors else None
+    model_paired_bias=sum(model_paired_errors)/len(model_paired_errors) if model_paired_errors else None
+    persistence_rmse=math.sqrt(sum(x*x for x in persistence_errors)/len(persistence_errors)) if persistence_errors else None
+    persistence_bias=sum(persistence_errors)/len(persistence_errors) if persistence_errors else None
     out["mae_persistence_ft"]=persistence_mae
-    out["skill_vs_persistence"]=1-(out["mae_ft"]/persistence_mae) if out["mae_ft"] is not None and persistence_mae else None
+    out["persistence_comparison"]={
+        "paired_n":len(paired),
+        "model_mae_ft":model_paired_mae,"model_rmse_ft":model_paired_rmse,"model_bias_ft":model_paired_bias,
+        "persistence_mae_ft":persistence_mae,"persistence_rmse_ft":persistence_rmse,"persistence_bias_ft":persistence_bias,
+        "mae_difference_ft":model_paired_mae-persistence_mae if model_paired_mae is not None and persistence_mae is not None else None,
+        "rmse_difference_ft":model_paired_rmse-persistence_rmse if model_paired_rmse is not None and persistence_rmse is not None else None,
+        "bias_difference_ft":model_paired_bias-persistence_bias if model_paired_bias is not None and persistence_bias is not None else None,
+    }
+    out["skill_vs_persistence"]=1-(model_paired_mae/persistence_mae) if model_paired_mae is not None and persistence_mae else None
     intervals=[r for r in valid if r.get("interval_lower_ft") is not None and r.get("interval_upper_ft") is not None]
     out["intervals"]={"n":len(intervals),"coverage":sum(bool(r.get("interval_covered")) for r in intervals)/len(intervals) if intervals else None,
         "upper_bound_exceedance_frequency":sum(bool(r.get("upper_bound_exceeded")) for r in intervals)/len(intervals) if intervals else None,

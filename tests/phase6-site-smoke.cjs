@@ -8,3 +8,6 @@ for (const value of ['loadLatestIssue','history/index.json','performance.json','
 for (const value of ['role="region"','tabindex="0"','aria-label="Prospective forecast scorecard"','rmse_ft','Pending verification','m.intervals?.n','event?.event_count','qualifying_24h_events','hits/misses/false alarms','verification_completeness','due_unverified','input_age_effect','observation_latency_minutes']) if (!js.includes(value)) throw new Error(`Missing scientific scorecard metric: ${value}`);
 for (const value of ['Feature anchor','Effective lead','matured archived outcomes','valid-time windows overlap across hourly issues and are not independent','legacy actual-issue plus horizon']) if (!js.toLowerCase().includes(value.toLowerCase())) throw new Error(`Missing explicit timing or dependence label: ${value}`);
 console.log('Phase 6 site smoke checks passed');
+
+require('./phase6-readiness-smoke.cjs');
+require('./phase6-dashboard-smoke.cjs');

@@ -34,3 +34,8 @@ Source outages, provisional or delayed observations, the unverified MCHL1 datum,
 ### Phase 6.1 prospective timing clarification
 
 Phase 5 models construct features at an exact UTC hour and predict the corresponding grid target at anchor plus 6, 12, or 24 hours. For future Phase 6 issuances, archive this model feature anchor explicitly. Keep actual issuance time distinct: the effective available lead is the grid target minus the actual issuance, and may be less than the nominal horizon when a scheduled job runs late. Do not backdate issuance or alter previously archived forecast objects, including the first authentic Phase 6 issue. All event lead-time evaluations must use actual issuance timestamps.
+
+
+### Phase 6.17 evidence readiness
+
+The prospective dashboard summarizes authentic issue-target maturity, exact model/persistence pairs, source availability and age at the latest issue, target observation capture delay where source timestamps support it, and the existing outcome-defined ≥0.50-ft/24h rise groups. Counts across hourly issue-target windows and model variants are overlapping paired outcomes, not independent samples. The current five-group event-metric suppression rule is unchanged. False alarms are reported as individual pairs because the archive has no predeclared false-alert episode grouping. See [`phase6-17-evidence-readiness.md`](phase6-17-evidence-readiness.md) for the current evidence snapshot and proposed, owner-approval-pending challenger-readiness criteria.

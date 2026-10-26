@@ -75,9 +75,12 @@
   };
   const archive = window.MAUL1ResearchDashboard;
   const latestPromise = archive?.loadLatestIssue ? archive.loadLatestIssue(fetch) : Promise.resolve({latest:null,record:null});
-  Promise.all([latestPromise, ...['data/prospective/history/index.json','data/prospective/performance.json'].map(path=>fetch(path).then(r=>r.ok?r.json():null))]).then(async ([loadedIssue, history, metrics]) => {
+  Promise.all([latestPromise, ...['data/prospective/history/index.json','data/prospective/performance.json','phase6-readiness-gates.json'].map(path=>fetch(path).then(r=>r.ok?r.json():null))]).then(async ([loadedIssue, history, metrics, readinessGates]) => {
     const view = window.MAUL1ForecastView;
     const {latest, record:issue} = loadedIssue || {};
+    const readinessApi=window.MAUL1EvidenceReadiness;
+    const readinessRows=readinessApi ? await readinessApi.loadVerificationRevisions(history,fetch) : [];
+    const readinessSummary=readinessApi ? readinessApi.summarizeReadiness(history,metrics,latest,readinessGates,readinessRows) : null;
     if (cycleRoot) cycleRoot.innerHTML = view?.renderArchiveCycleHealth(history) || 'Archive cycle history is unavailable.';
     if (primaryRoot) {
       primaryRoot.innerHTML = issue && view ? view.renderGuidance(issue) : '<p class="research-empty">The matching immutable authentic issue is unavailable. Forecast guidance is withheld.</p>';
@@ -91,7 +94,7 @@
       }
     }
     if (!root) return;
-    root.innerHTML = `<div id="phase6-latest">${showForecast(latest)}</div>${view?.renderVerificationOverview(metrics)||''}<h3>Archived forecast history</h3><label for="phase6-issue-select">Select an immutable issuance:</label> <select id="phase6-issue-select"></select><div id="phase6-selected">No previous issues.</div><h3>Prospective performance</h3><p>Verification count: ${esc(metrics?.verification_count ?? 0)} · ${esc(metrics?.revision_count ?? 0)} retained verification revisions. Overlapping hourly forecasts are not independent event samples.</p>${showMetrics(metrics)}<p><strong>Limitations:</strong> research-only; MAUL1 native gage-height datum; no NAVD88 threshold equivalence; input availability depends on source freshness; event metrics remain withheld below five independent groups. Frozen model version: ${esc(latest?.snapshot?.model_artifact_sha256 || 'pending first issue')}.</p>`;
+    root.innerHTML = `${readinessApi?.renderReadiness(readinessSummary)||'<p class="research-empty">Prospective evidence readiness summary is unavailable.</p>'}<div id="phase6-latest">${showForecast(latest)}</div>${view?.renderVerificationOverview(metrics)||''}<h3>Archived forecast history</h3><label for="phase6-issue-select">Select an immutable issuance:</label> <select id="phase6-issue-select"></select><div id="phase6-selected">No previous issues.</div><h3>Prospective performance</h3><p>Verification count: ${esc(metrics?.verification_count ?? 0)} · ${esc(metrics?.revision_count ?? 0)} retained verification revisions. Overlapping hourly forecasts are not independent event samples.</p>${showMetrics(metrics)}<p><strong>Limitations:</strong> research-only; MAUL1 native gage-height datum; no NAVD88 threshold equivalence; input availability depends on source freshness; event metrics remain withheld below five independent groups. Frozen model version: ${esc(latest?.snapshot?.model_artifact_sha256 || 'pending first issue')}.</p>`;
     const select=document.getElementById('phase6-issue-select');
     const entries=(history || []).filter(x=>x.mode==='authentic').slice().reverse();
     if (!entries.length) { select.disabled=true; return; }
