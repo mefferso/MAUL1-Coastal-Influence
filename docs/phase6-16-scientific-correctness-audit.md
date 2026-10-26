@@ -2,6 +2,8 @@
 
 **Status:** research / shadow evaluation only. This audit does not establish independent operational skill. Frozen Phase 5A/5B artifacts, authentic issue files, archived observation captures, and prior verification revisions remain immutable.
 
+Repository growth and workflow reliability are documented separately in the [Phase 6.17 sustainability report](phase6-17-sustainability.md). The [MCHL1 evidence determination](mchl1-determination.md) consolidates its shadow-only disposition and reopening criteria.
+
 ## Timing contract and historical erratum
 
 Phase 5A builds its target at the exact hourly feature anchor plus the requested horizon; Phase 5B inherits that convention. The updated prospective issuer floors the execution timestamp to the completed UTC feature hour, records that anchor, and sets valid time to anchor plus horizon. Actual issue time stays separate, and effective lead is valid time minus actual issue time. Verifying observations retain their own valid timestamp and capture/receipt context; no observation is invented or shifted.

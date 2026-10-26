@@ -20,15 +20,6 @@ on:
         required: true
         type: boolean
         default: true
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/history.yml'
-      - 'scripts/history.py'
-      - 'scripts/history_sources.py'
-      - 'scripts/history_validate.py'
-      - 'scripts/discover.py'
-      - 'scripts/analyze.py'
 permissions:
   contents: write
 jobs:
@@ -42,6 +33,8 @@ jobs:
       RUN_DISCOVERY: ${{ github.event_name != 'workflow_dispatch' || inputs.run_discovery }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -68,7 +61,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add site/data/history/raw site/data/history/manifest.json
-          git diff --cached --quiet || (git commit -m "data: persist acquired historical partitions" && git push)
+          .github/scripts/publish-with-rebase-retry.sh "${GITHUB_REF_NAME}" "data: persist acquired historical partitions"
       - name: Rebuild hourly reports
         run: |
           set +e
@@ -97,4 +90,4 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add site/data/history
-          git diff --cached --quiet || (git commit -m "data: backfill historical archive" && git push)
+          .github/scripts/publish-with-rebase-retry.sh "${GITHUB_REF_NAME}" "data: backfill historical archive"
