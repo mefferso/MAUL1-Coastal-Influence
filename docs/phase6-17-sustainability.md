@@ -46,7 +46,7 @@ The projection sums unique uncompressed blob payload. It does not predict GitHub
 | `phase7-clean-experiment.yml` | Manual | Read-only cleaned retrospective experiment; outputs are workflow artifacts, not archive rewrites. |
 | `phase8-lead-analysis.yml` | Manual | Read-only retrospective lead analysis; outputs are workflow artifacts. |
 | `publish-v1.1-release.yml` | Relevant release-file push to `main` | Creates the research release/tag and release notes; no archive write. |
-| `site.yml` | Main push, PR, manual, and successful writer `workflow_run` | Validates/deploys Pages. Full Phase 5A/5B and Model Lab historical reproduction runs on PRs and manual dispatch; main-push and writer-completion runs skip those repeats and still validate/deploy. |
+| `site.yml` | Main push, PR, manual, and successful writer `workflow_run` | Validates/deploys Pages. `workflow_run` still publishes commits made with `GITHUB_TOKEN`; it now skips redundant Phase 5A/5B and Model Lab historical regeneration because each writer already validated its outputs. |
 
 ## Backfill failure and collision handling
 
@@ -54,7 +54,7 @@ Historical run [40322298251](https://github.com/mefferso/MAUL1-Coastal-Influence
 
 Historical writers now use `.github/scripts/publish-with-rebase-retry.sh`: fetch current target, rebase, push, retry up to three times on push races, and abort with an explicit error on conflicts. It never force-pushes. A local two-clone integration test covers a successful rebase over an unrelated concurrent commit and a same-file conflict with unchanged remote history.
 
-`site.yml` is started both by main pushes and successful `workflow_run` events because writes made with `GITHUB_TOKEN` do not start normal push workflows. Historical reports are validated by their writer; the follow-on Pages run deploys without repeating the costly Phase 5A/5B and Model Lab historical reproductions. Main-push deployments also skip those repeats because the merged PR already ran full validation. Pull requests and manual dispatch retain full historical reproduction. Phase 6 and hourly forcing collection remain scheduled; their PR validation groups are isolated from production collectors.
+`site.yml` is started both by main pushes and successful `workflow_run` events because writes made with `GITHUB_TOKEN` do not start normal push workflows. Historical reports are validated by their writer; the follow-on Pages run deploys without repeating the costly Phase 5A/5B and Model Lab historical reproductions. Phase 6 and hourly forcing collection remain scheduled; their PR validation groups are isolated from production collectors.
 
 ## Preservation validation
 
