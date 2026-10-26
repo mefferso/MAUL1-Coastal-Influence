@@ -10,15 +10,17 @@ const dashboardCss = read('site/research-dashboard.css');
 const app = read('site/app.js');
 const forecast = read('site/forecast-view.js');
 
-assert.match(html, /Design A — Forecaster Console \/ Research-Only Preview/);
+assert.match(html, /<title>MAUL1 Coastal Influence — Forecaster Console<\/title>/);
+assert.match(html, /<h1>MAUL1 Forecaster Console<\/h1>/);
+assert.doesNotMatch(html, /Design A — Forecaster Console \/ Research-Only Preview|About this preview/);
 assert.match(html, /RESEARCH\s*\/\s*SHADOW EVALUATION\s*\/\s*NOT OPERATIONAL/);
 assert.match(html, /id="current-forecast-view"[\s\S]*?id="forecast-verification-view"[\s\S]*?id="historical-research-view"[\s\S]*?id="model-lab-view"/);
 assert.match(html, /id="console-network-map"/);
 assert.match(html, /id="console-network-list"/);
 assert.match(html, /id="forecast-chart"/);
 assert.match(html, /chart-theme\.js/);
-assert.match(html, /name="data-snapshot-sha" content="e236d8946fe7acbfb764f1ba60960f9bb806881e"/);
-assert.match(html, /name="data-snapshot-time" content="2026-10-26T15:03:15Z"/);
+assert.doesNotMatch(html, /name="data-snapshot-sha"/);
+assert.doesNotMatch(html, /name="data-snapshot-time"/);
 assert.doesNotMatch(html, /(?:src|href)="\/(?!\/)/, 'frontend resources must remain relative for project Pages');
 assert.match(html, /USGS 00065/);
 assert.match(html, /63160/);
@@ -47,8 +49,8 @@ assert.match(app, /'MAUL1',30\.30769444,-90\.6087222/);
 for (const match of html.matchAll(/(?:src|href)="([^"]+\.(?:css|js))"/g)) {
   const asset = match[1];
   if (/^https?:\/\//i.test(asset)) continue;
-  assert.equal(asset.startsWith('/'), false, `${asset} must resolve beneath the preview Pages path`);
-  assert.ok(new URL(asset, 'https://mefferso.github.io/MAUL1-Preview-A/').pathname.startsWith('/MAUL1-Preview-A/'));
+  assert.equal(asset.startsWith('/'), false, `${asset} must resolve beneath the production project Pages path`);
+  assert.ok(new URL(asset, 'https://mefferso.github.io/MAUL1-Coastal-Influence/').pathname.startsWith('/MAUL1-Coastal-Influence/'));
 }
 
 const chartTheme = require(path.join(root, 'site/chart-theme.js'));
