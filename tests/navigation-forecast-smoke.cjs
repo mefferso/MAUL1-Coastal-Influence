@@ -29,7 +29,9 @@ for (const id of ['event', 'replay', 'phase6-content', 'research-current', 'map'
   assert.ok(html.includes(`id="${id}"`), `preserved application element ${id}`);
 }
 assert.match(html, /RESEARCH \/ SHADOW EVALUATION \/ NOT OPERATIONAL/);
-assert.match(html, /v1\.1\.0 RC/);
+assert.match(html, /<title>MAUL1 Coastal Influence — Forecaster Console<\/title>/);
+assert.match(html, /<h1>MAUL1 Forecaster Console<\/h1>/);
+assert.doesNotMatch(html, /Research-Only Preview|About this preview|Fixed production data snapshot/);
 assert.match(fs.readFileSync('site/forecaster-console.css','utf8'), /@media\s*\(max-width:\s*640px\)/);
 assert.match(fs.readFileSync('site/style.css','utf8'), /\.app-view\[hidden\]\s*\{\s*display:\s*none\s*!important/);
 assert.match(html, /id="forecast-chart"[^>]*role="region"/);
