@@ -250,14 +250,14 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
     return out
 
 
-def fetch(url, opener, retries=3, sleeper=time.sleep):
+def fetch(url, opener, retries=3, sleeper=time.sleep, clock=None):
     last = None
     for attempt in range(1, retries + 1):
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
         try:
             with opener(request, timeout=30) as response:
                 body = response.read()
-                received = dt.datetime.now(UTC)
+                received = (clock or (lambda: dt.datetime.now(UTC)))()
                 return body, received, response.headers.get("Date"), response.status, attempt
         except urllib.error.HTTPError as exc:
             if exc.code != 429 and not 500 <= exc.code < 600:
@@ -359,7 +359,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
     url = awc_url()
     item = {"source": "NOAA AWC METAR KNEW", "critical": False, "category": "shadow", "url": url}
     try:
-        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
+        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
         digest, raw_path = write_immutable_raw(raw_dir, body)
         payload = json.loads(body)
         rows = awc_wind_records(payload, received, digest, url, raw_path, http_date)
@@ -385,7 +385,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
             source_name = f"NOAA CO-OPS 8761927 {product}"
             item = {"source": source_name, "request_window": window, "critical": True, "url": url}
             try:
-                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
+                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
                 digest, raw_path = write_immutable_raw(raw_dir, body)
                 payload = json.loads(body)
                 rows = noaa_records(product, payload, received, digest, url, raw_path, http_date)
@@ -414,7 +414,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
                     "category": meta["category"], "url": url,
                     "hydrologic_role": meta.get("hydrologic_role")}
             try:
-                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper)
+                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
                 digest, raw_path = write_immutable_raw(raw_dir, body)
                 rows = usgs_records(json.loads(body), received, digest, url, raw_path, http_date)
                 rows = [row for row in rows if row["station_id"] == name and row["parameter_code"] == parameter]
