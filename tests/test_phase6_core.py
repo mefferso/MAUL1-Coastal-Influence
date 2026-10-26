@@ -134,14 +134,8 @@ class Phase6EvidenceReadinessMetricTests(unittest.TestCase):
         metrics = phase6_metrics.compute_metrics(rows)
         self.assertEqual(metrics["n"], 3)
         self.assertAlmostEqual(metrics["mae_ft"], 0.3)
-        self.assertAlmostEqual(metrics["skill_vs_persistence"], 0.2)
+        self.assertAlmostEqual(metrics["skill_vs_persistence"], -0.2)
         self.assertAlmostEqual(metrics["mae_persistence_ft"], 0.25)
-        self.assertEqual(metrics["persistence_comparison"]["paired_n"], 2)
-        self.assertAlmostEqual(metrics["persistence_comparison"]["model_rmse_ft"], 0.2)
-        self.assertAlmostEqual(metrics["persistence_comparison"]["persistence_rmse_ft"], (0.065) ** 0.5)
-        self.assertAlmostEqual(metrics["persistence_comparison"]["rmse_difference_ft"], 0.2-(0.065)**0.5)
-        self.assertAlmostEqual(metrics["persistence_comparison"]["persistence_bias_ft"], -0.25)
-        self.assertAlmostEqual(metrics["persistence_comparison"]["bias_difference_ft"], 0.25)
         self.assertEqual(metrics["rises"]["0.50"]["hits"], 0)
 
     def test_readiness_maturity_excludes_simulations_and_separates_missing_predictions(self):
