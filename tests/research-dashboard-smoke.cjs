@@ -149,8 +149,9 @@ async function testArchiveHydration() {
   assert.ok(latestTraces.some(trace=>trace.name==='Phase 5A · coastal predictors' && trace.x.includes(fullIssue.forecasts['6'].valid_time_utc)));
   assert.match(forecast.renderGuidance(loaded.record,latestRenderTime),new RegExp(compact.actual_issue_time_utc.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   const guidance = forecast.renderGuidance(chronologyIssue, Date.parse('2026-10-24T06:00:00Z'));
-  assert.match(guidance, /Latest archived MAUL1 observation · native USGS 00065/);
-  assert.match(guidance, /2\.68 ft · fresh/);
+  assert.match(guidance, /Latest archived observation · native USGS 00065/);
+  assert.match(guidance, /Retrieved .* source USGS NWIS IV/);
+  assert.match(guidance, /2\.68 ft[\s\S]*Eligible for display/);
   assert.match(guidance, /\+0\.02 ft to \+0\.12 ft/);
   assert.match(guidance, /Persistence baseline/);
   assert.match(guidance, /Rising · \+0\.17 ft/);

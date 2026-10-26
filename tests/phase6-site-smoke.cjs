@@ -11,3 +11,4 @@ console.log('Phase 6 site smoke checks passed');
 
 require('./phase6-readiness-smoke.cjs');
 require('./phase6-dashboard-smoke.cjs');
+require('./phase6-ui-regression.cjs');
