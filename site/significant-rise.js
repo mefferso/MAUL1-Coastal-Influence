@@ -4,13 +4,14 @@
   if (root && root.document) api.init(root.document, root);
 })(typeof window !== 'undefined' ? window : null, function () {
   'use strict';
+  const chartTheme = globalThis.MAUL1ChartTheme || (typeof require === 'function' ? require('./chart-theme.js') : null);
   const LABELS = {
     persistence_ft: 'Persistence', maul1_only_ft: 'Phase 5A MAUL1-only',
     maul1_plus_coastal_ft: 'Phase 5A coastal', maul1_coastal_tidal: 'Phase 5B coastal + tidal',
     full_multivariable: 'Phase 5B full multivariable', bounded_damped_trend_ft: 'Damped-trend challenger'
   };
   const METHODS = Object.keys(LABELS);
-  const COLORS = ['#727b84', '#287f8e', '#8064a2', '#c17b16', '#bd4c4c', '#39916e'];
+  const COLORS = Object.values(chartTheme.modelColors);
   const escape = value => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const fmt = (value, n=3) => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toFixed(n);
   const table = (headers, rows) => `<table class="model-lab-table"><thead><tr>${headers.map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
@@ -52,13 +53,13 @@
       if (!event || !window.Plotly) return;
       const rows = event.timeline_rows || [];
       const modelSpecs = [
-        ['phase5a_maul1_only_stage_native_ft','Phase 5A MAUL1-only','#287f8e'],
-        ['phase5a_coastal_stage_native_ft','Phase 5A coastal','#8064a2'],
-        ['phase5b_coastal_tidal_stage_native_ft','Phase 5B coastal + tidal','#c17b16']
+        ['phase5a_maul1_only_stage_native_ft','Phase 5A MAUL1-only',chartTheme.modelColors.phase5a_maul1_only],
+        ['phase5a_coastal_stage_native_ft','Phase 5A coastal',chartTheme.modelColors.phase5a_coastal],
+        ['phase5b_coastal_tidal_stage_native_ft','Phase 5B coastal + tidal',chartTheme.modelColors.phase5b_coastal_tidal]
       ];
       const traces = [
-        {name:'Observed MAUL1 issue stage (native 00065)',x:rows.map(r=>r.issue_time_utc),y:rows.map(r=>r.issue_maul1_stage_native_ft),mode:'lines',connectgaps:false,line:{color:'#20252b',width:2}},
-        {name:'Observed MAUL1 target stage (native 00065)',x:rows.map(r=>r.valid_time_utc),y:rows.map(r=>r.actual_valid_maul1_stage_native_ft),mode:'lines+markers',connectgaps:false,line:{color:'#111820',width:3},marker:{size:4}}
+        {name:'Observed MAUL1 issue stage (native 00065)',x:rows.map(r=>r.issue_time_utc),y:rows.map(r=>r.issue_maul1_stage_native_ft),mode:'lines',connectgaps:false,line:{color:chartTheme.stationColors.MAUL1,width:2}},
+        {name:'Observed MAUL1 target stage (native 00065)',x:rows.map(r=>r.valid_time_utc),y:rows.map(r=>r.actual_valid_maul1_stage_native_ft),mode:'lines+markers',connectgaps:false,line:{color:chartTheme.stationColors.MAUL1,width:3},marker:{size:4}}
       ];
       for (const [key,name,color] of modelSpecs) traces.push({name,x:rows.map(r=>r.valid_time_utc),y:rows.map(r=>r[key]),mode:'markers',connectgaps:false,marker:{color,size:6},customdata:rows.map(r=>r.issue_time_utc),hovertemplate:'Valid: %{x}<br>Forecast: %{y:.3f} ft<br>Issued: %{customdata}<extra>'+name+'</extra>'});
       const config = report.challenger_protocol.config_by_horizon['24'];
@@ -69,18 +70,18 @@
         const slope=Math.max(-config.cap_per_hour,Math.min(config.cap_per_hour,change/6));
         return stage+24*config.shrink*slope;
       });
-      traces.push({name:'Bounded damped-trend challenger (experimental)',x:rows.map(r=>r.valid_time_utc),y:challenger,mode:'markers',connectgaps:false,marker:{color:'#39916e',symbol:'diamond',size:6},customdata:rows.map(r=>r.issue_time_utc),hovertemplate:'Valid: %{x}<br>Forecast: %{y:.3f} ft<br>Issued: %{customdata}<extra>Experimental challenger</extra>'});
-      window.Plotly.react('rise-stage-chart',traces,{height:380,margin:{l:60,r:20,t:20,b:90},xaxis:{title:'UTC valid time',type:'date'},yaxis:{title:'MAUL1 stage (ft, native gage height)'},legend:{orientation:'h',y:-.3},hovermode:'closest'}, {responsive:true,displaylogo:false});
+      traces.push({name:'Bounded damped-trend challenger (experimental)',x:rows.map(r=>r.valid_time_utc),y:challenger,mode:'markers',connectgaps:false,marker:{color:chartTheme.modelColors.challenger,symbol:'diamond',size:6},customdata:rows.map(r=>r.issue_time_utc),hovertemplate:'Valid: %{x}<br>Forecast: %{y:.3f} ft<br>Issued: %{customdata}<extra>Experimental challenger</extra>'});
+      window.Plotly.react('rise-stage-chart',traces,chartTheme.layout('',{height:380,margin:{l:60,r:20,t:20,b:90},xaxis:{title:'UTC valid time',type:'date'},yaxis:{title:'MAUL1 stage (ft, native gage height)'},legend:{orientation:'h',y:-.3},hovermode:'x unified'}),chartTheme.chartConfig());
       const f = rows.map(r=>r.features||{}), times=rows.map(r=>r.issue_time_utc);
       const wind=f.map(v=>v.nwcl1_wind_u_knots==null||v.nwcl1_wind_v_knots==null?null:Math.hypot(v.nwcl1_wind_u_knots,v.nwcl1_wind_v_knots));
       window.Plotly.react('rise-coastal-chart',[
-        {name:'NWCL1 residual setup (ft MLLW)',x:times,y:f.map(v=>v.nwcl1_residual_mllw_ft),mode:'lines+markers',connectgaps:false,line:{color:'#167c80'},yaxis:'y'},
-        {name:'NWCL1 wind speed (knots)',x:times,y:wind,mode:'lines+markers',connectgaps:false,line:{color:'#5376a6'},yaxis:'y2'}
-      ],{height:300,margin:{l:55,r:55,t:35,b:90},title:'Issue-time coastal context',xaxis:{title:'UTC issue time',type:'date'},yaxis:{title:'Residual (ft MLLW)'},yaxis2:{title:'Wind (knots)',overlaying:'y',side:'right'},legend:{orientation:'h',y:-.36}}, {responsive:true,displaylogo:false});
+        {name:'NWCL1 residual setup (ft MLLW)',x:times,y:f.map(v=>v.nwcl1_residual_mllw_ft),mode:'lines+markers',connectgaps:false,line:{color:chartTheme.stationColors.NWCL1},yaxis:'y'},
+        {name:'NWCL1 wind speed (knots)',x:times,y:wind,mode:'lines+markers',connectgaps:false,line:{color:chartTheme.stationColors.NWCL1,dash:'dot'},yaxis:'y2'}
+      ],chartTheme.layout('Issue-time coastal context',{height:300,margin:{l:55,r:55,t:35,b:90},xaxis:{title:'UTC issue time',type:'date'},yaxis:{title:'Residual (ft MLLW)'},yaxis2:{title:'Wind (knots)',overlaying:'y',side:'right'},legend:{orientation:'h',y:-.36}}),chartTheme.chartConfig());
       window.Plotly.react('rise-inland-chart',[
-        {name:'DENL1 discharge (log units)',x:times,y:f.map(v=>v.denl1_log_discharge),mode:'lines+markers',connectgaps:false,line:{color:'#a55d23'},yaxis:'y'},
-        {name:'MDLL1 24h stage change (ft, within-station)',x:times,y:f.map(v=>v.mdll1_stage_change_24h_ft),mode:'lines+markers',connectgaps:false,line:{color:'#7562a5'},yaxis:'y2'}
-      ],{height:300,margin:{l:55,r:60,t:35,b:90},title:'Issue-time river and inland context',xaxis:{title:'UTC issue time',type:'date'},yaxis:{title:'DENL1 log discharge'},yaxis2:{title:'MDLL1 24h change (ft)',overlaying:'y',side:'right'},legend:{orientation:'h',y:-.36}}, {responsive:true,displaylogo:false});
+        {name:'DENL1 discharge (log units)',x:times,y:f.map(v=>v.denl1_log_discharge),mode:'lines+markers',connectgaps:false,line:{color:chartTheme.stationColors.DENL1},yaxis:'y'},
+        {name:'MDLL1 24h stage change (ft, within-station)',x:times,y:f.map(v=>v.mdll1_stage_change_24h_ft),mode:'lines+markers',connectgaps:false,line:{color:chartTheme.stationColors.MDLL1},yaxis:'y2'}
+      ],chartTheme.layout('Issue-time river and inland context',{height:300,margin:{l:55,r:60,t:35,b:90},xaxis:{title:'UTC issue time',type:'date'},yaxis:{title:'DENL1 log discharge'},yaxis2:{title:'MDLL1 24h change (ft)',overlaying:'y',side:'right'},legend:{orientation:'h',y:-.36}}),chartTheme.chartConfig());
       $('rise-event-note').textContent = `${event.event_id}: ${event.selection}. ${event.interpretation} ${rows.length} aligned hourly issue/valid pairs; missing feature values remain gaps. Challenger points are reconstructed from the frozen historical configuration using only issue-time MAUL1 features. Archived USGS approval/provisional and source receipt-time flags are unavailable for these cases, so event-level QC status cannot be reconstructed.`;
     }
     async function load() {
