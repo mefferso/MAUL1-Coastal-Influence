@@ -22,7 +22,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: forcing-archive-${{ github.repository }}
+  # PR validation must not occupy the production collector's single pending slot.
+  group: forcing-archive-${{ github.repository }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
   cancel-in-progress: false
 
 jobs:
@@ -69,6 +70,9 @@ jobs:
           else
             echo 'No run-health report was produced.' >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Summarize archive growth
+        if: always()
+        run: python scripts/archive_growth.py .
       - name: Persist immutable payloads, receipts, and run health
         if: always()
         run: |
