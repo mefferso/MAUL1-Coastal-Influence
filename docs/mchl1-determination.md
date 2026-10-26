@@ -26,4 +26,3 @@ Reopen the disposition only after all of these gates are met and reviewed. Passi
 - [Phase 7 data-quality audit](phase7-data-quality.md)
 - [Phase 8 retrospective lead results](phase8-lead-results.md)
 - [Phase 6.16 source and QC audit](phase6-16-scientific-correctness-audit.md)
-

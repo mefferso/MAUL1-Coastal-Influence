@@ -65,4 +65,3 @@ The before/after SHA-256 manifest covered 410 files under `site/data/prospective
 - At 350 MiB local Git pack size, review trend and decide whether to keep the current layout or prepare a measured separate-repository/Releases experiment.
 - Before 500 MiB, choose retention and migration policy, if any. No deletion or migration is authorized by this report.
 - Review and approve the MCHL1 reopening criteria in [the determination](mchl1-determination.md); its data stays shadow-only.
-
