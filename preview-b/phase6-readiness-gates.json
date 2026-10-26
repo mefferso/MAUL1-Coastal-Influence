@@ -1,0 +1,28 @@
+{
+  "schema": "phase6.evidence-readiness-gates.v1",
+  "status": "proposed",
+  "owner_approval": {
+    "status": "pending",
+    "approved_by": null,
+    "approved_at_utc": null
+  },
+  "thresholds": {
+    "minimum_verified_issue_target_pairs_per_horizon": 100,
+    "minimum_predeclared_rise_groups": 20,
+    "minimum_mae_improvement_fraction_vs_each_baseline": 0.05,
+    "paired_block_interval_confidence": 0.95,
+    "maximum_absolute_bias_ft": 0.05,
+    "maximum_rmse_regression_fraction_vs_best_baseline": 0.05,
+    "minimum_pairs_per_availability_stratum": 20,
+    "maximum_mae_regression_fraction_within_strata": 0.10,
+    "interval_coverage_target": 0.80,
+    "interval_coverage_tolerance": 0.10,
+    "minimum_interval_pairs": 50
+  },
+  "inference_method": {
+    "paired_uncertainty": "paired block bootstrap over fixed non-overlapping UTC calendar weeks starting Monday 00:00 UTC; report 95% interval for paired model-minus-baseline MAE difference",
+    "event_unit": "existing outcome-defined 0.50-ft/24-hour rise groups; no physical-storm independence claim",
+    "owner_approval_required_before_activation": true
+  }
+}
+
