@@ -10,7 +10,7 @@ The trajectory chart remains one authentic issuance, using the existing traces a
 
 ## Screenshots
 
-The captures use the same current archived evidence at `origin/main` and the redesigned branch. Desktop viewport is 1440×1000; mobile viewport is 390×844. Full-page images show the entire visible Current Forecast panel.
+The before/after captures use the same authentic archive snapshot from the initial dashboard checkout at `57e4517`; no observation or forecast values were edited for the screenshots. The PR itself is based on newer `main` commit `4eb0d42`, which contains a later prospective archive cycle. Desktop viewport is 1440×1000; mobile viewport is 390×844. Full-page images show the entire visible Current Forecast panel.
 
 | View | Before | After |
 |---|---|---|
