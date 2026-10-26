@@ -31,7 +31,9 @@ def make_record(actual_issue_time, nominal_slot, snapshot, forecasts, *, simulat
         by_horizon[str(h)] = {"valid_time_utc": stamp(valid), "effective_lead_hours": round((valid-actual).total_seconds()/3600, 6), "models": entries}
     return {"schema": "phase6.forecast.v1", "issuance_id": identity,
             "mode": "simulation" if simulated else "authentic", "nominal_issue_time_utc": stamp(nominal),
-            "actual_issue_time_utc": stamp(actual), "model_anchor_time_utc": stamp(anchor), "latest_maul1_native_stage_ft": latest,
+            "actual_issue_time_utc": stamp(actual), "model_anchor_time_utc": stamp(anchor),
+            "feature_anchor_time_utc": stamp(anchor), "valid_time_basis": "feature_anchor_plus_horizon",
+            "latest_maul1_native_stage_ft": latest,
             "snapshot": snapshot, "forecasts": by_horizon, "run_id": run_id}
 
 def write_immutable(record, archive_root):

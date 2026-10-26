@@ -11,11 +11,22 @@ class TestArchive(unittest.TestCase):
   data={'value':{'timeSeries':[{'sourceInfo':{'siteCode':[{'value':'07380215'}]},'variable':{'variableCode':[{'value':'00065'}]},'values':[{'value':[{'value':'5.38','dateTime':'2020-01-01T00:00:00-06:00','qualifiers':['P']}]}]}]}}
   result=build.parse_usgs(data,'MAUL1')
   self.assertEqual(result[0]['datum'],'gage height');self.assertEqual(result[0]['value'],5.38)
+ def test_usgs_negative_missing_sentinel_is_dropped_but_negative_gage_height_is_retained(self):
+  data={'value':{'timeSeries':[{'sourceInfo':{'siteCode':[{'value':'07380215'}]},'variable':{'variableCode':[{'value':'00065'}]},'values':[{'value':[
+   {'value':'-999999','dateTime':'2020-01-01T00:00:00Z','qualifiers':['A']},
+   {'value':'-0.5','dateTime':'2020-01-01T01:00:00Z','qualifiers':['A']}]}]}]}}
+  rows=build.parse_usgs(data,'MAUL1')
+  self.assertEqual([row['value'] for row in rows],[-0.5])
  def test_dedupe(self):
   row=dict(station='MAUL1',variable='stage',time='2020-01-01T00:00:00Z')
   self.assertEqual(len(build.dedupe([row,row])),1)
  def test_coops_error(self):
   with self.assertRaises(ValueError): build.parse_coops({'error':{'message':'no data'}},'water','NAVD88')
+ def test_coops_nonfinite_numeric_values_are_omitted_before_aggregation(self):
+  rows=build.parse_coops({'data':[{'t':'2020-01-01 00:00','v':'nan','f':'0'},
+                                   {'t':'2020-01-01 00:06','v':'inf','f':'0'},
+                                   {'t':'2020-01-01 00:12','v':'1.25','f':'0'}]},'water','MLLW')
+  self.assertEqual([row['value'] for row in rows],[1.25])
  def test_event_windows(self):
   self.assertGreaterEqual(len(build.EVENTS),7)
   for _,start,end in build.EVENTS.values(): self.assertGreaterEqual((build.dt.date.fromisoformat(end)-build.dt.date.fromisoformat(start)).days,8)
@@ -26,6 +37,11 @@ class TestScientificCalculations(unittest.TestCase):
   rows=build.parse_wind({'data':[{'t':'2020-01-01 00:00','s':'10','d':'350','g':'12'},{'t':'2020-01-01 00:06','s':'10','d':'10','g':'12'}]})
   v=[r['value'] for r in rows if r['variable']=='wind_v']
   self.assertTrue(all(x<-9 for x in v))
+ def test_wind_nonfinite_gust_does_not_contaminate_valid_components(self):
+  rows=build.parse_wind({'data':[{'t':'2020-01-01 00:00','s':'10','d':'180','g':'inf'}]})
+  by_variable={row['variable']:row['value'] for row in rows}
+  self.assertEqual(by_variable['wind'],10)
+  self.assertNotIn('gust',by_variable)
  def test_residual_only_same_timestamp_and_datum(self):
   base=dict(station='NWCL1',time='2020-01-01T00:00:00Z',datum='MLLW',value=3)
   result=build.residuals([dict(base,variable='water'),dict(base,variable='prediction',value=1)])

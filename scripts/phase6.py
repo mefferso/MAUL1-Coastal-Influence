@@ -6,11 +6,12 @@ import phase6_models, phase6_sources, phase6_forecast, phase6_verify, phase6_met
 import phase5a, phase5b
 UTC=dt.timezone.utc
 
-def quality_is_usable(value):
-    """Accept documented provisional/zero-valued quality codes, reject other flags.
+def quality_is_usable(value, source=None):
+    """Accept documented provisional/zero flags and USGS-approved ``A`` rows.
 
     CO-OPS returns comma-separated per-field quality flags (e.g. 0,0,0,0).
-    Retain source flags in the archived observations; normalize only for eligibility.
+    Retain source flags in archived observations; interpret ``A`` only in the
+    USGS qualifier context rather than treating it as a generic good flag.
     """
     if value is None: return True
     if isinstance(value, str):
@@ -19,7 +20,9 @@ def quality_is_usable(value):
         flags = [str(part).strip() for part in value]
     else:
         return False
-    return all(flag in ("", "0", "P", "provisional") for flag in flags)
+    accepted = {"", "0", "P", "provisional"}
+    if source == "USGS NWIS IV": accepted.update({"A", "approved"})
+    return all(flag in accepted for flag in flags)
 
 def latest_snapshot(snapshot, issued):
     obs=snapshot["observations"]
@@ -27,7 +30,7 @@ def latest_snapshot(snapshot, issued):
         rows=[o for o in obs if o["station"]==station and o["parameter"]==param and (datum is None or o["datum"]==datum)
               and o["eligible_completed_hour"] and dt.datetime.fromisoformat(o["retrieved_utc"].replace("Z","+00:00"))<=issued
               and dt.datetime.fromisoformat(o["valid_time_utc"].replace("Z","+00:00"))<=issued
-              and quality_is_usable(o.get("qc"))]
+              and quality_is_usable(o.get("qc"), o.get("source"))]
         return max(rows,key=lambda x:x["valid_time_utc"]) if rows else None
     target=latest("MAUL1","stage","gage height")
     elevation=latest("MAUL1","elevation","NAVD88")
@@ -58,7 +61,7 @@ def feature_snapshot(snapshot, issued):
     groups=collections.defaultdict(list); predictions={}
     for o in snapshot["observations"]:
         if o["retrieved_utc"]>phase6_forecast.stamp(issued): continue
-        if not quality_is_usable(o.get("qc")): continue
+        if not quality_is_usable(o.get("qc"), o.get("source")): continue
         valid=dt.datetime.fromisoformat(o["valid_time_utc"].replace("Z","+00:00"))
         start=valid.replace(minute=0,second=0,microsecond=0)
         if start+dt.timedelta(hours=1)>issued.replace(minute=0,second=0,microsecond=0): continue
@@ -222,7 +225,7 @@ def update_site():
     latest=records[-1] if records else None
     # Compact website projection: full source evidence remains immutable in archive/issues.
     if latest:
-        projection={key:latest[key] for key in ("schema","issuance_id","mode","nominal_issue_time_utc","actual_issue_time_utc","latest_maul1_native_stage_ft","forecasts") if key in latest}
+        projection={key:latest[key] for key in ("schema","issuance_id","mode","nominal_issue_time_utc","actual_issue_time_utc","model_anchor_time_utc","feature_anchor_time_utc","valid_time_basis","latest_maul1_native_stage_ft","forecasts") if key in latest}
         projection["snapshot"]={"availability":{key:{"status":value.get("status"),"age_hours":value.get("age_hours")} for key,value in latest.get("snapshot",{}).get("availability",{}).items()}}
         projection["snapshot"]["feature_diagnostics"]=latest.get("snapshot",{}).get("feature_diagnostics",{})
         for key in ("model_anchor_time_utc","run_id"):

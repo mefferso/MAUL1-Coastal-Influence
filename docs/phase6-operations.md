@@ -1,6 +1,6 @@
 # Phase 6 operations
 
-The `Phase 6 prospective verification` workflow runs hourly at minute 17 UTC. GitHub may delay a scheduled run; each record therefore stores its nominal slot and actual issue time separately, and every horizon is calculated from the actual time. `workflow_dispatch` defaults to an isolated simulation; choose `authentic` only to make a real current-time issue. Pull requests run the regression suite, full frozen holdout replay, a hosted-runner live provider check, and both site smoke checks.
+The `Phase 6 prospective verification` workflow runs hourly at minute 17 UTC. GitHub may delay a scheduled run; each record stores nominal slot, feature anchor, and actual issue time separately. Future issue valid times follow the Phase 5 contract: completed-hour feature anchor plus horizon; effective lead is valid time minus actual issue time. `workflow_dispatch` defaults to an isolated simulation; choose `authentic` only to make a real current-time issue. Pull requests run the regression suite, full frozen holdout replay, a hosted-runner live provider check, and both site smoke checks.
 
 The workflow uses only GitHub-hosted runners and free Pages deployment. A serialized concurrency group protects the single writer. Each issuance, raw-normalized source snapshot, attempt audit, observation capture, and verification revision uses a create-only archive path. The commit step fetches and rebases up to three times to accommodate concurrent updates. Actions artifacts are retained for 90 days; committed archives remain available with the repository.
 
@@ -19,3 +19,7 @@ The authentic issue snapshot, attempt audit and compact latest-dashboard record 
 ## Phase 6.4 source archive format
 
 Future authentic forecast issuances use `phase6.forecast.v2`: a compact create-only JSON issue with frozen model predictions, issue-time derived features, eligibility and diagnostics, plus a SHA-256 reference to losslessly gzip-compressed issue-time source observations stored in `archive/snapshots/<sha256>.json.gz`. This compressed payload retains original normalized observations, timestamps, units, datums, QC, source URLs and response hashes. `recover_source_snapshot` verifies its checksum before returning data. The write operation is create-only and rejects an existing issue file. Previously issued v1 JSON snapshots are unchanged and remain readable in the same verification history; verification does not require expanding evidence snapshots. This reduces Git and Pages transfer size, but does not alone solve the long-term limits of committing hourly archives to Git.
+
+## Phase 6.5 historical timing erratum
+
+The first authentic issue (2026-10-22T13:53:11Z) predates the anchor-based contract and is immutable. Its valid times use actual issue time plus horizon; its targets are therefore 53m11s later than Phase 5 hourly grid targets. Keep it in the archive and label the discrepancy as a historical timing erratum in comparisons.

@@ -11,6 +11,8 @@ class Phase6SourceTests(unittest.TestCase):
     def test_quality_flags_are_retained_but_rejected_from_features(self):
         self.assertTrue(phase6.quality_is_usable([]))
         self.assertTrue(phase6.quality_is_usable(["P"]))
+        self.assertTrue(phase6.quality_is_usable(["A"], source="USGS NWIS IV"))
+        self.assertFalse(phase6.quality_is_usable(["A"], source="NOAA CO-OPS 8761927"))
         self.assertFalse(phase6.quality_is_usable(["R"]))
         self.assertTrue(phase6.quality_is_usable("0,0,0,0"))
         self.assertTrue(phase6.quality_is_usable("0,0"))
@@ -83,6 +85,22 @@ class Phase6SourceTests(unittest.TestCase):
         diagnostic=phase6.feature_availability({"nwcl1_residual_mllw_ft":None},index,issued)
         self.assertTrue(diagnostic["stations"]["NWCL1"]["expected_bin_present"])
         self.assertFalse(diagnostic["stations"]["NWCL1_residual"]["expected_bin_present"])
+
+    def test_only_same_completed_mllw_hour_with_usable_flags_builds_residual(self):
+        issued=dt.datetime(2026,10,22,15,0,tzinfo=dt.timezone.utc)
+        def observation(parameter,value,qc):
+            return {"station":"NWCL1","source":"NOAA CO-OPS 8761927","parameter":parameter,
+                    "value":value,"units":"ft","datum":"MLLW","qc":qc,
+                    "valid_time_utc":"2026-10-22T14:15:00Z","retrieved_utc":"2026-10-22T14:30:00Z"}
+        good={"observations":[observation("water_level",1.5,"0,0,0,0"),
+                               observation("predictions",1.1,"")]}
+        _,good_index=phase6.feature_snapshot(good,issued)
+        hour=dt.datetime(2026,10,22,14,tzinfo=dt.timezone.utc)
+        self.assertAlmostEqual(good_index[("NWCL1","residual")][hour]["value"],0.4)
+        bad={"observations":[observation("water_level",1.5,"1,0,0,0"),
+                              observation("predictions",1.1,"")]}
+        _,bad_index=phase6.feature_snapshot(bad,issued)
+        self.assertNotIn(hour,bad_index.get(("NWCL1","residual"),{}))
 
     def test_source_lookback_covers_72_hour_change_plus_completed_bin(self):
         requested=[]

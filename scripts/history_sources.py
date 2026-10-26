@@ -89,12 +89,26 @@ def parse_ndbc_payload(payload,month,request='NDBC historical stdmet'):
   try:
    year=int(fields[index['#YY']]) if '#YY' in index else int(fields[index['YY']]); year=year+2000 if year<100 else year
    stamp=dt.datetime(year,int(fields[index['MM']]),int(fields[index['DD']]),int(fields[index['hh']]),int(fields[index['mm']]),tzinfo=dt.timezone.utc)
-   direction=float(fields[index['WDIR']]); speed=float(fields[index['WSPD']])*1.943844492; gust=float(fields[index['GST']])*1.943844492
-   if speed < 0 or not 0 <= direction <= 360: continue
+   raw_direction=fields[index['WDIR']]; raw_speed=fields[index['WSPD']]; raw_gust=fields[index['GST']]
+   direction=float(raw_direction) if raw_direction.upper()!='MM' and float(raw_direction)!=999 else None
+   speed=float(raw_speed) if raw_speed.upper()!='MM' and float(raw_speed)!=99.0 else None
+   gust=float(raw_gust) if raw_gust.upper()!='MM' and float(raw_gust)!=99.0 else None
+   if direction is not None and (not math.isfinite(direction) or not 0 <= direction <= 360): direction=None
+   if speed is not None and (not math.isfinite(speed) or speed < 0): speed=None
+   if gust is not None and (not math.isfinite(gust) or gust < 0): gust=None
   except (KeyError,ValueError,IndexError): continue
-  angle=math.radians(direction)
-  for variable,value,unit in [('wind',speed,'knots'),('wind_u',-speed*math.sin(angle),'knots'),('wind_v',-speed*math.cos(angle),'knots'),('wind_direction',direction,'degrees from'),('gust',gust,'knots')]:
-   rows.append({'time':_iso(stamp),'value':round(value,6),'station':'NWCL1-NDBC','variable':variable,'unit':unit,'datum':'none','quality':'NDBC standard met','source':'NDBC historical standard meteorological archive'})
+  values=[]
+  if speed is not None: values.append(('wind',speed*1.943844492,'knots'))
+  if direction is not None: values.append(('wind_direction',direction,'degrees from'))
+  if speed is not None and direction is not None:
+   angle=math.radians(direction)
+   values.extend([('wind_u',-speed*1.943844492*math.sin(angle),'knots'),
+                  ('wind_v',-speed*1.943844492*math.cos(angle),'knots')])
+  if gust is not None: values.append(('gust',gust*1.943844492,'knots'))
+  missing_fields=[name for name,value in (('WDIR',direction),('WSPD',speed),('GST',gust)) if value is None]
+  quality='NDBC standard met'+('; missing marker '+','.join(missing_fields) if missing_fields else '')
+  for variable,value,unit in values:
+   rows.append({'time':_iso(stamp),'value':round(value,6),'station':'NWCL1-NDBC','variable':variable,'unit':unit,'datum':'none','quality':quality,'source':'NDBC historical standard meteorological archive'})
  return _result(rows,'NDBC historical standard meteorological archive',request,month)
 
 def fetch_usgs_month(station,month):
