@@ -1,15 +1,5 @@
 name: Phase 7 cleaned historical experiment
 on:
-  pull_request:
-    paths:
-      - 'scripts/phase7_data.py'
-      - 'scripts/phase7_experiment.py'
-      - 'scripts/phase5a.py'
-      - 'scripts/phase4.py'
-      - 'scripts/evidence.py'
-      - 'tests/test_phase7_data.py'
-      - 'docs/phase7-data-quality.md'
-      - '.github/workflows/phase7-clean-experiment.yml'
   workflow_dispatch:
 permissions:
   contents: read

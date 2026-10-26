@@ -17,7 +17,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: phase6-single-writer-${{ github.repository }}
+  group: phase6-single-writer-${{ github.repository }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
   cancel-in-progress: false
 jobs:
   verify:

@@ -1,10 +1,5 @@
 name: MCHL1 one-time source probe
 on:
-  pull_request:
-    paths:
-      - scripts/probe_mchl1.py
-      - tests/test_probe_mchl1.py
-      - .github/workflows/mchl1-probe.yml
   workflow_dispatch:
 permissions:
   contents: read

@@ -4,10 +4,16 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts.archive_growth import build_report
+from scripts.archive_growth import build_report, storage_budget_notice
 
 
 class ArchiveGrowthTests(unittest.TestCase):
+    def test_storage_budget_notice_is_advisory_at_measured_pack_thresholds(self):
+        mib = 1024 * 1024
+        self.assertIn("soft warning", storage_budget_notice(350 * mib).lower())
+        self.assertIn("owner review", storage_budget_notice(500 * mib).lower())
+        self.assertIn("below", storage_budget_notice(349 * mib).lower())
+
     def test_report_distinguishes_tree_history_and_reports_cycle_rate(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

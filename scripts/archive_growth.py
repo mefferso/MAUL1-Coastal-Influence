@@ -9,6 +9,8 @@ import subprocess
 import sys
 
 DATA_PREFIXES = ("site/data/", "research/prospective-forcing-archive/")
+SOFT_WARNING_BYTES = 350 * 1024 * 1024
+OWNER_REVIEW_BYTES = 500 * 1024 * 1024
 
 
 def git(root: Path, *args: str) -> str:
@@ -68,6 +70,19 @@ def format_bytes(size: int) -> str:
     raise AssertionError("unreachable")
 
 
+def storage_budget_notice(pack_bytes: int) -> str:
+    """Return an advisory threshold message; never gate archive writes."""
+    if pack_bytes >= OWNER_REVIEW_BYTES:
+        return (f"Owner review suggested: Git pack is {format_bytes(pack_bytes)} "
+                f"(review threshold {format_bytes(OWNER_REVIEW_BYTES)}).")
+    if pack_bytes >= SOFT_WARNING_BYTES:
+        return (f"Soft warning: Git pack is {format_bytes(pack_bytes)} "
+                f"(soft threshold {format_bytes(SOFT_WARNING_BYTES)}).")
+    return (f"Below advisory thresholds: Git pack is {format_bytes(pack_bytes)}; "
+            f"soft warning {format_bytes(SOFT_WARNING_BYTES)}, owner review "
+            f"{format_bytes(OWNER_REVIEW_BYTES)}.")
+
+
 def build_report(root: Path) -> str:
     # Include newly collected files before the workflow stages them for commit.
     tracked = git(root, "ls-files", "--cached", "--others", "--exclude-standard", "-z").split("\0")
@@ -90,11 +105,13 @@ def build_report(root: Path) -> str:
         "### Archive growth (current checkout)",
         f"- Working tree: **{format_bytes(tree_bytes)}** tracked files; archive data: **{format_bytes(archive_bytes)}**.",
         f"- Git pack/history: **{format_bytes(pack_size)}** (history size is distinct from working-tree size).",
+        f"- Storage budget: {storage_budget_notice(pack_size)}",
         f"- New unique data blobs on first-parent history, trailing 7 days: **{format_bytes(history_bytes)}**.",
         f"- Phase 6 cycle additions: {cycle}.",
         f"- Linear projection of new data-blob payload: +{format_bytes(int(six_months))} in 6 months; +{format_bytes(int(twelve_months))} in 12 months.",
         f"- Adding that payload to today's Git pack gives an uncompressed planning ceiling of {format_bytes(pack_size + int(six_months))} and {format_bytes(pack_size + int(twelve_months))}.",
         "- Scenario assumes the measured 7-day commit rate continues; the window includes historical backfill, and Git pack delta-compression makes actual storage lower.",
+        "- Git pack size is a local compressed-history measurement, not GitHub's repository-size meter; projections sum unique uncompressed blob payload and do not model pack deltas, reachability cleanup, or GitHub accounting.",
     )) + "\n"
 
 
