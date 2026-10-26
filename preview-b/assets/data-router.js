@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const SNAPSHOT='57e4517f353d38056c761125c78331308d67e317';
+const SNAPSHOT='e236d8946fe7acbfb764f1ba60960f9bb806881e';
 const ROOT=`https://raw.githubusercontent.com/mefferso/MAUL1-Coastal-Influence/${SNAPSHOT}/site/`;
 const nativeFetch=window.fetch.bind(window);
 function resolve(input,init={}){const request=input instanceof Request?input:null;const method=(init.method||request?.method||'GET').toUpperCase();if(!['GET','HEAD'].includes(method))return Promise.reject(new TypeError('Design B is read-only; only GET and HEAD are allowed.'));const raw=typeof input==='string'?input:input.url;const u=new URL(raw,location.href);if(u.origin===location.origin&&/(^|\/)data\//.test(u.pathname)){const rel=u.pathname.slice(u.pathname.indexOf('/data/')+6);return nativeFetch(ROOT+'data/'+rel+u.search,{...init,method});}return nativeFetch(input,init)}

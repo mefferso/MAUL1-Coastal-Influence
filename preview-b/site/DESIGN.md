@@ -20,7 +20,7 @@ River blue identifies inland river context; lake teal identifies lake/coastal co
 
 ## Data boundary
 
-`assets/data-router.js` maps page-local `data/...` GETs to the immutable `57e4517f353d38056c761125c78331308d67e317` source commit. It rejects write methods. There is no live sync, schedule, production route, or copied archive. If the pinned snapshot becomes unavailable, the UI reports missing evidence rather than silently switching to current data.
+`assets/data-router.js` maps page-local `data/...` GETs to the immutable `e236d8946fe7acbfb764f1ba60960f9bb806881e` source commit. It rejects write methods. There is no live sync, schedule, production route, or copied archive. If the pinned snapshot becomes unavailable, the UI reports missing evidence rather than silently switching to current data.
 
 ## Scientific boundary
 
