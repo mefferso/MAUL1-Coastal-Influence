@@ -28,9 +28,11 @@ for (const id of ['event', 'replay', 'phase6-content', 'research-current', 'map'
 }
 assert.match(html, /Research \/ Shadow Evaluation \/ Not Operational/);
 assert.match(html, /v1\.1\.0 RC/);
-assert.match(fs.readFileSync('site/style.css','utf8'), /@media\(max-width:850px\)/);
-assert.match(fs.readFileSync('site/style.css','utf8'), /\.app-view\[hidden\]\{display:none!important\}/);
-assert.match(html, /id="forecast-chart"[^>]*role="img"/);
+assert.match(fs.readFileSync('site/style.css','utf8'), /@media\s*\(max-width:\s*760px\)/);
+assert.match(fs.readFileSync('site/style.css','utf8'), /\.app-view\[hidden\]\s*\{\s*display:\s*none\s*!important/);
+assert.match(html, /id="forecast-chart"[^>]*role="region"/);
+assert.match(html, /forecast-chart-description/);
+assert.match(html, /Current Forecast/);
 assert.match(html, /id="forecast-cycle-health"/);
 assert.match(html, /Station network and detailed current conditions/);
 assert.match(html, /Historical observations, events, and data quality/);
@@ -40,7 +42,7 @@ assert.match(html, /Historical precursor timing and propagation/);
 assert.match(html, /Methodology and scientific reports/);
 assert.ok(html.indexOf('id="forecast-guidance"') < html.indexOf('id="research-current"'), 'forecast guidance precedes station cards');
 assert.match(fs.readFileSync('site/phase6.js','utf8'), /x0:issue\.actual_issue_time_utc/);
-assert.match(fs.readFileSync('site/phase6.js','utf8'), /type:'date',title:'Valid time · UTC'/);
+assert.match(fs.readFileSync('site/phase6.js','utf8'), /type:'date',title:\{text:'Valid time · UTC'/);
 
 function makeTab(id, selected, panel) {
   const handlers = {};
@@ -118,8 +120,8 @@ assert.equal(observed.x[0],withObservation.snapshot.availability.MAUL1_00065.obs
 const staleObservation=JSON.parse(JSON.stringify(withObservation));staleObservation.snapshot.availability.MAUL1_00065.observation.valid_time_utc=iso(-240);
 assert.equal(forecast.buildTraces(staleObservation).some(t=>t.name==='Latest observation · USGS 00065'),false);
 const staleSummary=forecast.renderGuidance(staleObservation,now);
-assert.match(staleSummary,/2\.45 ft · stale at view/);
-assert.match(staleSummary,/withheld from chart because it is stale/);
+assert.match(staleSummary,/2\.45 ft[\s\S]*Stale at view · withheld from chart/);
+assert.match(staleSummary,/Stale at view · withheld from chart/);
 const absentObservation=JSON.parse(JSON.stringify(withObservation));absentObservation.snapshot.availability.MAUL1_00065.observation=null;
 assert.equal(forecast.buildTraces(absentObservation).some(t=>t.name==='Latest observation · USGS 00065'),false);
 const futureObservation=JSON.parse(JSON.stringify(withObservation));futureObservation.snapshot.availability.MAUL1_00065.observation.valid_time_utc=iso(1);
