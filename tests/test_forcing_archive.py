@@ -30,6 +30,14 @@ class TestForcingArchive(unittest.TestCase):
     def test_valid_receipt(self):
         archive.validate(sample())
 
+    def test_acquisition_mode_is_a_known_archive_class(self):
+        row=sample()
+        row["acquisition_mode"]="delayed_recovery"
+        archive.validate(row)
+        row["acquisition_mode"]="guessed_historical"
+        with self.assertRaises(ValueError):
+            archive.validate(row)
+
     def test_missing_receipt(self):
         row = sample()
         del row["retrieved_at"]

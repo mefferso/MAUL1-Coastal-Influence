@@ -1,5 +1,6 @@
 """Deterministic tests for NWCL1 receipt ingestion; no internet or fake published archive."""
 import datetime as dt
+import hashlib
 import json
 import pathlib
 import sys
@@ -48,6 +49,155 @@ class TestNWCL1Collector(unittest.TestCase):
     def test_observation_collection_uses_provider_recent_window_for_recovery(self):
         self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlparse(collector.noaa_url("wind", "recent")).query)["date"], ["recent"])
         self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlparse(collector.noaa_url("predictions", "latest")).query)["date"], ["latest"])
+
+    def test_noaa_range_and_usgs_continuous_history_urls(self):
+        begin, end = dt.datetime(2026, 10, 25, tzinfo=UTC), dt.datetime(2026, 10, 31, tzinfo=UTC)
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(collector.noaa_url("water_level", begin=begin, end=end)).query)
+        self.assertEqual(q["begin_date"], ["20261025 00:00"])
+        self.assertEqual(q["end_date"], ["20261031 00:00"])
+        self.assertEqual(q["datum"], ["MLLW"])
+        u = urllib.parse.parse_qs(urllib.parse.urlparse(collector.usgs_url("USGS-07380215", "63160", begin=begin, end=end)).query)
+        self.assertEqual(u["time"], ["2026-10-25T00:00:00Z/2026-10-31T00:00:00Z"])
+        self.assertIn("continuous", collector.usgs_url("USGS-07380215", "63160", begin=begin, end=end))
+
+    def test_noaa_history_windows_are_bounded(self):
+        windows = collector.noaa_windows(dt.datetime(2026, 1, 1, tzinfo=UTC), dt.datetime(2026, 3, 5, tzinfo=UTC))
+        self.assertTrue(all(end - start <= dt.timedelta(days=31) for start, end in windows))
+        self.assertEqual(windows[0][0], dt.datetime(2026, 1, 1, tzinfo=UTC))
+        self.assertEqual(windows[-1][1], dt.datetime(2026, 3, 5, tzinfo=UTC))
+
+    def test_receipt_identity_retains_provider_revisions_and_recovery_class(self):
+        row = {"source":"USGS s", "station_id":"s", "variable":"gage_height", "valid_time":"2026-10-25T12:00:00Z",
+               "value":1.0, "qc_flags":[], "status":"provisional", "provider_updated_at":"2026-10-25T12:01:00Z",
+               "acquisition_mode":"prospective"}
+        self.assertNotEqual(collector._receipt_identity(row), collector._receipt_identity({**row, "status":"observed"}))
+        self.assertEqual(collector._receipt_identity(row), collector._receipt_identity({**row, "acquisition_mode":"delayed_recovery"}))
+
+    def test_history_rows_mark_recovery_without_backdating_retrieval(self):
+        valid = dt.datetime(2026, 10, 25, 12, tzinfo=UTC)
+        acquired = dt.datetime(2026, 10, 25, 18, tzinfo=UTC)
+        payload = {"data": [{"t":"2026-10-25 12:00", "v":"2.1"}]}
+        row = collector.noaa_records("water_level", payload, acquired, "d", "u", "raw/d", acquisition_mode="delayed_recovery")[0]
+        self.assertEqual(row["valid_time"], collector.iso(valid))
+        self.assertEqual(row["retrieved_at"], collector.iso(acquired))
+        self.assertEqual(row["acquisition_mode"], "delayed_recovery")
+
+    def test_usgs_history_bootstrap_matches_logical_archive_station_and_parameter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=pathlib.Path(tmp)
+            receipts=root/"receipts"; health=root/"health"
+            receipts.mkdir(); health.mkdir()
+            row={"source":"USGS USGS-07380215", "station_id":"MAUL1", "parameter_code":"63160",
+                 "record_type":"observation", "valid_time":"2026-10-25T12:00:00Z"}
+            (receipts/"a.jsonl").write_text(json.dumps(row)+"\n")
+            begin=collector.history_begin(receipts, health, "USGS MAUL1 USGS-07380215 parameter 63160",
+                dt.datetime(2026,10,31,tzinfo=UTC), receipt_station_id="MAUL1", parameter_code="63160")
+            self.assertEqual(begin, dt.datetime(2026,10,25,12,tzinfo=UTC))
+
+    def test_noaa_history_bootstrap_matches_product_receipts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=pathlib.Path(tmp)
+            receipts=root/"receipts"; health=root/"health"
+            receipts.mkdir(); health.mkdir()
+            row={"source":"NOAA CO-OPS 8761927", "station_id":"NWCL1", "product":"water_level",
+                 "record_type":"observation", "valid_time":"2026-10-25T12:00:00Z"}
+            (receipts/"a.jsonl").write_text(json.dumps(row)+"\n")
+            begin=collector.history_begin(receipts, health, "NOAA CO-OPS 8761927 water_level",
+                dt.datetime(2026,10,31,tzinfo=UTC), receipt_station_id="NWCL1", receipt_product="water_level")
+            self.assertEqual(begin, dt.datetime(2026,10,25,12,tzinfo=UTC))
+
+    def test_six_hour_actions_outage_recovers_intermediate_noaa_observations(self):
+        start = dt.datetime(2026, 10, 31, 0, tzinfo=UTC)
+        resumed = start + dt.timedelta(hours=6)
+        actual_received = resumed + dt.timedelta(minutes=5)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp)
+            old = collector.noaa_records("water_level", {"data":[{"t":"2026-10-31 00:00", "v":"1.0"}]},
+                start, "old", "old-url", "raw/old.json")[0]
+            collector.append_receipts(out / "receipts", [old])
+
+            class Response:
+                status=200
+                headers={"Date":"Sat, 31 Oct 2026 06:00:00 GMT"}
+                def __init__(self, payload): self.payload=payload
+                def __enter__(self): return self
+                def __exit__(self, *args): return False
+                def read(self): return json.dumps(self.payload).encode()
+
+            def opener(request, timeout=30):
+                query=urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)
+                if "ids" in query:
+                    return Response([{"icaoId":"KNEW", "obsTime":int((resumed-dt.timedelta(minutes=5)).timestamp()),
+                        "reportTime":"2026-10-31T05:55:00Z", "wdir":180, "wspd":5}])
+                if "product" in query:
+                    product=query["product"][0]
+                    if product == "predictions":
+                        return Response({"predictions":[{"t":"2026-10-31 06:00", "v":"1.5"}]})
+                    data=[]
+                    for hour in range(7):
+                        t=(start+dt.timedelta(hours=hour)).strftime("%Y-%m-%d %H:%M")
+                        data.append({"t":t, "s":"5", "d":"180", "f":"0"} if product=="wind" else {"t":t,"v":str(1+hour/10),"f":"0"})
+                    return Response({"data":data})
+                station, parameter=query["monitoring_location_id"][0],query["parameter_code"][0]
+                unit="ft^3/s" if parameter=="00060" else ("in" if parameter=="00045" else "ft")
+                value="100" if parameter=="00060" else ("0.01" if parameter=="00045" else "2.0")
+                if station=="USGS-073802302" and parameter=="00065":
+                    if "page" in query:
+                        raise OSError("simulated outage on second USGS page")
+                    return Response({"features":[{"properties":{"monitoring_location_id":station,
+                        "parameter_code":parameter,"time":"2026-10-31T05:45:00Z","value":value,
+                        "unit_of_measure":unit,"approval_status":"Provisional","time_series_id":station+parameter}}],
+                        "links":[{"rel":"next","href":"?page=2"}]})
+                return Response({"features":[{"properties":{"monitoring_location_id":station,"parameter_code":parameter,
+                    "time":"2026-10-31T05:55:00Z","value":value,"unit_of_measure":unit,
+                    "approval_status":"Provisional","time_series_id":station+parameter}}]})
+
+            report=collector.collect(out, now=resumed, opener=opener, sleeper=lambda _:None,
+                                     clock=lambda: actual_received)
+            self.assertEqual(report["critical_failures"], [])
+            partial=next(x for x in report["sources"] if x["source"].endswith("USGS-073802302 parameter 00065"))
+            self.assertEqual(partial["status"], "failed")
+            self.assertEqual(len(partial["raw_responses"]), 1)
+            preserved=out/partial["raw_responses"][0]["path"]
+            self.assertEqual(hashlib.sha256(preserved.read_bytes()).hexdigest(), partial["raw_responses"][0]["sha256"])
+            history=next(x for x in report["sources"] if x["source"]=="NOAA CO-OPS 8761927 water_level")
+            self.assertEqual(history["request_window"], "history")
+            receipt_rows=[json.loads(line) for p in (out/"receipts").glob("*.jsonl") for line in p.read_text().splitlines()]
+            recovered=[r for r in receipt_rows if r.get("variable")=="water_level" and r.get("station_id")=="NWCL1"]
+            self.assertEqual({r["valid_time"] for r in recovered}, {f"2026-10-31T0{h}:00:00Z" for h in range(7)})
+            for row in recovered:
+                self.assertEqual(row["retrieved_at"], collector.iso(actual_received) if row["valid_time"] != collector.iso(start) else collector.iso(start))
+                if row["valid_time"] in {"2026-10-31T01:00:00Z", "2026-10-31T02:00:00Z", "2026-10-31T03:00:00Z"}:
+                    self.assertEqual(row["acquisition_mode"], "delayed_recovery")
+
+    def test_usgs_continuous_pages_keep_each_page_raw_reference(self):
+        base={"monitoring_location_id":"USGS-07380215", "parameter_code":"63160", "unit_of_measure":"ft",
+              "approval_status":"Provisional", "time_series_id":"series"}
+        page1 = {"features": [{"properties":{**base,"time":"2026-10-25T12:00:00Z","value":"-1.0"}}],
+                 "links": [{"rel":"next", "href":"?page=2"}]}
+        page2 = {"features": [{"properties":{**base,"time":"2026-10-25T12:15:00Z","value":"-0.9"}}], "links": []}
+        class Response:
+            status=200
+            headers={"Date":"Sat, 31 Oct 2026 18:00:00 GMT"}
+            def __init__(self, payload): self.payload=payload
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self): return json.dumps(self.payload).encode()
+        urls=[]
+        def opener(request, timeout=30):
+            urls.append(request.full_url)
+            return Response(page1 if len(urls)==1 else page2)
+        pages=collector.fetch_usgs_history(collector.usgs_url("USGS-07380215", "63160"), opener, clock=lambda: self.received)
+        self.assertEqual(len(pages), 2)
+        self.assertIn("page=2", urls[1])
+        self.assertNotEqual(pages[0][1], pages[1][1])
+        with tempfile.TemporaryDirectory() as tmp:
+            rows=[]
+            for url, body, retrieved, http_date, status, attempts, payload in pages:
+                digest, path=collector.write_immutable_raw(pathlib.Path(tmp), body)
+                rows.extend(collector.usgs_records(payload, retrieved, digest, url, path, http_date))
+            self.assertEqual([r["valid_time"] for r in rows], ["2026-10-25T12:00:00Z", "2026-10-25T12:15:00Z"])
+            self.assertEqual(len(list(pathlib.Path(tmp).glob("*.json"))), 2)
 
     def test_water_datum_explicit(self):
         payload = {"data": [{"t": "2026-10-25 12:00", "v": "2.1"}]}
@@ -256,14 +406,15 @@ class TestNWCL1Collector(unittest.TestCase):
             self.assertEqual(knew["category"], "shadow")
             self.assertEqual(knew["status"], "success")
             self.assertLessEqual(knew["newest_valid_age_seconds"], knew["freshness_limit_seconds"])
-            self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
+            self.assertEqual(sum("begin_date" in url for url in requested_urls), 2)
+            self.assertEqual(sum("date=recent" in url for url in requested_urls), 0)
             self.assertTrue((pathlib.Path(temp) / "health" / (first["run_id"] + ".json")).exists())
             self.assertEqual(next(r for r in first["sources"] if "63160" in r["source"])["status"], "empty")
             receipt_clock[0] = now + dt.timedelta(minutes=1)
             with patch.object(collector, "fetch", side_effect=fetch_at_injected_clock):
                 second = collector.collect(temp, now=receipt_clock[0], opener=opener, sleeper=lambda _: None)
             self.assertEqual(second["records_added"], 0)
-            self.assertEqual(sum("date=recent" in url for url in requested_urls), 2)
+            self.assertEqual(sum("begin_date" in url for url in requested_urls), 4)
 
     def test_new_local_feeds_are_collected_as_optional_and_keep_empty_status(self):
         class Response:

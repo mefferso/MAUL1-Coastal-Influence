@@ -23,7 +23,7 @@ from validate_forcing_archive import validate
 UTC = dt.timezone.utc
 NOAA_API = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
 AWC_API = "https://aviationweather.gov/api/data/metar"
-USGS_API = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/latest-continuous/items"
+USGS_API = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items"
 NOAA_STATION = "8761927"
 AWC_STATION = "KNEW"
 SOURCES = {
@@ -63,9 +63,14 @@ def parse_noaa_time(value: str) -> dt.datetime:
     return dt.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(tzinfo=UTC)
 
 
-def noaa_url(product: str, date: str = "latest") -> str:
-    query = {"product": product, "station": NOAA_STATION, "date": date,
+def noaa_url(product: str, date: str = "latest", begin=None, end=None) -> str:
+    query = {"product": product, "station": NOAA_STATION,
              "units": "english", "time_zone": "gmt", "format": "json"}
+    if begin is None or end is None:
+        query["date"] = date
+    else:
+        query["begin_date"] = begin.astimezone(UTC).strftime("%Y%m%d %H:%M")
+        query["end_date"] = end.astimezone(UTC).strftime("%Y%m%d %H:%M")
     if product in {"water_level", "predictions"}:
         query["datum"] = "MLLW"
     return NOAA_API + "?" + urllib.parse.urlencode(query)
@@ -113,6 +118,7 @@ def awc_wind_records(payload, retrieved, digest, url, raw_path, provider_date=No
                    "source": "NOAA AWC METAR KNEW", "sensor_id": "KNEW-ASOS", "source_category": "shadow",
                    "variable": variable, "unit": unit, "datum": "not_applicable", "valid_time": iso(valid),
                    "retrieved_at": iso(retrieved), "provider_http_date": provider_date, "value": value,
+                   "acquisition_mode": "prospective",
                    "status": "observed", "raw_id": f"awc:KNEW:{report['obsTime']}:{variable}",
                    "qc_flags": [], "provider_report_time": report.get("reportTime"),
                    "provider_url": url, "raw_sha256": digest, "raw_path": raw_path,
@@ -128,7 +134,7 @@ def awc_wind_records(payload, retrieved, digest, url, raw_path, provider_date=No
     return out
 
 
-def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_date=None):
+def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_date=None, acquisition_mode=None):
     list_key = "predictions" if product == "predictions" else "data"
     if not isinstance(payload, dict) or "error" in payload or not isinstance(payload.get(list_key), list):
         raise ValueError(f"NOAA {product}: provider error or absent data list")
@@ -162,6 +168,7 @@ def noaa_records(product, payload, retrieved, digest, url, raw_path, provider_da
                    "variable": variable, "unit": unit, "datum": datum,
                    "valid_time": iso(valid), "retrieved_at": iso(retrieved),
                    "provider_http_date": provider_date, "value": value,
+                   "acquisition_mode": acquisition_mode or ("prospective" if prediction or (retrieved-valid) <= dt.timedelta(hours=2) else "delayed_recovery"),
                    "status": "predicted" if prediction else "provisional",
                    "raw_id": f"coops:8761927:{product}:{entry['t']}:{variable}",
                    "qc_flags": [f"provider_flag:{flag}" for flag in str(entry.get("f", "")).split(",")
@@ -180,7 +187,7 @@ def records_for_payload(product, payload, received, digest, url, raw_path):
     return noaa_records(product, payload, received, digest, url, raw_path)
 
 
-def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
+def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None, acquisition_mode=None):
     if not isinstance(payload, dict) or not isinstance(payload.get("features"), list):
         raise ValueError("USGS: invalid OGC response or missing features")
     out = []
@@ -234,6 +241,7 @@ def usgs_records(payload, retrieved, digest, url, raw_path, provider_date=None):
                "variable": variable, "unit": normalized, "provider_unit": unit, "datum": datum,
                "valid_time": iso(valid), "retrieved_at": iso(retrieved), "provider_http_date": provider_date,
                "provider_updated_at": props.get("last_modified"), "value": number, "status": status,
+               "acquisition_mode": acquisition_mode or ("prospective" if (retrieved-valid) <= dt.timedelta(hours=2) else "delayed_recovery"),
                "raw_id": f"usgs:{station}:{parameter}:{t}:{props.get('time_series_id','')}",
                "qc_flags": flags, "parameter_code": parameter, "provider_url": url,
                "source_category": SOURCES[station_name]["category"],
@@ -272,15 +280,73 @@ def fetch(url, opener, retries=3, sleeper=time.sleep, clock=None):
     raise RuntimeError(f"request failed after {retries} attempts: {last}")
 
 
-def usgs_url(station, parameters):
+def usgs_url(station, parameters, begin=None, end=None):
     # OGC API behavior for a comma-separated property filter is inconsistent;
     # request each parameter separately so one series cannot mask another.
     if isinstance(parameters, (tuple, list)):
         if len(parameters) != 1:
             raise ValueError("USGS requests must select exactly one parameter_code")
         parameters = parameters[0]
-    query = {"monitoring_location_id": station, "parameter_code": parameters, "limit": "500", "f": "json"}
+    query = {"monitoring_location_id": station, "parameter_code": parameters, "limit": "10000", "f": "json"}
+    if begin is not None and end is not None:
+        query["time"] = f"{iso(begin)}/{iso(end)}"
     return USGS_API + "?" + urllib.parse.urlencode(query)
+
+
+def noaa_windows(begin, end, max_days=31):
+    """Split NOAA queries into intervals no longer than the documented limit."""
+    windows, cursor, finish = [], begin.astimezone(UTC), end.astimezone(UTC)
+    while cursor < finish:
+        boundary = min(cursor + dt.timedelta(days=max_days), finish)
+        windows.append((cursor, boundary))
+        cursor = boundary
+    return windows or [(finish, finish)]
+
+
+def fetch_usgs_history(url, opener, sleeper=time.sleep, clock=None, max_pages=1000, on_page=None):
+    """Fetch OGC continuous pages and preserve the bytes and request URL per page."""
+    pages, next_url, seen = [], url, set()
+    while next_url:
+        if next_url in seen or len(pages) >= max_pages:
+            raise RuntimeError("USGS pagination cycle or page limit exceeded")
+        seen.add(next_url)
+        body, retrieved, http_date, status, attempts = fetch(next_url, opener, sleeper=sleeper, clock=clock)
+        payload = json.loads(body)
+        page = (next_url, body, retrieved, http_date, status, attempts, payload)
+        pages.append(page)
+        if on_page:
+            on_page(page)
+        link = next((x for x in payload.get("links", []) if x.get("rel") == "next"), None)
+        next_url = urllib.parse.urljoin(next_url, link["href"]) if link and link.get("href") else None
+    return pages
+
+
+def history_begin(receipts_dir, health_dir, source_name, now, receipt_station_id=None, parameter_code=None, receipt_product=None):
+    """Resume from overlapping successful history, or bootstrap from earliest receipt."""
+    for path in sorted(pathlib.Path(health_dir).glob("*.json"), reverse=True):
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for source in report.get("sources", []):
+            if source.get("source") == source_name and source.get("request_window") == "history" and source.get("status") == "success" and source.get("valid_time_max"):
+                stamp = dt.datetime.fromisoformat(source["valid_time_max"].replace("Z", "+00:00")).astimezone(UTC)
+                return stamp-dt.timedelta(hours=1)
+    earliest = None
+    for path in pathlib.Path(receipts_dir).glob("*.jsonl"):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(line)
+                matches = (row.get("source") == source_name if receipt_station_id is None else
+                           row.get("station_id") == receipt_station_id and
+                           (parameter_code is None or str(row.get("parameter_code")) == str(parameter_code)) and
+                           (receipt_product is None or row.get("product") == receipt_product))
+                if matches and row.get("record_type", "observation") == "observation":
+                    stamp = dt.datetime.fromisoformat(row["valid_time"].replace("Z", "+00:00")).astimezone(UTC)
+                    earliest = stamp if earliest is None else min(earliest, stamp)
+            except (ValueError, KeyError, json.JSONDecodeError):
+                continue
+    return earliest or now.astimezone(UTC)-dt.timedelta(hours=1)
 
 
 def write_immutable_raw(raw_dir, body):
@@ -323,7 +389,9 @@ def _receipt_identity(row):
     """Keep separate provider series/sensors even when readings happen to match."""
     return (row.get("source"), row.get("station_id"), row.get("variable"), row.get("valid_time"),
             row.get("value"), tuple(row.get("qc_flags", [])), row.get("sensor_id"),
-            row.get("parameter_code"), row.get("accumulation_period_seconds"))
+            row.get("parameter_code"), row.get("accumulation_period_seconds"), row.get("status"),
+            row.get("provider_updated_at"), row.get("unit"), row.get("datum"),
+            row.get("measurement_semantics"))
 
 
 def noaa_recent_window_due(health_dir, product, now):
@@ -344,7 +412,7 @@ def noaa_recent_window_due(health_dir, product, now):
     return True
 
 
-def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
+def collect(out_dir, now=None, opener=None, sleeper=time.sleep, clock=None):
     now = now or dt.datetime.now(UTC)
     opener = opener or urllib.request.urlopen
     out = pathlib.Path(out_dir)
@@ -359,7 +427,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
     url = awc_url()
     item = {"source": "NOAA AWC METAR KNEW", "critical": False, "category": "shadow", "url": url}
     try:
-        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
+        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=clock)
         digest, raw_path = write_immutable_raw(raw_dir, body)
         payload = json.loads(body)
         rows = awc_wind_records(payload, received, digest, url, raw_path, http_date)
@@ -375,17 +443,18 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
     results.append(item)
     for product in ("wind", "water_level", "predictions"):
-        # Keep hourly raw responses small. Once daily, also retrieve NOAA's
-        # recent window for outage recovery and provisional-value revisions.
-        windows = ["latest"]
-        if product in {"wind", "water_level"} and noaa_recent_window_due(health_dir, product, now):
-            windows.append("recent")
-        for window in windows:
-            url = noaa_url(product, window)
-            source_name = f"NOAA CO-OPS 8761927 {product}"
+        source_name = f"NOAA CO-OPS 8761927 {product}"
+        if product == "predictions":
+            requests = [("latest", noaa_url(product, "latest"))]
+        else:
+            begin = history_begin(receipts_dir, health_dir, source_name, now,
+                                  receipt_station_id="NWCL1", receipt_product=product)
+            requests = [("history", noaa_url(product, "history", start, end))
+                        for start, end in noaa_windows(begin, now)]
+        for window, url in requests:
             item = {"source": source_name, "request_window": window, "critical": True, "url": url}
             try:
-                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
+                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=clock)
                 digest, raw_path = write_immutable_raw(raw_dir, body)
                 payload = json.loads(body)
                 rows = noaa_records(product, payload, received, digest, url, raw_path, http_date)
@@ -396,6 +465,11 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
                 item.update(status=item_status, response_code=status, attempts=attempts, count=len(rows),
                             provider_item_count=provider_items, invalid_or_unmapped_item_count=max(0, provider_items - accepted_items),
                             retrieved_at=iso(received),
+                            raw_responses=[{"url":url,"sha256":digest,"path":raw_path,
+                                            "http_date":http_date,"response_code":status,
+                                            "retrieved_at":iso(received),"attempts":attempts}],
+                            window_begin=urllib.parse.parse_qs(urllib.parse.urlparse(url).query).get("begin_date", [None])[0],
+                            window_end=urllib.parse.parse_qs(urllib.parse.urlparse(url).query).get("end_date", [None])[0],
                             valid_time_min=min((r["valid_time"] for r in rows), default=None),
                             valid_time_max=max((r["valid_time"] for r in rows), default=None),
                             newest_valid_age_seconds=max(0, int((received - max(dt.datetime.fromisoformat(r["valid_time"].replace("Z", "+00:00")) for r in rows)).total_seconds())) if rows and product != "predictions" else None,
@@ -408,17 +482,36 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         if meta.get("provider") != "USGS":
             continue
         for parameter in meta["parameters"]:
-            url = usgs_url(meta["station"], parameter)
+            source_name = f"USGS {name} {meta['station']} parameter {parameter}"
+            begin = history_begin(receipts_dir, health_dir, source_name, now, receipt_station_id=name, parameter_code=parameter)
+            url = usgs_url(meta["station"], parameter, begin, now)
             item = {"source": f"USGS {name} {meta['station']} parameter {parameter}",
+                    "request_window": "history", "window_begin": iso(begin), "window_end": iso(now),
                     "critical": meta.get("critical", meta["category"] == "core") and not (name == "MAUL1" and parameter == "63160"),
                     "category": meta["category"], "url": url,
                     "hydrologic_role": meta.get("hydrologic_role")}
-            try:
-                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
+            raw_responses, page_payloads = [], {}
+
+            def preserve_page(page):
+                page_url, body, page_received, page_date, page_status, page_attempts, _payload = page
                 digest, raw_path = write_immutable_raw(raw_dir, body)
-                rows = usgs_records(json.loads(body), received, digest, url, raw_path, http_date)
-                rows = [row for row in rows if row["station_id"] == name and row["parameter_code"] == parameter]
-                provider_items = len(json.loads(body).get("features", []))
+                raw_responses.append({"url":page_url,"sha256":digest,"path":raw_path,
+                                      "http_date":page_date,"response_code":page_status,
+                                      "retrieved_at":iso(page_received),"attempts":page_attempts})
+                page_payloads[page_url] = (digest, raw_path)
+
+            try:
+                pages = fetch_usgs_history(url, opener, sleeper=sleeper, clock=clock, on_page=preserve_page)
+                rows, provider_items = [], 0
+                status, attempts, received, http_date = 200, 0, now, None
+                for page_url, body, received, http_date, status, page_attempts, payload in pages:
+                    digest, raw_path = page_payloads[page_url]
+                    attempts += page_attempts
+                    provider_items += len(payload.get("features", []))
+                    page_rows = usgs_records(payload, received, digest, page_url, raw_path, http_date)
+                    rows.extend(row for row in page_rows if row["station_id"] == name and row["parameter_code"] == parameter)
+                item["raw_responses"] = raw_responses
+                item["attempts"] = attempts
                 item_status = "success" if len(rows) == provider_items and rows else (
                     "partial" if rows else "invalid" if provider_items else "empty")
                 item.update(status=item_status, response_code=status, attempts=attempts,
@@ -432,6 +525,9 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
                             qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
                 all_rows.extend(rows)
             except Exception as exc:
+                if raw_responses:
+                    item["raw_responses"] = raw_responses
+                    item["attempts"] = sum(response["attempts"] for response in raw_responses)
                 item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
             results.append(item)
     receipt_file, added = append_receipts(receipts_dir, all_rows)
@@ -479,15 +575,21 @@ def main():
 
         # NWCL1 CO-OPS products are critical to the established core archive.
         for product in ("wind", "water_level", "predictions"):
-            url = noaa_url(product, "recent" if product in {"wind", "water_level"} else "latest")
+            smoke_now = dt.datetime.now(UTC)
+            url = (noaa_url(product, "history", smoke_now-dt.timedelta(hours=6), smoke_now)
+                   if product in {"wind", "water_level"} else noaa_url(product, "latest"))
             body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
             parsed = json.loads(body)
             digest = hashlib.sha256(body).hexdigest()
             rows = noaa_records(product, parsed, received, digest, url, f"raw/{digest}.json", date)
             if status != 200 or not rows:
                 raise RuntimeError(f"live NOAA smoke failed: {url} HTTP {status}, parsed receipts={len(rows)}")
+            unique_times = {r["valid_time"] for r in rows}
+            if product in {"wind", "water_level"} and len(unique_times) < 2:
+                raise RuntimeError(f"live NOAA history smoke returned fewer than two valid times: {url}")
             print(json.dumps({"source": f"NOAA CO-OPS 8761927 {product}", "http_status": status,
-                              "parsed_receipts": len(rows), "retrieved_at": iso(received), "http_date": date,
+                              "parsed_receipts": len(rows), "unique_valid_times": len(unique_times),
+                              "retrieved_at": iso(received), "http_date": date,
                               "category": "core"}))
 
         # Verify every configured USGS source. Candidate/shadow feeds remain
@@ -496,15 +598,19 @@ def main():
             if meta.get("provider") != "USGS":
                 continue
             for parameter in meta["parameters"]:
-                url = usgs_url(meta["station"], parameter)
+                smoke_now = dt.datetime.now(UTC)
+                url = usgs_url(meta["station"], parameter, smoke_now-dt.timedelta(hours=6), smoke_now)
                 optional_datum = name == "MAUL1" and parameter == "63160"
                 critical = meta.get("critical", meta["category"] == "core") and not optional_datum
                 try:
-                    body, received, date, status, attempts = fetch(url, urllib.request.urlopen)
-                    parsed = json.loads(body)
-                    digest = hashlib.sha256(body).hexdigest()
-                    rows = usgs_records(parsed, received, digest, url, f"raw/{digest}.json", date)
-                    rows = [r for r in rows if r["station_id"] == name and r["parameter_code"] == parameter]
+                    pages = fetch_usgs_history(url, urllib.request.urlopen)
+                    rows, parsed_count = [], 0
+                    for page_url, body, received, date, status, attempts, parsed in pages:
+                        digest = hashlib.sha256(body).hexdigest()
+                        page_rows = usgs_records(parsed, received, digest, page_url, f"raw/{digest}.json", date)
+                        rows.extend(r for r in page_rows if r["station_id"] == name and r["parameter_code"] == parameter)
+                        parsed_count += len(parsed.get("features", []))
+                    unique_times = {r["valid_time"] for r in rows}
                 except Exception as exc:
                     print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}",
                                       "status": "failed", "category": meta["category"], "critical": critical,
@@ -512,13 +618,14 @@ def main():
                     if critical:
                         raise
                     continue
-                if (status != 200 or not rows) and critical:
+                if (status != 200 or not rows or len(unique_times) < 2) and critical:
                     sample = (parsed.get("features") or [{}])[0].get("properties", {}) if isinstance(parsed, dict) else {}
                     raise RuntimeError(f"live USGS smoke failed: {name} parameter {parameter} HTTP {status}, "
                                        f"parsed receipts={len(rows)}, sample_properties={json.dumps(sample, sort_keys=True)[:1200]}")
                 print(json.dumps({"source": f"USGS {name} {meta['station']} parameter {parameter}",
-                                  "status": "success" if status == 200 and rows else "empty_or_failed",
+                                  "status": "success" if status == 200 and len(unique_times) >= 2 else "empty_or_failed",
                                   "http_status": status, "parsed_receipts": len(rows),
+                                  "unique_valid_times":len(unique_times),
                                   "newest_valid_time": max((r["valid_time"] for r in rows), default=None),
                                   "retrieved_at": iso(received), "http_date": date,
                                   "optional_unavailable": not rows and not critical,

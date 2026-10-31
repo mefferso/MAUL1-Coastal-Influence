@@ -2,6 +2,8 @@ name: Validate and deploy
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'research/prospective-forcing-archive/**'
   pull_request:
   workflow_dispatch:
   workflow_run:
