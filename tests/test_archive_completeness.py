@@ -31,6 +31,10 @@ class TestArchiveCompleteness(unittest.TestCase):
             self.assertEqual(series["delayed_recovery_records"], 2)
             self.assertEqual(report["issue_availability"][0]["available_receipts"], 1)
             self.assertEqual(report["issue_availability"][0]["available_features"][0]["variable"], "gage_height")
+            summary=completeness.render_summary(report)
+            self.assertIn("Feature availability at issues", summary)
+            self.assertIn("gage_height", summary)
+            self.assertNotIn("2026-10-31T08:00:00Z", summary)
 
 
 if __name__ == "__main__":

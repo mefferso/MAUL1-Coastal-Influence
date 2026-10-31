@@ -108,20 +108,58 @@ def build_report(root, issue_times=None):
             "receipt_count":len(rows), "series_count":len(series), "series":series, "issue_availability":availability}
 
 
+def render_summary(report):
+    """Render bounded Actions markdown rather than embedding issue-by-issue JSON."""
+    lines=["## Archive completeness (Research / Shadow Evaluation / Not Operational)",
+           f"\nReceipts: {report['receipt_count']} · series: {report['series_count']} · audited issues: {len(report['issue_availability'])}",
+           "\n| Station | Variable | Unique times | Median cadence | Max gap | Median latency | Max latency | Repeated | Revisions | Recovered | Prospective |",
+           "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    def fmt(seconds):
+        return "—" if seconds is None else f"{seconds/60:.1f} min" if seconds < 3600 else f"{seconds/3600:.2f} h"
+    for item in report["series"]:
+        latency=item["latency_seconds"]
+        lines.append(f"| {item['station_id']} | {item['variable']} | {item['unique_valid_timestamps']} | "
+                     f"{fmt(item['cadence_seconds_median'])} | {fmt(item['max_gap_seconds'])} | "
+                     f"{fmt(latency['median'])} | {fmt(latency['max'])} | {item['repeated_value_transitions']} | "
+                     f"{item['revision_valid_times']} | {item['delayed_recovery_records']} | {item['prospective_records']} |")
+    issues=report["issue_availability"]
+    feature_counts=defaultdict(int)
+    available_series=[]
+    for issue in issues:
+        for feature in issue["available_features"]:
+            key=(feature["station_id"], feature["parameter_code"], feature["variable"])
+            feature_counts[key]+=1
+        available_series.append(issue["available_series"])
+    lines.extend(["\n### Feature availability at issues", "",
+                  f"{len(issues)} issue times checked using both valid_time and actual retrieved_at no later than issue time."])
+    if issues:
+        lines.append(f"Available series per issue: min {min(available_series)}/{report['series_count']}, "
+                     f"median {statistics.median(available_series):g}/{report['series_count']}, "
+                     f"max {max(available_series)}/{report['series_count']}.")
+        lines.extend(["", "| Station | Parameter | Variable | Issues available |", "|---|---|---|---:|"])
+        for (station, parameter, variable), count in sorted(feature_counts.items(), key=lambda item:tuple(str(x or "") for x in item[0])):
+            lines.append(f"| {station} | {parameter or '—'} | {variable} | {count}/{len(issues)} |")
+    else:
+        lines.append("No authentic issue timestamps were found.")
+    return "\n".join(lines)+"\n"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=pathlib.Path, default=pathlib.Path("."))
     parser.add_argument("--summary", action="store_true", help="append the report to GITHUB_STEP_SUMMARY")
     args = parser.parse_args()
     report = build_report(args.root)
-    rendered = json.dumps(report, indent=2, sort_keys=True)
-    print(rendered)
     if args.summary:
+        rendered=render_summary(report)
+        print(rendered)
         import os
         path = os.environ.get("GITHUB_STEP_SUMMARY")
         if path:
             with open(path, "a", encoding="utf-8") as handle:
-                handle.write("\n## Archive completeness (research only)\n\n```json\n"+rendered+"\n```\n")
+                handle.write("\n"+rendered)
+    else:
+        print(json.dumps(report, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
