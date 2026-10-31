@@ -303,7 +303,7 @@ def noaa_windows(begin, end, max_days=31):
     return windows or [(finish, finish)]
 
 
-def fetch_usgs_history(url, opener, sleeper=time.sleep, clock=None, max_pages=1000):
+def fetch_usgs_history(url, opener, sleeper=time.sleep, clock=None, max_pages=1000, on_page=None):
     """Fetch OGC continuous pages and preserve the bytes and request URL per page."""
     pages, next_url, seen = [], url, set()
     while next_url:
@@ -312,7 +312,10 @@ def fetch_usgs_history(url, opener, sleeper=time.sleep, clock=None, max_pages=10
         seen.add(next_url)
         body, retrieved, http_date, status, attempts = fetch(next_url, opener, sleeper=sleeper, clock=clock)
         payload = json.loads(body)
-        pages.append((next_url, body, retrieved, http_date, status, attempts, payload))
+        page = (next_url, body, retrieved, http_date, status, attempts, payload)
+        pages.append(page)
+        if on_page:
+            on_page(page)
         link = next((x for x in payload.get("links", []) if x.get("rel") == "next"), None)
         next_url = urllib.parse.urljoin(next_url, link["href"]) if link and link.get("href") else None
     return pages
@@ -487,15 +490,22 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep, clock=None):
                     "critical": meta.get("critical", meta["category"] == "core") and not (name == "MAUL1" and parameter == "63160"),
                     "category": meta["category"], "url": url,
                     "hydrologic_role": meta.get("hydrologic_role")}
+            raw_responses, page_payloads = [], {}
+
+            def preserve_page(page):
+                page_url, body, page_received, page_date, page_status, page_attempts, _payload = page
+                digest, raw_path = write_immutable_raw(raw_dir, body)
+                raw_responses.append({"url":page_url,"sha256":digest,"path":raw_path,
+                                      "http_date":page_date,"response_code":page_status,
+                                      "retrieved_at":iso(page_received),"attempts":page_attempts})
+                page_payloads[page_url] = (digest, raw_path)
+
             try:
-                pages = fetch_usgs_history(url, opener, sleeper=sleeper, clock=clock)
-                rows, raw_responses, provider_items = [], [], 0
+                pages = fetch_usgs_history(url, opener, sleeper=sleeper, clock=clock, on_page=preserve_page)
+                rows, provider_items = [], 0
                 status, attempts, received, http_date = 200, 0, now, None
                 for page_url, body, received, http_date, status, page_attempts, payload in pages:
-                    digest, raw_path = write_immutable_raw(raw_dir, body)
-                    raw_responses.append({"url":page_url,"sha256":digest,"path":raw_path,
-                                          "http_date":http_date,"response_code":status,
-                                          "retrieved_at":iso(received),"attempts":page_attempts})
+                    digest, raw_path = page_payloads[page_url]
                     attempts += page_attempts
                     provider_items += len(payload.get("features", []))
                     page_rows = usgs_records(payload, received, digest, page_url, raw_path, http_date)
@@ -515,6 +525,9 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep, clock=None):
                             qc_flag_counts={flag: sum(flag in r["qc_flags"] for r in rows) for flag in sorted({f for r in rows for f in r["qc_flags"]})})
                 all_rows.extend(rows)
             except Exception as exc:
+                if raw_responses:
+                    item["raw_responses"] = raw_responses
+                    item["attempts"] = sum(response["attempts"] for response in raw_responses)
                 item.update(status="failed", error=f"{type(exc).__name__}: {exc}")
             results.append(item)
     receipt_file, added = append_receipts(receipts_dir, all_rows)

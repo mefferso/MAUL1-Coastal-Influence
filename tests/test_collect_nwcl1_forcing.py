@@ -1,5 +1,6 @@
 """Deterministic tests for NWCL1 receipt ingestion; no internet or fake published archive."""
 import datetime as dt
+import hashlib
 import json
 import pathlib
 import sys
@@ -140,6 +141,13 @@ class TestNWCL1Collector(unittest.TestCase):
                 station, parameter=query["monitoring_location_id"][0],query["parameter_code"][0]
                 unit="ft^3/s" if parameter=="00060" else ("in" if parameter=="00045" else "ft")
                 value="100" if parameter=="00060" else ("0.01" if parameter=="00045" else "2.0")
+                if station=="USGS-073802302" and parameter=="00065":
+                    if "page" in query:
+                        raise OSError("simulated outage on second USGS page")
+                    return Response({"features":[{"properties":{"monitoring_location_id":station,
+                        "parameter_code":parameter,"time":"2026-10-31T05:45:00Z","value":value,
+                        "unit_of_measure":unit,"approval_status":"Provisional","time_series_id":station+parameter}}],
+                        "links":[{"rel":"next","href":"?page=2"}]})
                 return Response({"features":[{"properties":{"monitoring_location_id":station,"parameter_code":parameter,
                     "time":"2026-10-31T05:55:00Z","value":value,"unit_of_measure":unit,
                     "approval_status":"Provisional","time_series_id":station+parameter}}]})
@@ -147,6 +155,11 @@ class TestNWCL1Collector(unittest.TestCase):
             report=collector.collect(out, now=resumed, opener=opener, sleeper=lambda _:None,
                                      clock=lambda: actual_received)
             self.assertEqual(report["critical_failures"], [])
+            partial=next(x for x in report["sources"] if x["source"].endswith("USGS-073802302 parameter 00065"))
+            self.assertEqual(partial["status"], "failed")
+            self.assertEqual(len(partial["raw_responses"]), 1)
+            preserved=out/partial["raw_responses"][0]["path"]
+            self.assertEqual(hashlib.sha256(preserved.read_bytes()).hexdigest(), partial["raw_responses"][0]["sha256"])
             history=next(x for x in report["sources"] if x["source"]=="NOAA CO-OPS 8761927 water_level")
             self.assertEqual(history["request_window"], "history")
             receipt_rows=[json.loads(line) for p in (out/"receipts").glob("*.jsonl") for line in p.read_text().splitlines()]
