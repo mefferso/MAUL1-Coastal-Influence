@@ -69,6 +69,8 @@ def validate(record: dict) -> None:
         raise ValueError("only tide_prediction may be a prediction record")
     if record_type == "observation" and record["status"] == "predicted":
         raise ValueError("predicted status requires prediction record_type")
+    if "acquisition_mode" in record and record["acquisition_mode"] not in {"prospective", "delayed_recovery"}:
+        raise ValueError("acquisition_mode must be prospective or delayed_recovery")
     if received < valid and record_type != "prediction":
         raise ValueError("receipt timestamp predates valid time; check time basis")
     val = record["value"]

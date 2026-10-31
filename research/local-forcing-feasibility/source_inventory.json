@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "research_status": "retrospective feasibility; no operational use",
-  "reviewed_utc_date": "2026-10-25",
+  "reviewed_utc_date": "2026-10-31",
   "sources": [
     {
       "id": "usgs-301828090363100-precipitation",
@@ -161,6 +161,28 @@
       "url": "https://waterdata.usgs.gov/monitoring-location/USGS-07378500/"
     }
   ],
+  "history_recovery": {
+    "status": "implemented in review branch; provider-backed continuity remains unverified until the next hosted recovery run",
+    "noaa_coops": {
+      "station": "8761927 / NWCL1",
+      "products": ["wind", "water_level"],
+      "query": "documented begin_date/end_date ranges, split into intervals of at most 31 days; water_level keeps datum=MLLW",
+      "bootstrap": "earliest matching archived product receipt, then one-hour overlap from last successful history valid time",
+      "reference": "https://api.tidesandcurrents.noaa.gov/api/dev"
+    },
+    "usgs_ogc": {
+      "collection": "continuous",
+      "query": "RFC3339 time interval; follow OGC next-page links and preserve each original response",
+      "series": ["DENL1 00060/00065", "MDLL1 00065", "MAUL1 direct 00065/63160", "optional tributary and 00045 precipitation"],
+      "datum_gate": "63160 remains direct NAVD88 only; never derive it from 00065",
+      "reference": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items"
+    },
+    "provenance": "valid_time remains provider observation time; retrieved_at is actual collector acquisition time. Rows acquired after a collection gap are marked delayed_recovery and cannot be counted as issue-time available before retrieval.",
+    "references": [
+      "https://tidesandcurrents.noaa.gov/web_services_info.html",
+      "https://api.waterdata.usgs.gov/ogcapi/v0/?f=html"
+    ]
+  },
   "implementation_status": {
     "usgs_candidates": "Verified currently reporting by hosted PR smoke on 2026-10-25; one current row per listed parameter.",
     "mrms_basin_qpe": "Research-only prototype: NLDI geometry and synthetic aggregation are implemented; live MRMS product is reachable, but GRIB variable/units/accumulation metadata cannot be validated, so no values are archived or scheduled.",

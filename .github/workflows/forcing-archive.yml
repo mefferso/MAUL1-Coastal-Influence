@@ -9,10 +9,14 @@ on:
       - '.github/workflows/forcing-archive.yml'
       - 'scripts/collect_nwcl1_forcing.py'
       - 'scripts/validate_forcing_archive.py'
+      - 'scripts/archive_completeness.py'
       - 'scripts/collect_mrms_basin_qpe.py'
       - 'tests/test_collect_nwcl1_forcing.py'
       - 'tests/test_collect_mrms_basin_qpe.py'
       - 'tests/test_forcing_archive.py'
+      - 'tests/test_archive_completeness.py'
+      - 'tests/test_archive_workflow.py'
+      - '.github/scripts/publish-with-rebase-retry.sh'
       - 'docs/prospective-forcing-archive.md'
       - 'docs/rainfall-tributary-observation-acquisition.md'
       - 'research/local-forcing-feasibility/source_inventory.json'
@@ -37,7 +41,7 @@ jobs:
           python-version: '3.12'
       - name: Install optional MRMS geospatial decoder
         run: python -m pip install -r research/local-forcing-feasibility/mrms-requirements.txt
-      - run: python -m unittest tests.test_collect_nwcl1_forcing tests.test_collect_mrms_basin_qpe tests.test_forcing_archive -v
+      - run: python -m unittest tests.test_collect_nwcl1_forcing tests.test_collect_mrms_basin_qpe tests.test_forcing_archive tests.test_archive_completeness tests.test_archive_workflow -v
       - name: Verify live NOAA and USGS current endpoints
         run: python scripts/collect_nwcl1_forcing.py --live-smoke
       - name: Verify live MRMS product and NLDI basin endpoints
@@ -73,6 +77,9 @@ jobs:
       - name: Summarize archive growth
         if: always()
         run: python scripts/archive_growth.py .
+      - name: Summarize archive completeness
+        if: always()
+        run: python scripts/archive_completeness.py --summary
       - name: Persist immutable payloads, receipts, and run health
         if: always()
         run: |
@@ -80,13 +87,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add research/prospective-forcing-archive
           if ! git diff --cached --quiet; then
-            git commit -m 'Archive prospective coastal forcing observations'
-            for attempt in 1 2 3; do
-              git fetch origin main
-              git rebase origin/main
-              if git push origin HEAD:main; then exit 0; fi
-              if [ "$attempt" -eq 3 ]; then exit 1; fi
-            done
+            .github/scripts/publish-with-rebase-retry.sh main 'Archive prospective coastal forcing observations'
           fi
       - name: Fail visibly on any critical feed failure or empty response
         if: always()
