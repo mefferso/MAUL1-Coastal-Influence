@@ -409,7 +409,7 @@ def noaa_recent_window_due(health_dir, product, now):
     return True
 
 
-def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
+def collect(out_dir, now=None, opener=None, sleeper=time.sleep, clock=None):
     now = now or dt.datetime.now(UTC)
     opener = opener or urllib.request.urlopen
     out = pathlib.Path(out_dir)
@@ -424,7 +424,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
     url = awc_url()
     item = {"source": "NOAA AWC METAR KNEW", "critical": False, "category": "shadow", "url": url}
     try:
-        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
+        body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=clock)
         digest, raw_path = write_immutable_raw(raw_dir, body)
         payload = json.loads(body)
         rows = awc_wind_records(payload, received, digest, url, raw_path, http_date)
@@ -451,7 +451,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
         for window, url in requests:
             item = {"source": source_name, "request_window": window, "critical": True, "url": url}
             try:
-                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=lambda: now)
+                body, received, http_date, status, attempts = fetch(url, opener, sleeper=sleeper, clock=clock)
                 digest, raw_path = write_immutable_raw(raw_dir, body)
                 payload = json.loads(body)
                 rows = noaa_records(product, payload, received, digest, url, raw_path, http_date)
@@ -488,7 +488,7 @@ def collect(out_dir, now=None, opener=None, sleeper=time.sleep):
                     "category": meta["category"], "url": url,
                     "hydrologic_role": meta.get("hydrologic_role")}
             try:
-                pages = fetch_usgs_history(url, opener, sleeper=sleeper, clock=lambda: now)
+                pages = fetch_usgs_history(url, opener, sleeper=sleeper, clock=clock)
                 rows, raw_responses, provider_items = [], [], 0
                 status, attempts, received, http_date = 200, 0, now, None
                 for page_url, body, received, http_date, status, page_attempts, payload in pages:

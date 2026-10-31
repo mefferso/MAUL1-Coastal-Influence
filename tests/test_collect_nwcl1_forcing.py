@@ -108,6 +108,7 @@ class TestNWCL1Collector(unittest.TestCase):
     def test_six_hour_actions_outage_recovers_intermediate_noaa_observations(self):
         start = dt.datetime(2026, 10, 31, 0, tzinfo=UTC)
         resumed = start + dt.timedelta(hours=6)
+        actual_received = resumed + dt.timedelta(minutes=5)
         with tempfile.TemporaryDirectory() as tmp:
             out = pathlib.Path(tmp)
             old = collector.noaa_records("water_level", {"data":[{"t":"2026-10-31 00:00", "v":"1.0"}]},
@@ -143,7 +144,8 @@ class TestNWCL1Collector(unittest.TestCase):
                     "time":"2026-10-31T05:55:00Z","value":value,"unit_of_measure":unit,
                     "approval_status":"Provisional","time_series_id":station+parameter}}]})
 
-            report=collector.collect(out, now=resumed, opener=opener, sleeper=lambda _:None)
+            report=collector.collect(out, now=resumed, opener=opener, sleeper=lambda _:None,
+                                     clock=lambda: actual_received)
             self.assertEqual(report["critical_failures"], [])
             history=next(x for x in report["sources"] if x["source"]=="NOAA CO-OPS 8761927 water_level")
             self.assertEqual(history["request_window"], "history")
@@ -151,7 +153,7 @@ class TestNWCL1Collector(unittest.TestCase):
             recovered=[r for r in receipt_rows if r.get("variable")=="water_level" and r.get("station_id")=="NWCL1"]
             self.assertEqual({r["valid_time"] for r in recovered}, {f"2026-10-31T0{h}:00:00Z" for h in range(7)})
             for row in recovered:
-                self.assertEqual(row["retrieved_at"], collector.iso(resumed) if row["valid_time"] != collector.iso(start) else collector.iso(start))
+                self.assertEqual(row["retrieved_at"], collector.iso(actual_received) if row["valid_time"] != collector.iso(start) else collector.iso(start))
                 if row["valid_time"] in {"2026-10-31T01:00:00Z", "2026-10-31T02:00:00Z", "2026-10-31T03:00:00Z"}:
                     self.assertEqual(row["acquisition_mode"], "delayed_recovery")
 
