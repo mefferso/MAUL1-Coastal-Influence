@@ -25,6 +25,16 @@ def receipt(station, variable, when, retrieved=None, value=1.0, parameter="", da
 
 
 class TestArchiveMonitoring(unittest.TestCase):
+    def test_context_keeps_provider_status_labels_without_upgrading_them(self):
+        issue=stamp(1)
+        provisional=receipt("DENL1","stream_stage",stamp(0),stamp(0,5),value=2.0)
+        provisional["status"]="provisional"
+        approved_revision={**provisional,"status":"approved","retrieved_at":stamp(0,10).isoformat().replace("+00:00","Z")}
+        result=monitoring.assess_context([provisional,approved_revision],"DENL1",["stream_stage"],issue)
+        self.assertEqual(result["features"][0]["provider_status_counts"],{"approved":1,"provisional":1})
+        self.assertEqual(result["features"][0]["unique_valid_times"],1)
+        self.assertTrue(result["features"][0]["cadence_provisional"])
+
     def test_schedule_report_distinguishes_recorded_runs_from_nominal_slots(self):
         now=stamp(12)
         runs=[

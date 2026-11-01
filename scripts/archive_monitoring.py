@@ -301,6 +301,7 @@ def assess_context(rows: list[dict], station: str, variables: list[str], issue_t
             output.append({"station":station,"variable":variable,"unique_valid_times":len(times),
                            "latest_valid_time":iso(times[-1]),
                            "latest_retrieved_at":max(r["retrieved_at"] for r in matching),
+                           "provider_status_counts":dict(sorted(Counter(r.get("status","unknown") for r in matching).items())),
                            "parameter_code":parameter_code or "source-native","datum":datum or "source-defined",
                            "expected_cadence_seconds":cadence,"cadence_basis":policy["basis"],
                            "cadence_provisional":policy.get("provisional",True),"expected_times":expected,
@@ -558,6 +559,7 @@ def _decorate_coverage(completeness: dict, rows: list[dict]) -> list[dict]:
         if not policy:
             output.append({**item,"expected_cadence_seconds":None,"coverage_fraction":None,
                            "cadence_basis":"not configured; coverage threshold not inferred",
+                           "provider_status_counts":dict(sorted(Counter(r.get("status","unknown") for r in matching).items())),
                            "invalid_value_receipts":sum(not _usable_value(r) for r in matching),
                            "receipt_with_qc_flags":sum(bool(r.get("qc_flags")) for r in matching),
                            "latest_valid_time":max((r["valid_time"] for r in matching),default=None),
@@ -571,6 +573,7 @@ def _decorate_coverage(completeness: dict, rows: list[dict]) -> list[dict]:
         output.append({**item,"expected_cadence_seconds":cadence,
                        "expected_intervals":expected,"coverage_fraction":min(1.0,count/expected) if expected else 0,
                        "cadence_basis":policy["basis"],"cadence_provisional":policy["provisional"],
+                       "provider_status_counts":dict(sorted(Counter(r.get("status","unknown") for r in matching).items())),
                        "invalid_value_receipts":sum(not _usable_value(row) for row in matching),
                        "receipt_with_qc_flags":sum(bool(row.get("qc_flags")) for row in matching),
                        "latest_valid_time":max((r["valid_time"] for r in matching),default=None),
@@ -673,6 +676,7 @@ def _aggregate_context(rows: list[dict], issues: list[dt.datetime], station: str
             "issue_windows_assessed":len(issues),"windows_with_observations":len(values),
             "ready_issue_windows":ready,"ready_fraction":ready/len(issues) if issues else 0,
             "median_coverage_fraction":statistics.median([item["coverage_fraction"] for item in values]) if values else 0,
+            "latest_issue_provider_status_counts":values[-1]["provider_status_counts"] if values else {},
             "latest_valid_time_at_last_issue":values[-1]["latest_valid_time"] if values else None,
             "assessment":"Sufficient observed coverage" if issues and ready/len(issues)>=ISSUE_WINDOW_PASS_THRESHOLD else
                 ("Partial coverage" if ready or values else "Insufficient coverage")}
@@ -770,12 +774,13 @@ def render_daily(report: dict) -> str:
         lines.append("Git storage measurement unavailable.")
     else:
         lines.append(f"Working checkout {storage['working_tree_bytes']} bytes; archive files {storage['archive_files_bytes']} bytes; Git pack {storage['git_pack_bytes']} bytes; trailing seven-day new data blobs {storage['new_unique_data_blob_bytes_7d']} bytes.")
-    lines.extend(["", "## Series coverage", "", "| Station | Variable | Unique times | Expected times | Expected cadence | Coverage | Maximum gap | Latest valid | Latest retrieved | Revisions | Delayed recovery | Invalid | QC flagged |", "|---|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|"])
+    lines.extend(["", "## Series coverage", "", "| Station | Variable | Unique times | Expected times | Expected cadence | Coverage | Maximum gap | Latest valid | Latest retrieved | Revisions | Delayed recovery | Invalid | QC flagged | Provider statuses |", "|---|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|"])
     for item in report["coverage"]["series"]:
         cadence="—" if item.get("expected_cadence_seconds") is None else f"{item['expected_cadence_seconds']/60:g} min"+ (" provisional" if item.get("cadence_provisional") else "")
         coverage="—" if item.get("coverage_fraction") is None else f"{item['coverage_fraction']:.1%}"
         gap="—" if item.get("max_gap_seconds") is None else f"{item['max_gap_seconds']/3600:.2f} h"
-        lines.append(f"| {item['station_id']} | {item['variable']} | {item['unique_valid_timestamps']} | {item.get('expected_intervals','—')} | {cadence} | {coverage} | {gap} | {item.get('latest_valid_time') or '—'} | {item.get('latest_retrieved_at') or '—'} | {item['revision_valid_times']} | {item['delayed_recovery_records']} | {item['invalid_value_receipts']} | {item['receipt_with_qc_flags']} |")
+        statuses=", ".join(f"{name}: {count}" for name,count in item.get("provider_status_counts",{}).items()) or "—"
+        lines.append(f"| {item['station_id']} | {item['variable']} | {item['unique_valid_timestamps']} | {item.get('expected_intervals','—')} | {cadence} | {coverage} | {gap} | {item.get('latest_valid_time') or '—'} | {item.get('latest_retrieved_at') or '—'} | {item['revision_valid_times']} | {item['delayed_recovery_records']} | {item['invalid_value_receipts']} | {item['receipt_with_qc_flags']} | {statuses} |")
     return "\n".join(lines)+"\n"
 
 
@@ -791,11 +796,12 @@ def render_weekly(report: dict) -> str:
     residual=feature["nwcl1_water_level_residual_latest_issue"]
     latest_residual=residual["latest_issue"]
     lines.extend(["",f"NWCL1 observed-minus-predicted MLLW residual: {latest_residual['status']}; exact matched times {latest_residual['matched_exact_valid_times']}; issue windows ready {residual['ready_issue_windows']}/{residual['issue_windows_assessed']}.",
-                  "", "| Context feature | Window | Ready issue windows | Assessed | Status |", "|---|---:|---:|---:|---|"])
+                  "", "| Context feature | Window | Ready issue windows | Assessed | Status | Provider statuses at latest issue |", "|---|---:|---:|---:|---|---|"])
     for item in feature["time_dependent_context_features"]:
-        lines.append(f"| {item['station']} {item['variable']} | {item['window_hours']}h | {item['ready_issue_windows']} | {item['issue_windows_assessed']} | {item['assessment']} |")
+        statuses=", ".join(f"{name}: {count}" for name,count in item.get("latest_issue_provider_status_counts",{}).items()) or "—"
+        lines.append(f"| {item['station']} {item['variable']} | {item['window_hours']}h | {item['ready_issue_windows']} | {item['issue_windows_assessed']} | {item['assessment']} | {statuses} |")
     lines.extend([
-                  "Issue-time context requires both valid and actual retrieval times at or before each authentic issuance; later receipts are excluded.",
+                  "Issue-time context requires both valid and actual retrieval times at or before each authentic issuance; later receipts are excluded. Provider status labels are reported as received and do not become approved/final because a feature meets availability thresholds.",
                   f"PR #77 production verification: {report['repair_deployment']['verification_state']} (successful repaired-code schedules: {report['repair_deployment'].get('successful_post_merge_scheduled_runs',0)}; delayed receipts acquired within those runs: {report['repair_deployment']['delayed_recovery_receipts_acquired_after_merge']}).",
                   "",f"## Independent forecast evidence: {validation['status']}","",
                   f"Matured targets: 6h {validation['matured_forecast_targets']['6h']}, 12h {validation['matured_forecast_targets']['12h']}, 24h {validation['matured_forecast_targets']['24h']}.",
