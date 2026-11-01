@@ -1,0 +1,66 @@
+name: Research archive health and scientific readiness
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+    - cron: '19 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      period:
+        description: Report to generate
+        type: choice
+        options: [daily, weekly]
+        default: daily
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archive-monitoring-${{ github.repository }}-${{ github.event_name == 'workflow_dispatch' && inputs.period || (github.event.schedule == '19 7 * * 1' && 'weekly' || 'daily') }}
+  cancel-in-progress: false
+
+jobs:
+  assess:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select report period
+        id: period
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_PERIOD: ${{ inputs.period }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            echo "period=$INPUT_PERIOD" >> "$GITHUB_OUTPUT"
+          elif [ "$SCHEDULE" = '19 7 * * 1' ]; then
+            echo 'period=weekly' >> "$GITHUB_OUTPUT"
+          else
+            echo 'period=daily' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Assess archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/archive_monitoring.py --root . --period '${{ steps.period.outputs.period }}'
+      - name: Publish changed report only
+        if: success()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research/prospective-forcing-archive/monitoring
+          if ! git diff --cached --quiet; then
+            .github/scripts/publish-with-rebase-retry.sh main 'Update research archive monitoring report'
+          else
+            echo 'Monitoring report unchanged; no commit needed.'
+          fi
