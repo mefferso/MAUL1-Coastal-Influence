@@ -68,10 +68,13 @@ class TestArchiveMonitoring(unittest.TestCase):
     def test_late_recovery_counts_eventually_but_not_at_earlier_issue(self):
         issue=stamp(3)
         rows=[receipt("NWCL1","wind_u",stamp(h), stamp(h) if h==0 else stamp(6,5), value=float(h)) for h in range(7)]
+        for row in rows[1:]:
+            row["acquisition_mode"]="delayed_recovery"
         before=monitoring.available_rows_at_issue(rows, issue)
         after=monitoring.available_rows_at_issue(rows, stamp(7))
         self.assertEqual(len(before), 1)
         self.assertEqual(len(after), 7)
+        self.assertEqual(sum(row["acquisition_mode"]=="delayed_recovery" for row in after),6)
         self.assertTrue(all(monitoring.parse_time(r["retrieved_at"]) > monitoring.parse_time(r["valid_time"])
                             for r in after if monitoring.parse_time(r["valid_time"]) > stamp(0)))
 
