@@ -1,0 +1,266 @@
+{
+  "issuance_id": "3d574611fb93b5fa",
+  "actual_issue_time_utc": "2026-11-07T02:47:51Z",
+  "sources": [
+    {
+      "station": "MAUL1",
+      "status": "retrieved",
+      "retrieved_utc": "2026-11-07T02:47:50Z",
+      "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07380215&parameterCd=00065%2C63160&period=P4D&siteStatus=all",
+      "response_sha256": "dc9dbeedd78c8c53596b6422eaf79c33a60eb90db4b8d589ed5173887034757d",
+      "server_date": "Sat, 07 Nov 2026 02:47:50 GMT"
+    },
+    {
+      "station": "DENL1",
+      "status": "retrieved",
+      "retrieved_utc": "2026-11-07T02:47:50Z",
+      "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07378500&parameterCd=00060%2C00065&period=P4D&siteStatus=all",
+      "response_sha256": "e62eecc5d0a45364dfdd06f80034f7a4bae577e136cba58944b8b7ad1b0d3fe2",
+      "server_date": "Sat, 07 Nov 2026 02:47:50 GMT"
+    },
+    {
+      "station": "MDLL1",
+      "status": "retrieved",
+      "retrieved_utc": "2026-11-07T02:47:50Z",
+      "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=301200090072400&parameterCd=00065&period=P4D&siteStatus=all",
+      "response_sha256": "ba208d7d5d0e62f119ac571b47fbe2294b886f5750cbc1db52fedff276ca0c8a",
+      "server_date": "Sat, 07 Nov 2026 02:47:50 GMT"
+    },
+    {
+      "station": "NWCL1",
+      "product": "water_level",
+      "status": "retrieved",
+      "retrieved_utc": "2026-11-07T02:47:51Z",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261103&end_date=20261107&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=water_level&datum=MLLW&interval=h",
+      "response_sha256": "be5ed4f3079771dced60d2e52537fc7049dd9d3d4d9d489f9abb7194e979bc3f",
+      "server_date": "Sat, 07 Nov 2026 02:47:51 GMT"
+    },
+    {
+      "station": "NWCL1",
+      "product": "predictions",
+      "status": "retrieved",
+      "retrieved_utc": "2026-11-07T02:47:51Z",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261103&end_date=20261107&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=predictions&datum=MLLW&interval=h",
+      "response_sha256": "d6c2eacaecc3ed7039c0aaeaeaa2c98a3b8c440f61a3c97ed39dee72b996bf0d",
+      "server_date": "Sat, 07 Nov 2026 02:47:51 GMT"
+    },
+    {
+      "station": "NWCL1",
+      "product": "wind",
+      "status": "retrieved",
+      "retrieved_utc": "2026-11-07T02:47:51Z",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261103&end_date=20261107&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=wind",
+      "response_sha256": "fc5b60ffe2daf960d6043e3b874a924019aa62dce3df858ad3e40b51b4f26005",
+      "server_date": "Sat, 07 Nov 2026 02:47:51 GMT"
+    },
+    {
+      "station": "MCHL1",
+      "status": "retrieved_unverified",
+      "forecast_eligible": false,
+      "observation_count": 378,
+      "retrieved_utc": "2026-11-07T02:47:51Z",
+      "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/hads.py?stations=MCHL1&sts=2026-11-03T02%3A47Z&ets=2026-11-07T02%3A47Z&what=txt&delim=comma",
+      "response_sha256": "ecfcc2bfcd2b6cea3b68af6a581d8ef32d767a3ca3e4f41d2fc6786dee57cbd7",
+      "server_date": "Sat, 07 Nov 2026 02:47:51 GMT",
+      "datum": "HADS native gage height (unverified)",
+      "qc": "unverified",
+      "coverage": {
+        "earliest_valid_utc": "2026-11-03T03:00:00Z",
+        "latest_valid_utc": "2026-11-07T01:30:00Z",
+        "observation_span_hours": 94.5,
+        "latest_age_minutes": 77.85,
+        "maximum_gap_minutes": 30.0,
+        "valid_timestamp_count": 378
+      }
+    }
+  ],
+  "availability": {
+    "MAUL1_00065": {
+      "status": "eligible",
+      "observation": {
+        "station": "MAUL1",
+        "source": "USGS NWIS IV",
+        "parameter": "stage",
+        "value": 2.78,
+        "units": "ft",
+        "datum": "gage height",
+        "valid_time_utc": "2026-11-07T01:45:00Z",
+        "retrieved_utc": "2026-11-07T02:47:50Z",
+        "original_source_time": "2026-11-07T01:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07380215&parameterCd=00065%2C63160&period=P4D&siteStatus=all",
+        "response_sha256": "dc9dbeedd78c8c53596b6422eaf79c33a60eb90db4b8d589ed5173887034757d",
+        "age_seconds_at_retrieval": 3770.0,
+        "eligible_completed_hour": true
+      },
+      "age_hours": 1.0475,
+      "model_feature_available": true
+    },
+    "MAUL1_63160": {
+      "status": "eligible",
+      "observation": {
+        "station": "MAUL1",
+        "source": "USGS NWIS IV",
+        "parameter": "elevation",
+        "value": 1.4,
+        "units": "ft",
+        "datum": "NAVD88",
+        "valid_time_utc": "2026-11-07T01:45:00Z",
+        "retrieved_utc": "2026-11-07T02:47:50Z",
+        "original_source_time": "2026-11-07T01:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07380215&parameterCd=00065%2C63160&period=P4D&siteStatus=all",
+        "response_sha256": "dc9dbeedd78c8c53596b6422eaf79c33a60eb90db4b8d589ed5173887034757d",
+        "age_seconds_at_retrieval": 3770.0,
+        "eligible_completed_hour": true,
+        "parameter_code": "63160"
+      },
+      "maximum_age_hours": 2,
+      "age_hours": 1.0475
+    },
+    "NWCL1": {
+      "status": "stale",
+      "observation": {
+        "station": "NWCL1",
+        "source": "NOAA CO-OPS 8761927",
+        "parameter": "water_level",
+        "value": 1.188,
+        "units": "ft",
+        "datum": "MLLW",
+        "valid_time_utc": "2026-11-06T23:24:00Z",
+        "retrieved_utc": "2026-11-07T02:47:51Z",
+        "original_source_time": "2026-11-06T23:24:00Z",
+        "qc": "0,0,0,0",
+        "provenance_url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261103&end_date=20261107&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=water_level&datum=MLLW&interval=h",
+        "response_sha256": "be5ed4f3079771dced60d2e52537fc7049dd9d3d4d9d489f9abb7194e979bc3f",
+        "age_seconds_at_retrieval": 12231.0,
+        "eligible_completed_hour": true
+      },
+      "maximum_age_hours": 3,
+      "age_hours": 3.3975
+    },
+    "DENL1": {
+      "status": "eligible",
+      "observation": {
+        "station": "DENL1",
+        "source": "USGS NWIS IV",
+        "parameter": "discharge",
+        "value": 314.0,
+        "units": "cfs",
+        "datum": "native",
+        "valid_time_utc": "2026-11-07T01:45:00Z",
+        "retrieved_utc": "2026-11-07T02:47:50Z",
+        "original_source_time": "2026-11-07T01:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07378500&parameterCd=00060%2C00065&period=P4D&siteStatus=all",
+        "response_sha256": "e62eecc5d0a45364dfdd06f80034f7a4bae577e136cba58944b8b7ad1b0d3fe2",
+        "age_seconds_at_retrieval": 3770.0,
+        "eligible_completed_hour": true
+      },
+      "maximum_age_hours": 3,
+      "age_hours": 1.0475
+    },
+    "MDLL1": {
+      "status": "eligible",
+      "observation": {
+        "station": "MDLL1",
+        "source": "USGS NWIS IV",
+        "parameter": "stage",
+        "value": 1.0,
+        "units": "ft",
+        "datum": "gage height",
+        "valid_time_utc": "2026-11-07T01:45:00Z",
+        "retrieved_utc": "2026-11-07T02:47:50Z",
+        "original_source_time": "2026-11-07T01:45:00Z",
+        "qc": [
+          "P"
+        ],
+        "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=301200090072400&parameterCd=00065&period=P4D&siteStatus=all",
+        "response_sha256": "ba208d7d5d0e62f119ac571b47fbe2294b886f5750cbc1db52fedff276ca0c8a",
+        "age_seconds_at_retrieval": 3770.0,
+        "eligible_completed_hour": true
+      },
+      "maximum_age_hours": 3,
+      "age_hours": 1.0475
+    },
+    "MCHL1": {
+      "status": "missing",
+      "observation": null,
+      "maximum_age_hours": 3
+    }
+  },
+  "feature_diagnostics": {
+    "model_anchor_utc": "2026-11-07T02:00:00Z",
+    "expected_latest_bin_utc": "2026-11-07T01:00:00Z",
+    "stations": {
+      "MAUL1": {
+        "expected_bin_present": true,
+        "latest_eligible_bin_utc": "2026-11-07T01:00:00Z",
+        "lag_from_expected_hours": 0.0
+      },
+      "NWCL1": {
+        "expected_bin_present": false,
+        "latest_eligible_bin_utc": "2026-11-06T23:00:00Z",
+        "lag_from_expected_hours": 2.0
+      },
+      "NWCL1_residual": {
+        "expected_bin_present": false,
+        "latest_eligible_bin_utc": "2026-11-06T23:00:00Z",
+        "lag_from_expected_hours": 2.0
+      },
+      "NWCL1_wind_u": {
+        "expected_bin_present": true,
+        "latest_eligible_bin_utc": "2026-11-07T01:00:00Z",
+        "lag_from_expected_hours": 0.0
+      },
+      "NWCL1_wind_v": {
+        "expected_bin_present": true,
+        "latest_eligible_bin_utc": "2026-11-07T01:00:00Z",
+        "lag_from_expected_hours": 0.0
+      },
+      "MDLL1": {
+        "expected_bin_present": true,
+        "latest_eligible_bin_utc": "2026-11-07T01:00:00Z",
+        "lag_from_expected_hours": 0.0
+      },
+      "DENL1": {
+        "expected_bin_present": true,
+        "latest_eligible_bin_utc": "2026-11-07T01:00:00Z",
+        "lag_from_expected_hours": 0.0
+      }
+    },
+    "missing_features": {
+      "coastal": [
+        "nwcl1_residual_change_12h_ft",
+        "nwcl1_residual_change_24h_ft",
+        "nwcl1_residual_change_6h_ft",
+        "nwcl1_residual_mllw_ft"
+      ],
+      "river": [
+        "mchl1_stage_change_24h_native_ft",
+        "mchl1_stage_change_6h_native_ft",
+        "mchl1_stage_change_72h_native_ft"
+      ],
+      "target": []
+    },
+    "mchl1_shadow": {
+      "forecast_eligible": false,
+      "candidate_observation_count": 378,
+      "latest_completed_bin_present": true,
+      "latest_completed_bin_utc": "2026-11-07T01:00:00Z",
+      "features": {
+        "mchl1_stage_change_6h_native_ft": -0.05249999999999999,
+        "mchl1_stage_change_24h_native_ft": -0.3224999999999998,
+        "mchl1_stage_change_72h_native_ft": -1.2725
+      },
+      "note": "Shadow-only native-stage changes, no source QC approval or model inference"
+    }
+  },
+  "mode": "authentic"
+}
