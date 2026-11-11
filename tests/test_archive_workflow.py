@@ -22,6 +22,19 @@ class TestArchiveWorkflow(unittest.TestCase):
         collection=workflow.split("  collect-and-persist:",1)[1]
         self.assertNotIn("collect_mrms_basin_qpe.py", collection)
 
+    def test_health_monitor_runs_daily_weekly_and_writes_only_reports(self):
+        workflow=(ROOT/".github/workflows/archive-monitoring.yml").read_text()
+        site=(ROOT/".github/workflows/site.yml").read_text()
+        self.assertIn("cron: '17 7 * * *'",workflow)
+        self.assertIn("cron: '19 7 * * 1'",workflow)
+        self.assertIn("actions: read",workflow)
+        self.assertIn("contents: write",workflow)
+        self.assertIn("python scripts/archive_monitoring.py",workflow)
+        self.assertIn("research/prospective-forcing-archive/monitoring",workflow)
+        self.assertIn("git diff --cached --quiet",workflow)
+        self.assertNotIn("  push:",workflow)
+        self.assertIn("research/prospective-forcing-archive/**",site)
+
 
 if __name__ == "__main__":
     unittest.main()
