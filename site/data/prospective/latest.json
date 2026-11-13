@@ -1,178 +1,178 @@
 {
   "schema": "phase6.forecast.v2",
-  "issuance_id": "640bbe8ecef2bc1c",
+  "issuance_id": "001078578bf7615f",
   "mode": "authentic",
-  "nominal_issue_time_utc": "2026-11-13T16:17:00Z",
-  "actual_issue_time_utc": "2026-11-13T16:24:20Z",
-  "model_anchor_time_utc": "2026-11-13T16:00:00Z",
-  "feature_anchor_time_utc": "2026-11-13T16:00:00Z",
+  "nominal_issue_time_utc": "2026-11-13T22:17:00Z",
+  "actual_issue_time_utc": "2026-11-13T22:38:11Z",
+  "model_anchor_time_utc": "2026-11-13T22:00:00Z",
+  "feature_anchor_time_utc": "2026-11-13T22:00:00Z",
   "valid_time_basis": "feature_anchor_plus_horizon",
-  "latest_maul1_native_stage_ft": 2.1675,
+  "latest_maul1_native_stage_ft": 2.2824999999999998,
   "forecasts": {
     "12": {
-      "effective_lead_hours": 11.594444,
+      "effective_lead_hours": 11.363611,
       "models": {
         "persistence": {
           "interval_lower_ft": null,
           "interval_status": "not_calibrated",
           "interval_upper_ft": null,
           "predicted_change_ft": 0.0,
-          "predicted_stage_native_ft": 2.1675,
+          "predicted_stage_native_ft": 2.2824999999999998,
           "status": "issued"
         },
         "phase5a_coastal": {
           "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 5,
-          "interval_lower_ft": 2.390496726200843,
-          "interval_upper_ft": 2.7754550994711673,
-          "predicted_change_ft": 0.41547591283600527,
-          "predicted_stage_native_ft": 2.5829759128360053,
+          "imputed_feature_count": 3,
+          "interval_lower_ft": 1.7667852528632484,
+          "interval_upper_ft": 2.1517436261335727,
+          "predicted_change_ft": -0.3232355605015891,
+          "predicted_stage_native_ft": 1.9592644394984107,
           "status": "issued"
         },
         "phase5a_maul1_only": {
           "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
           "imputed_feature_count": 0,
-          "interval_lower_ft": 1.855055679180895,
-          "interval_upper_ft": 2.3581859537573893,
-          "predicted_change_ft": -0.06087918353085797,
-          "predicted_stage_native_ft": 2.106620816469142,
+          "interval_lower_ft": 1.746569789749987,
+          "interval_upper_ft": 2.2497000643264813,
+          "predicted_change_ft": -0.2843650729617657,
+          "predicted_stage_native_ft": 1.998134927038234,
           "status": "issued"
         },
         "phase5b_coastal_tidal": {
           "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 2,
-          "interval_lower_ft": 2.3769440284985306,
-          "interval_upper_ft": 2.7578673254520343,
-          "predicted_change_ft": 0.39990567697528245,
-          "predicted_stage_native_ft": 2.5674056769752824,
+          "imputed_feature_count": 0,
+          "interval_lower_ft": 1.7727483072090924,
+          "interval_upper_ft": 2.153671604162596,
+          "predicted_change_ft": -0.31929004431415553,
+          "predicted_stage_native_ft": 1.9632099556858442,
           "status": "issued"
         },
         "phase5b_full_multivariable": {
           "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 5,
-          "interval_lower_ft": 2.4015119765144446,
-          "interval_upper_ft": 2.7843049859769176,
-          "predicted_change_ft": 0.4254084812456811,
-          "predicted_stage_native_ft": 2.592908481245681,
+          "imputed_feature_count": 3,
+          "interval_lower_ft": 1.7721520628386191,
+          "interval_upper_ft": 2.154945072301092,
+          "predicted_change_ft": -0.3189514324301441,
+          "predicted_stage_native_ft": 1.9635485675698556,
+          "status": "issued"
+        }
+      },
+      "valid_time_utc": "2026-11-14T10:00:00Z"
+    },
+    "24": {
+      "effective_lead_hours": 23.363611,
+      "models": {
+        "persistence": {
+          "interval_lower_ft": null,
+          "interval_status": "not_calibrated",
+          "interval_upper_ft": null,
+          "predicted_change_ft": 0.0,
+          "predicted_stage_native_ft": 2.2824999999999998,
+          "status": "issued"
+        },
+        "phase5a_coastal": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 3,
+          "interval_lower_ft": 1.9517610902238869,
+          "interval_upper_ft": 2.573833521583668,
+          "predicted_change_ft": -0.019702694096222384,
+          "predicted_stage_native_ft": 2.2627973059037774,
+          "status": "issued"
+        },
+        "phase5a_maul1_only": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 0,
+          "interval_lower_ft": 1.9742464770840016,
+          "interval_upper_ft": 2.675017635150507,
+          "predicted_change_ft": 0.04213205611725446,
+          "predicted_stage_native_ft": 2.324632056117254,
+          "status": "issued"
+        },
+        "phase5b_coastal_tidal": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 0,
+          "interval_lower_ft": 1.9650675336870602,
+          "interval_upper_ft": 2.57800320936009,
+          "predicted_change_ft": -0.010964628476424654,
+          "predicted_stage_native_ft": 2.271535371523575,
+          "status": "issued"
+        },
+        "phase5b_full_multivariable": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 3,
+          "interval_lower_ft": 1.9766157027825315,
+          "interval_upper_ft": 2.595018019647564,
+          "predicted_change_ft": 0.003316861215048039,
+          "predicted_stage_native_ft": 2.285816861215048,
+          "status": "issued"
+        }
+      },
+      "valid_time_utc": "2026-11-14T22:00:00Z"
+    },
+    "6": {
+      "effective_lead_hours": 5.363611,
+      "models": {
+        "persistence": {
+          "interval_lower_ft": null,
+          "interval_status": "not_calibrated",
+          "interval_upper_ft": null,
+          "predicted_change_ft": 0.0,
+          "predicted_stage_native_ft": 2.2824999999999998,
+          "status": "issued"
+        },
+        "phase5a_coastal": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 3,
+          "interval_lower_ft": 1.9347838733382825,
+          "interval_upper_ft": 2.1308362658633553,
+          "predicted_change_ft": -0.24968993039918086,
+          "predicted_stage_native_ft": 2.032810069600819,
+          "status": "issued"
+        },
+        "phase5a_maul1_only": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 0,
+          "interval_lower_ft": 1.8927007020095457,
+          "interval_upper_ft": 2.1767922582917554,
+          "predicted_change_ft": -0.24775351984934924,
+          "predicted_stage_native_ft": 2.0347464801506505,
+          "status": "issued"
+        },
+        "phase5b_coastal_tidal": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 0,
+          "interval_lower_ft": 1.946191589805702,
+          "interval_upper_ft": 2.141765700638666,
+          "predicted_change_ft": -0.23852135477781555,
+          "predicted_stage_native_ft": 2.043978645222184,
+          "status": "issued"
+        },
+        "phase5b_full_multivariable": {
+          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+          "imputed_feature_count": 3,
+          "interval_lower_ft": 1.9454368355840905,
+          "interval_upper_ft": 2.1407344129300157,
+          "predicted_change_ft": -0.23941437574294655,
+          "predicted_stage_native_ft": 2.043085624257053,
           "status": "issued"
         }
       },
       "valid_time_utc": "2026-11-14T04:00:00Z"
-    },
-    "24": {
-      "effective_lead_hours": 23.594444,
-      "models": {
-        "persistence": {
-          "interval_lower_ft": null,
-          "interval_status": "not_calibrated",
-          "interval_upper_ft": null,
-          "predicted_change_ft": 0.0,
-          "predicted_stage_native_ft": 2.1675,
-          "status": "issued"
-        },
-        "phase5a_coastal": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 5,
-          "interval_lower_ft": 2.399710650200972,
-          "interval_upper_ft": 3.021783081560753,
-          "predicted_change_ft": 0.5432468658808625,
-          "predicted_stage_native_ft": 2.7107468658808624,
-          "status": "issued"
-        },
-        "phase5a_maul1_only": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 0,
-          "interval_lower_ft": 1.9306944844168656,
-          "interval_upper_ft": 2.631465642483371,
-          "predicted_change_ft": 0.11358006345011828,
-          "predicted_stage_native_ft": 2.2810800634501183,
-          "status": "issued"
-        },
-        "phase5b_coastal_tidal": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 2,
-          "interval_lower_ft": 2.365657927257176,
-          "interval_upper_ft": 2.978593602930206,
-          "predicted_change_ft": 0.504625765093691,
-          "predicted_stage_native_ft": 2.672125765093691,
-          "status": "issued"
-        },
-        "phase5b_full_multivariable": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 5,
-          "interval_lower_ft": 2.443225785760099,
-          "interval_upper_ft": 3.0616281026251317,
-          "predicted_change_ft": 0.5849269441926155,
-          "predicted_stage_native_ft": 2.7524269441926155,
-          "status": "issued"
-        }
-      },
-      "valid_time_utc": "2026-11-14T16:00:00Z"
-    },
-    "6": {
-      "effective_lead_hours": 5.594444,
-      "models": {
-        "persistence": {
-          "interval_lower_ft": null,
-          "interval_status": "not_calibrated",
-          "interval_upper_ft": null,
-          "predicted_change_ft": 0.0,
-          "predicted_stage_native_ft": 2.1675,
-          "status": "issued"
-        },
-        "phase5a_coastal": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 5,
-          "interval_lower_ft": 2.453197584109151,
-          "interval_upper_ft": 2.649249976634224,
-          "predicted_change_ft": 0.38372378037168753,
-          "predicted_stage_native_ft": 2.5512237803716875,
-          "status": "issued"
-        },
-        "phase5a_maul1_only": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 0,
-          "interval_lower_ft": 2.169382170463548,
-          "interval_upper_ft": 2.4534737267457576,
-          "predicted_change_ft": 0.14392794860465274,
-          "predicted_stage_native_ft": 2.3114279486046527,
-          "status": "issued"
-        },
-        "phase5b_coastal_tidal": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 2,
-          "interval_lower_ft": 2.4491528251965216,
-          "interval_upper_ft": 2.6447269360294854,
-          "predicted_change_ft": 0.3794398806130035,
-          "predicted_stage_native_ft": 2.5469398806130035,
-          "status": "issued"
-        },
-        "phase5b_full_multivariable": {
-          "artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
-          "imputed_feature_count": 5,
-          "interval_lower_ft": 2.458960542020509,
-          "interval_upper_ft": 2.654258119366434,
-          "predicted_change_ft": 0.38910933069347164,
-          "predicted_stage_native_ft": 2.5566093306934716,
-          "status": "issued"
-        }
-      },
-      "valid_time_utc": "2026-11-13T22:00:00Z"
     }
   },
   "snapshot": {
     "availability": {
       "DENL1": {
         "status": "eligible",
-        "age_hours": 0.6555555555555556
+        "age_hours": 0.8863888888888889
       },
       "MAUL1_00065": {
         "status": "eligible",
-        "age_hours": 0.6555555555555556
+        "age_hours": 0.8863888888888889
       },
       "MAUL1_63160": {
         "status": "eligible",
-        "age_hours": 0.6555555555555556
+        "age_hours": 0.8863888888888889
       },
       "MCHL1": {
         "status": "missing",
@@ -180,32 +180,29 @@
       },
       "MDLL1": {
         "status": "eligible",
-        "age_hours": 0.6555555555555556
+        "age_hours": 0.8863888888888889
       },
       "NWCL1": {
         "status": "eligible",
-        "age_hours": 0.6055555555555555
+        "age_hours": 0.7363888888888889
       }
     },
     "feature_diagnostics": {
-      "expected_latest_bin_utc": "2026-11-13T15:00:00Z",
+      "expected_latest_bin_utc": "2026-11-13T21:00:00Z",
       "mchl1_shadow": {
-        "candidate_observation_count": 381,
+        "candidate_observation_count": 380,
         "features": {
-          "mchl1_stage_change_24h_native_ft": -0.1658333333333334,
-          "mchl1_stage_change_6h_native_ft": 0.22916666666666663,
-          "mchl1_stage_change_72h_native_ft": -0.5708333333333334
+          "mchl1_stage_change_24h_native_ft": 0.03583333333333327,
+          "mchl1_stage_change_6h_native_ft": 0.04833333333333334,
+          "mchl1_stage_change_72h_native_ft": -0.2216666666666668
         },
         "forecast_eligible": false,
         "latest_completed_bin_present": true,
-        "latest_completed_bin_utc": "2026-11-13T15:00:00Z",
+        "latest_completed_bin_utc": "2026-11-13T21:00:00Z",
         "note": "Shadow-only native-stage changes, no source QC approval or model inference"
       },
       "missing_features": {
-        "coastal": [
-          "nwcl1_residual_change_12h_ft",
-          "nwcl1_residual_change_24h_ft"
-        ],
+        "coastal": [],
         "river": [
           "mchl1_stage_change_24h_native_ft",
           "mchl1_stage_change_6h_native_ft",
@@ -213,45 +210,45 @@
         ],
         "target": []
       },
-      "model_anchor_utc": "2026-11-13T16:00:00Z",
+      "model_anchor_utc": "2026-11-13T22:00:00Z",
       "stations": {
         "DENL1": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         },
         "MAUL1": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         },
         "MDLL1": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         },
         "NWCL1": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         },
         "NWCL1_residual": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         },
         "NWCL1_wind_u": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         },
         "NWCL1_wind_v": {
           "expected_bin_present": true,
           "lag_from_expected_hours": 0.0,
-          "latest_eligible_bin_utc": "2026-11-13T15:00:00Z"
+          "latest_eligible_bin_utc": "2026-11-13T21:00:00Z"
         }
       }
     }
   },
-  "run_id": "43462290870-1"
+  "run_id": "43520837831-1"
 }
