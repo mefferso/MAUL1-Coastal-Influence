@@ -1,432 +1,22 @@
 {
   "prospective_only": true,
   "model_horizon_metrics": {
-    "persistence:6h": {
-      "n": 117,
-      "mae_ft": 0.13367521367521365,
-      "rmse_ft": 0.1686209497404104,
-      "bias_ft": 0.02594017094017095,
-      "underforecast_frequency_during_rises": 1.0,
-      "mean_underforecast_magnitude_during_rises_ft": 0.1000396825396825,
-      "underforecast_p90_ft": 0.20000000000000018,
-      "underforecast_max_ft": 0.30000000000000027,
-      "rapid_rise_n": 0,
-      "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 54,
-      "quiet_or_falling_mae_ft": 0.17291666666666664,
-      "absolute_error_p90_ft": 0.2599999999999998,
-      "absolute_error_p99_ft": 0.46999999999999975,
-      "mae_persistence_ft": 0.13367521367521365,
-      "skill_vs_persistence": 0.0,
-      "intervals": {
-        "n": 0,
-        "coverage": null,
-        "upper_bound_exceedance_frequency": null,
-        "mean_width_ft": null,
-        "coverage_during_rises": null
-      },
-      "input_age_effect": {
-        "le_1h": {
-          "n": 76,
-          "mae_ft": 0.13862938596491223,
-          "rmse_ft": 0.17166467061520516,
-          "bias_ft": 0.023695175438596502
-        },
-        "gt_1h": {
-          "n": 41,
-          "mae_ft": 0.12449186991869919,
-          "rmse_ft": 0.16282851928875033,
-          "bias_ft": 0.030101626016260163
-        },
-        "n_with_age": 117
-      },
-      "observation_latency_minutes": {
-        "n": 117,
-        "median": 156.25,
-        "p90": 5750.116666666667,
-        "max": 5813.916666666667
-      },
-      "rises": {
-        "0.25": {
-          "hits": 0,
-          "misses": 3,
-          "false_alarms": 0,
-          "correct_negatives": 114,
-          "probability_of_detection": 0.0,
-          "false_alarm_ratio": null,
-          "critical_success_index": 0.0,
-          "base_event_frequency": 0.02564102564102564
-        },
-        "0.50": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        },
-        "1.00": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        }
-      },
-      "events": {
-        "count": 0,
-        "status": "insufficient_independent_events"
-      }
-    },
-    "phase5a_coastal:6h": {
-      "n": 117,
-      "mae_ft": 0.1364033253106265,
-      "rmse_ft": 0.20643369825288024,
-      "bias_ft": 0.10557644816023043,
-      "underforecast_frequency_during_rises": 0.31746031746031744,
-      "mean_underforecast_magnitude_during_rises_ft": 0.05409126156599344,
-      "underforecast_p90_ft": 0.1131294017141351,
-      "underforecast_max_ft": 0.13703042332963822,
-      "rapid_rise_n": 0,
-      "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 54,
-      "quiet_or_falling_mae_ft": 0.14746926212617806,
-      "absolute_error_p90_ft": 0.33815736336932956,
-      "absolute_error_p99_ft": 0.6939980181950691,
-      "mae_persistence_ft": 0.13367521367521365,
-      "skill_vs_persistence": -0.02040850775852321,
-      "intervals": {
-        "n": 117,
-        "coverage": 0.5811965811965812,
-        "upper_bound_exceedance_frequency": 0.042735042735042736,
-        "mean_width_ft": 0.19605239252507278,
-        "coverage_during_rises": 0.49206349206349204
-      },
-      "input_age_effect": {
-        "le_1h": {
-          "n": 76,
-          "mae_ft": 0.1420501140927278,
-          "rmse_ft": 0.20911058614473596,
-          "bias_ft": 0.10290592764997082
-        },
-        "gt_1h": {
-          "n": 41,
-          "mae_ft": 0.1259361070803899,
-          "rmse_ft": 0.2013775708396155,
-          "bias_ft": 0.11052668130119943
-        },
-        "n_with_age": 117
-      },
-      "observation_latency_minutes": {
-        "n": 117,
-        "median": 156.25,
-        "p90": 5750.116666666667,
-        "max": 5813.916666666667
-      },
-      "rises": {
-        "0.25": {
-          "hits": 2,
-          "misses": 1,
-          "false_alarms": 27,
-          "correct_negatives": 87,
-          "probability_of_detection": 0.6666666666666666,
-          "false_alarm_ratio": 0.9310344827586207,
-          "critical_success_index": 0.06666666666666667,
-          "base_event_frequency": 0.02564102564102564
-        },
-        "0.50": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        },
-        "1.00": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        }
-      },
-      "events": {
-        "count": 0,
-        "status": "insufficient_independent_events"
-      }
-    },
-    "phase5a_maul1_only:6h": {
-      "n": 117,
-      "mae_ft": 0.10080481139207026,
-      "rmse_ft": 0.16088234026508147,
-      "bias_ft": 0.022254491319646977,
-      "underforecast_frequency_during_rises": 0.5873015873015873,
-      "mean_underforecast_magnitude_during_rises_ft": 0.10001214796285449,
-      "underforecast_p90_ft": 0.16878194320981033,
-      "underforecast_max_ft": 0.31316672203206286,
-      "rapid_rise_n": 0,
-      "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 54,
-      "quiet_or_falling_mae_ft": 0.12093929931672402,
-      "absolute_error_p90_ft": 0.17273358441648146,
-      "absolute_error_p99_ft": 0.5818584655944532,
-      "mae_persistence_ft": 0.13367521367521365,
-      "skill_vs_persistence": 0.24589751068591925,
-      "intervals": {
-        "n": 117,
-        "coverage": 0.8205128205128205,
-        "upper_bound_exceedance_frequency": 0.09401709401709402,
-        "mean_width_ft": 0.28409155628220967,
-        "coverage_during_rises": 0.8412698412698413
-      },
-      "input_age_effect": {
-        "le_1h": {
-          "n": 76,
-          "mae_ft": 0.10345748001295689,
-          "rmse_ft": 0.1581728587185967,
-          "bias_ft": 0.014297263672848956
-        },
-        "gt_1h": {
-          "n": 41,
-          "mae_ft": 0.09588766955823164,
-          "rmse_ft": 0.16578771770363787,
-          "bias_ft": 0.03700447427468721
-        },
-        "n_with_age": 117
-      },
-      "observation_latency_minutes": {
-        "n": 117,
-        "median": 156.25,
-        "p90": 5750.116666666667,
-        "max": 5813.916666666667
-      },
-      "rises": {
-        "0.25": {
-          "hits": 0,
-          "misses": 3,
-          "false_alarms": 4,
-          "correct_negatives": 110,
-          "probability_of_detection": 0.0,
-          "false_alarm_ratio": 1.0,
-          "critical_success_index": 0.0,
-          "base_event_frequency": 0.02564102564102564
-        },
-        "0.50": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        },
-        "1.00": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        }
-      },
-      "events": {
-        "count": 0,
-        "status": "insufficient_independent_events"
-      }
-    },
-    "phase5b_coastal_tidal:6h": {
-      "n": 117,
-      "mae_ft": 0.1372119831474818,
-      "rmse_ft": 0.2095308835825536,
-      "bias_ft": 0.10625077449659111,
-      "underforecast_frequency_during_rises": 0.31746031746031744,
-      "mean_underforecast_magnitude_during_rises_ft": 0.05201097601224754,
-      "underforecast_p90_ft": 0.10228094430721502,
-      "underforecast_max_ft": 0.10418986190651136,
-      "rapid_rise_n": 0,
-      "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 54,
-      "quiet_or_falling_mae_ft": 0.15207774594273968,
-      "absolute_error_p90_ft": 0.3400000000000003,
-      "absolute_error_p99_ft": 0.7397491803343512,
-      "mae_persistence_ft": 0.13367521367521365,
-      "skill_vs_persistence": -0.02645793019535625,
-      "intervals": {
-        "n": 117,
-        "coverage": 0.6068376068376068,
-        "upper_bound_exceedance_frequency": 0.03418803418803419,
-        "mean_width_ft": 0.19557411083296386,
-        "coverage_during_rises": 0.5396825396825397
-      },
-      "input_age_effect": {
-        "le_1h": {
-          "n": 76,
-          "mae_ft": 0.14197851112953722,
-          "rmse_ft": 0.2131021656018622,
-          "bias_ft": 0.10357671506133732
-        },
-        "gt_1h": {
-          "n": 41,
-          "mae_ft": 0.12837646786367166,
-          "rmse_ft": 0.20274463456628972,
-          "bias_ft": 0.11120756759608592
-        },
-        "n_with_age": 117
-      },
-      "observation_latency_minutes": {
-        "n": 117,
-        "median": 156.25,
-        "p90": 5750.116666666667,
-        "max": 5813.916666666667
-      },
-      "rises": {
-        "0.25": {
-          "hits": 2,
-          "misses": 1,
-          "false_alarms": 28,
-          "correct_negatives": 86,
-          "probability_of_detection": 0.6666666666666666,
-          "false_alarm_ratio": 0.9333333333333333,
-          "critical_success_index": 0.06451612903225806,
-          "base_event_frequency": 0.02564102564102564
-        },
-        "0.50": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        },
-        "1.00": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        }
-      },
-      "events": {
-        "count": 0,
-        "status": "insufficient_independent_events"
-      }
-    },
-    "phase5b_full_multivariable:6h": {
-      "n": 117,
-      "mae_ft": 0.13882333168210914,
-      "rmse_ft": 0.2089831069156716,
-      "bias_ft": 0.10817971202869485,
-      "underforecast_frequency_during_rises": 0.2698412698412698,
-      "mean_underforecast_magnitude_during_rises_ft": 0.06046651417922232,
-      "underforecast_p90_ft": 0.10442041617806108,
-      "underforecast_max_ft": 0.12529640561654887,
-      "rapid_rise_n": 0,
-      "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 54,
-      "quiet_or_falling_mae_ft": 0.1523044449603027,
-      "absolute_error_p90_ft": 0.337203422583662,
-      "absolute_error_p99_ft": 0.7147132531971203,
-      "mae_persistence_ft": 0.13367521367521365,
-      "skill_vs_persistence": -0.038512135985087737,
-      "intervals": {
-        "n": 117,
-        "coverage": 0.5726495726495726,
-        "upper_bound_exceedance_frequency": 0.042735042735042736,
-        "mean_width_ft": 0.19529757734592493,
-        "coverage_during_rises": 0.47619047619047616
-      },
-      "input_age_effect": {
-        "le_1h": {
-          "n": 76,
-          "mae_ft": 0.14403675856912412,
-          "rmse_ft": 0.21224395971436616,
-          "bias_ft": 0.1053252696442843
-        },
-        "gt_1h": {
-          "n": 41,
-          "mae_ft": 0.12915941842813008,
-          "rmse_ft": 0.20279997228610944,
-          "bias_ft": 0.11347087352174855
-        },
-        "n_with_age": 117
-      },
-      "observation_latency_minutes": {
-        "n": 117,
-        "median": 156.25,
-        "p90": 5750.116666666667,
-        "max": 5813.916666666667
-      },
-      "rises": {
-        "0.25": {
-          "hits": 2,
-          "misses": 1,
-          "false_alarms": 28,
-          "correct_negatives": 86,
-          "probability_of_detection": 0.6666666666666666,
-          "false_alarm_ratio": 0.9333333333333333,
-          "critical_success_index": 0.06451612903225806,
-          "base_event_frequency": 0.02564102564102564
-        },
-        "0.50": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        },
-        "1.00": {
-          "hits": 0,
-          "misses": 0,
-          "false_alarms": 0,
-          "correct_negatives": 117,
-          "probability_of_detection": null,
-          "false_alarm_ratio": null,
-          "critical_success_index": null,
-          "base_event_frequency": 0.0
-        }
-      },
-      "events": {
-        "count": 0,
-        "status": "insufficient_independent_events"
-      }
-    },
     "persistence:12h": {
-      "n": 116,
-      "mae_ft": 0.19786637931034484,
-      "rmse_ft": 0.24041255798397568,
-      "bias_ft": 0.03592672413793102,
+      "n": 118,
+      "mae_ft": 0.19925847457627122,
+      "rmse_ft": 0.24143819562564656,
+      "bias_ft": 0.040063559322033884,
       "underforecast_frequency_during_rises": 1.0,
       "mean_underforecast_magnitude_during_rises_ft": 0.16193965517241382,
       "underforecast_p90_ft": 0.26750000000000007,
       "underforecast_max_ft": 0.4125000000000001,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 58,
-      "quiet_or_falling_mae_ft": 0.23379310344827586,
-      "absolute_error_p90_ft": 0.3500000000000001,
+      "quiet_or_falling_n": 60,
+      "quiet_or_falling_mae_ft": 0.23533333333333334,
+      "absolute_error_p90_ft": 0.3699999999999999,
       "absolute_error_p99_ft": 0.6099999999999999,
-      "mae_persistence_ft": 0.19786637931034484,
+      "mae_persistence_ft": 0.19925847457627122,
       "skill_vs_persistence": 0.0,
       "intervals": {
         "n": 0,
@@ -437,10 +27,10 @@
       },
       "input_age_effect": {
         "le_1h": {
-          "n": 75,
-          "mae_ft": 0.20144444444444445,
-          "rmse_ft": 0.24355066398169792,
-          "bias_ft": 0.046577777777777774
+          "n": 77,
+          "mae_ft": 0.2034848484848485,
+          "rmse_ft": 0.2450200613160695,
+          "bias_ft": 0.052640692640692634
         },
         "gt_1h": {
           "n": 41,
@@ -448,12 +38,12 @@
           "rmse_ft": 0.23456350368902792,
           "bias_ft": 0.016443089430894262
         },
-        "n_with_age": 116
+        "n_with_age": 118
       },
       "observation_latency_minutes": {
-        "n": 116,
+        "n": 118,
         "median": 192.16666666666666,
-        "p90": 372.8833333333333,
+        "p90": 389.45,
         "max": 5752.5
       },
       "rises": {
@@ -461,17 +51,17 @@
           "hits": 0,
           "misses": 10,
           "false_alarms": 0,
-          "correct_negatives": 106,
+          "correct_negatives": 108,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": null,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.08620689655172414
+          "base_event_frequency": 0.0847457627118644
         },
         "0.50": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 116,
+          "correct_negatives": 118,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -481,7 +71,7 @@
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 116,
+          "correct_negatives": 118,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -494,35 +84,35 @@
       }
     },
     "phase5a_coastal:12h": {
-      "n": 116,
-      "mae_ft": 0.21950300899497452,
-      "rmse_ft": 0.30813068037427654,
-      "bias_ft": 0.166616517586704,
+      "n": 118,
+      "mae_ft": 0.2213100796250124,
+      "rmse_ft": 0.3105431383862687,
+      "bias_ft": 0.16931996942705155,
       "underforecast_frequency_during_rises": 0.43103448275862066,
       "mean_underforecast_magnitude_during_rises_ft": 0.08676126776604944,
       "underforecast_p90_ft": 0.1726571109129571,
       "underforecast_max_ft": 0.2972246875748765,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 58,
-      "quiet_or_falling_mae_ft": 0.2352991216224546,
-      "absolute_error_p90_ft": 0.5284576882703318,
+      "quiet_or_falling_n": 60,
+      "quiet_or_falling_mae_ft": 0.23832649010727971,
+      "absolute_error_p90_ft": 0.5449999999999999,
       "absolute_error_p99_ft": 0.7725000000000004,
-      "mae_persistence_ft": 0.19786637931034484,
-      "skill_vs_persistence": -0.10934970235996255,
+      "mae_persistence_ft": 0.19925847457627122,
+      "skill_vs_persistence": -0.11066834219038624,
       "intervals": {
-        "n": 116,
-        "coverage": 0.5862068965517241,
-        "upper_bound_exceedance_frequency": 0.017241379310344827,
-        "mean_width_ft": 0.3849583732703241,
+        "n": 118,
+        "coverage": 0.5847457627118644,
+        "upper_bound_exceedance_frequency": 0.01694915254237288,
+        "mean_width_ft": 0.3849583732703242,
         "coverage_during_rises": 0.5689655172413793
       },
       "input_age_effect": {
         "le_1h": {
-          "n": 75,
-          "mae_ft": 0.2254349503257736,
-          "rmse_ft": 0.3141643614869713,
-          "bias_ft": 0.1680296872502403
+          "n": 77,
+          "mae_ft": 0.2280501509969797,
+          "rmse_ft": 0.3176302348418541,
+          "bias_ft": 0.17213593371561609
         },
         "gt_1h": {
           "n": 41,
@@ -530,30 +120,30 @@
           "rmse_ft": 0.296776191671285,
           "bias_ft": 0.1640314511290157
         },
-        "n_with_age": 116
+        "n_with_age": 118
       },
       "observation_latency_minutes": {
-        "n": 116,
+        "n": 118,
         "median": 192.16666666666666,
-        "p90": 372.8833333333333,
+        "p90": 389.45,
         "max": 5752.5
       },
       "rises": {
         "0.25": {
           "hits": 7,
           "misses": 3,
-          "false_alarms": 33,
-          "correct_negatives": 73,
+          "false_alarms": 34,
+          "correct_negatives": 74,
           "probability_of_detection": 0.7,
-          "false_alarm_ratio": 0.825,
-          "critical_success_index": 0.16279069767441862,
-          "base_event_frequency": 0.08620689655172414
+          "false_alarm_ratio": 0.8292682926829268,
+          "critical_success_index": 0.1590909090909091,
+          "base_event_frequency": 0.0847457627118644
         },
         "0.50": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 24,
-          "correct_negatives": 92,
+          "correct_negatives": 94,
           "probability_of_detection": null,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
@@ -563,7 +153,7 @@
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 116,
+          "correct_negatives": 118,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -576,35 +166,35 @@
       }
     },
     "phase5a_maul1_only:12h": {
-      "n": 116,
-      "mae_ft": 0.12724611855126342,
-      "rmse_ft": 0.17861700273650144,
-      "bias_ft": -0.012547521029317617,
+      "n": 118,
+      "mae_ft": 0.1269093686055418,
+      "rmse_ft": 0.17766538014990538,
+      "bias_ft": -0.01051488725333447,
       "underforecast_frequency_during_rises": 0.8103448275862069,
       "mean_underforecast_magnitude_during_rises_ft": 0.14638055773070074,
       "underforecast_p90_ft": 0.22849855550188458,
       "underforecast_max_ft": 0.4859260451547258,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 58,
-      "quiet_or_falling_mae_ft": 0.12697281853358727,
+      "quiet_or_falling_n": 60,
+      "quiet_or_falling_mae_ft": 0.12631965364092398,
       "absolute_error_p90_ft": 0.21501743162864484,
       "absolute_error_p99_ft": 0.493240300399004,
-      "mae_persistence_ft": 0.19786637931034484,
-      "skill_vs_persistence": 0.3569088442676591,
+      "mae_persistence_ft": 0.19925847457627122,
+      "skill_vs_persistence": 0.3630917386303485,
       "intervals": {
-        "n": 116,
-        "coverage": 0.9137931034482759,
-        "upper_bound_exceedance_frequency": 0.05172413793103448,
+        "n": 118,
+        "coverage": 0.9152542372881356,
+        "upper_bound_exceedance_frequency": 0.05084745762711865,
         "mean_width_ft": 0.5031302745764945,
         "coverage_during_rises": 0.9137931034482759
       },
       "input_age_effect": {
         "le_1h": {
-          "n": 75,
-          "mae_ft": 0.130648814265072,
-          "rmse_ft": 0.17341300191273548,
-          "bias_ft": -0.01676535241683883
+          "n": 77,
+          "mae_ft": 0.13004437419984125,
+          "rmse_ft": 0.17204672383178646,
+          "bias_ft": -0.013540853087734239
         },
         "gt_1h": {
           "n": 41,
@@ -612,12 +202,12 @@
           "rmse_ft": 0.18776364962193495,
           "bias_ft": -0.004831975808242223
         },
-        "n_with_age": 116
+        "n_with_age": 118
       },
       "observation_latency_minutes": {
-        "n": 116,
+        "n": 118,
         "median": 192.16666666666666,
-        "p90": 372.8833333333333,
+        "p90": 389.45,
         "max": 5752.5
       },
       "rises": {
@@ -625,17 +215,17 @@
           "hits": 0,
           "misses": 10,
           "false_alarms": 2,
-          "correct_negatives": 104,
+          "correct_negatives": 106,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.08620689655172414
+          "base_event_frequency": 0.0847457627118644
         },
         "0.50": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 116,
+          "correct_negatives": 118,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -645,7 +235,7 @@
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 116,
+          "correct_negatives": 118,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -658,35 +248,35 @@
       }
     },
     "phase5b_coastal_tidal:12h": {
-      "n": 116,
-      "mae_ft": 0.22129634957453875,
-      "rmse_ft": 0.3186416211884159,
-      "bias_ft": 0.16918468660069683,
+      "n": 118,
+      "mae_ft": 0.22297451002803068,
+      "rmse_ft": 0.32056154024766037,
+      "bias_ft": 0.17174609557916914,
       "underforecast_frequency_during_rises": 0.39655172413793105,
       "mean_underforecast_magnitude_during_rises_ft": 0.08898347963443641,
       "underforecast_p90_ft": 0.14271383332065612,
       "underforecast_max_ft": 0.19435571213792935,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 58,
-      "quiet_or_falling_mae_ft": 0.2536353561303944,
+      "quiet_or_falling_n": 60,
+      "quiet_or_falling_mae_ft": 0.25585777147040006,
       "absolute_error_p90_ft": 0.5449999999999999,
       "absolute_error_p99_ft": 0.8157642211270453,
-      "mae_persistence_ft": 0.19786637931034484,
-      "skill_vs_persistence": -0.11841309446232406,
+      "mae_persistence_ft": 0.19925847457627122,
+      "skill_vs_persistence": -0.1190214644681602,
       "intervals": {
-        "n": 116,
-        "coverage": 0.6120689655172413,
-        "upper_bound_exceedance_frequency": 0.008620689655172414,
-        "mean_width_ft": 0.38092329695350363,
+        "n": 118,
+        "coverage": 0.6101694915254238,
+        "upper_bound_exceedance_frequency": 0.00847457627118644,
+        "mean_width_ft": 0.3809232969535037,
         "coverage_during_rises": 0.6206896551724138
       },
       "input_age_effect": {
         "le_1h": {
-          "n": 75,
-          "mae_ft": 0.2264283026479706,
-          "rmse_ft": 0.3231172316052708,
-          "bias_ft": 0.1718352072712249
+          "n": 77,
+          "mae_ft": 0.2288667315747912,
+          "rmse_ft": 0.3259000051953221,
+          "bias_ft": 0.17569163867536355
         },
         "gt_1h": {
           "n": 41,
@@ -694,30 +284,30 @@
           "rmse_ft": 0.31028751801988025,
           "bias_ft": 0.16433617317899918
         },
-        "n_with_age": 116
+        "n_with_age": 118
       },
       "observation_latency_minutes": {
-        "n": 116,
+        "n": 118,
         "median": 192.16666666666666,
-        "p90": 372.8833333333333,
+        "p90": 389.45,
         "max": 5752.5
       },
       "rises": {
         "0.25": {
           "hits": 7,
           "misses": 3,
-          "false_alarms": 32,
-          "correct_negatives": 74,
+          "false_alarms": 33,
+          "correct_negatives": 75,
           "probability_of_detection": 0.7,
-          "false_alarm_ratio": 0.8205128205128205,
-          "critical_success_index": 0.16666666666666666,
-          "base_event_frequency": 0.08620689655172414
+          "false_alarm_ratio": 0.825,
+          "critical_success_index": 0.16279069767441862,
+          "base_event_frequency": 0.0847457627118644
         },
         "0.50": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 22,
-          "correct_negatives": 94,
+          "correct_negatives": 96,
           "probability_of_detection": null,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
@@ -727,7 +317,7 @@
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 116,
+          "correct_negatives": 118,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -740,35 +330,35 @@
       }
     },
     "phase5b_full_multivariable:12h": {
-      "n": 116,
-      "mae_ft": 0.22008457470339424,
-      "rmse_ft": 0.30816864312317577,
-      "bias_ft": 0.17021948348217447,
+      "n": 118,
+      "mae_ft": 0.22200226876618023,
+      "rmse_ft": 0.3107508964436074,
+      "bias_ft": 0.17298234858260828,
       "underforecast_frequency_during_rises": 0.3793103448275862,
       "mean_underforecast_magnitude_during_rises_ft": 0.09266870582098652,
       "underforecast_p90_ft": 0.16040730532314917,
       "underforecast_max_ft": 0.286063199288793,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 58,
-      "quiet_or_falling_mae_ft": 0.23616547012740147,
-      "absolute_error_p90_ft": 0.5405334638579222,
+      "quiet_or_falling_n": 60,
+      "quiet_or_falling_mae_ft": 0.23940090527008037,
+      "absolute_error_p90_ft": 0.5449999999999999,
       "absolute_error_p99_ft": 0.7725000000000004,
-      "mae_persistence_ft": 0.19786637931034484,
-      "skill_vs_persistence": -0.11228888642168511,
+      "mae_persistence_ft": 0.19925847457627122,
+      "skill_vs_persistence": -0.11414216754531692,
       "intervals": {
-        "n": 116,
-        "coverage": 0.5775862068965517,
-        "upper_bound_exceedance_frequency": 0.017241379310344827,
-        "mean_width_ft": 0.38279300946247297,
+        "n": 118,
+        "coverage": 0.576271186440678,
+        "upper_bound_exceedance_frequency": 0.01694915254237288,
+        "mean_width_ft": 0.3827930094624729,
         "coverage_during_rises": 0.5517241379310345
       },
       "input_age_effect": {
         "le_1h": {
-          "n": 75,
-          "mae_ft": 0.22569209053362646,
-          "rmse_ft": 0.3141469939029711,
-          "bias_ft": 0.17152244792349478
+          "n": 77,
+          "mae_ft": 0.22848524466022757,
+          "rmse_ft": 0.31786931254069356,
+          "bias_ft": 0.17572260575425513
         },
         "gt_1h": {
           "n": 41,
@@ -776,30 +366,30 @@
           "rmse_ft": 0.29692130963531166,
           "bias_ft": 0.16783601194317394
         },
-        "n_with_age": 116
+        "n_with_age": 118
       },
       "observation_latency_minutes": {
-        "n": 116,
+        "n": 118,
         "median": 192.16666666666666,
-        "p90": 372.8833333333333,
+        "p90": 389.45,
         "max": 5752.5
       },
       "rises": {
         "0.25": {
           "hits": 7,
           "misses": 3,
-          "false_alarms": 34,
-          "correct_negatives": 72,
+          "false_alarms": 35,
+          "correct_negatives": 73,
           "probability_of_detection": 0.7,
-          "false_alarm_ratio": 0.8292682926829268,
-          "critical_success_index": 0.1590909090909091,
-          "base_event_frequency": 0.08620689655172414
+          "false_alarm_ratio": 0.8333333333333334,
+          "critical_success_index": 0.15555555555555556,
+          "base_event_frequency": 0.0847457627118644
         },
         "0.50": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 24,
-          "correct_negatives": 92,
+          "correct_negatives": 94,
           "probability_of_detection": null,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
@@ -809,7 +399,417 @@
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
+          "correct_negatives": 118,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        }
+      },
+      "events": {
+        "count": 0,
+        "status": "insufficient_independent_events"
+      }
+    },
+    "persistence:6h": {
+      "n": 119,
+      "mae_ft": 0.13523109243697476,
+      "rmse_ft": 0.17003880276114752,
+      "bias_ft": 0.029306722689075637,
+      "underforecast_frequency_during_rises": 1.0,
+      "mean_underforecast_magnitude_during_rises_ft": 0.1000396825396825,
+      "underforecast_p90_ft": 0.20000000000000018,
+      "underforecast_max_ft": 0.30000000000000027,
+      "rapid_rise_n": 0,
+      "rapid_rise_mae_ft": null,
+      "quiet_or_falling_n": 56,
+      "quiet_or_falling_mae_ft": 0.17482142857142854,
+      "absolute_error_p90_ft": 0.2699999999999996,
+      "absolute_error_p99_ft": 0.46999999999999975,
+      "mae_persistence_ft": 0.13523109243697476,
+      "skill_vs_persistence": 0.0,
+      "intervals": {
+        "n": 0,
+        "coverage": null,
+        "upper_bound_exceedance_frequency": null,
+        "mean_width_ft": null,
+        "coverage_during_rises": null
+      },
+      "input_age_effect": {
+        "le_1h": {
+          "n": 78,
+          "mae_ft": 0.14087606837606834,
+          "rmse_ft": 0.17370886137016298,
+          "bias_ft": 0.028888888888888895
+        },
+        "gt_1h": {
+          "n": 41,
+          "mae_ft": 0.12449186991869919,
+          "rmse_ft": 0.16282851928875033,
+          "bias_ft": 0.030101626016260163
+        },
+        "n_with_age": 119
+      },
+      "observation_latency_minutes": {
+        "n": 119,
+        "median": 156.25,
+        "p90": 5750.116666666667,
+        "max": 5813.916666666667
+      },
+      "rises": {
+        "0.25": {
+          "hits": 0,
+          "misses": 3,
+          "false_alarms": 0,
           "correct_negatives": 116,
+          "probability_of_detection": 0.0,
+          "false_alarm_ratio": null,
+          "critical_success_index": 0.0,
+          "base_event_frequency": 0.025210084033613446
+        },
+        "0.50": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        },
+        "1.00": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        }
+      },
+      "events": {
+        "count": 0,
+        "status": "insufficient_independent_events"
+      }
+    },
+    "phase5a_coastal:6h": {
+      "n": 119,
+      "mae_ft": 0.13535785038602646,
+      "rmse_ft": 0.20493625583452163,
+      "bias_ft": 0.10504907201126733,
+      "underforecast_frequency_during_rises": 0.31746031746031744,
+      "mean_underforecast_magnitude_during_rises_ft": 0.05409126156599344,
+      "underforecast_p90_ft": 0.1131294017141351,
+      "underforecast_max_ft": 0.13703042332963822,
+      "rapid_rise_n": 0,
+      "rapid_rise_mae_ft": null,
+      "quiet_or_falling_n": 56,
+      "quiet_or_falling_mae_ft": 0.1448524158822762,
+      "absolute_error_p90_ft": 0.33815736336932956,
+      "absolute_error_p99_ft": 0.6939980181950691,
+      "mae_persistence_ft": 0.13523109243697476,
+      "skill_vs_persistence": -0.0009373432305206375,
+      "intervals": {
+        "n": 119,
+        "coverage": 0.5882352941176471,
+        "upper_bound_exceedance_frequency": 0.04201680672268908,
+        "mean_width_ft": 0.19605239252507278,
+        "coverage_during_rises": 0.49206349206349204
+      },
+      "input_age_effect": {
+        "le_1h": {
+          "n": 78,
+          "mae_ft": 0.14031030520052776,
+          "rmse_ft": 0.2067822910067925,
+          "bias_ft": 0.10216981584604662
+        },
+        "gt_1h": {
+          "n": 41,
+          "mae_ft": 0.1259361070803899,
+          "rmse_ft": 0.2013775708396155,
+          "bias_ft": 0.11052668130119943
+        },
+        "n_with_age": 119
+      },
+      "observation_latency_minutes": {
+        "n": 119,
+        "median": 156.25,
+        "p90": 5750.116666666667,
+        "max": 5813.916666666667
+      },
+      "rises": {
+        "0.25": {
+          "hits": 2,
+          "misses": 1,
+          "false_alarms": 27,
+          "correct_negatives": 89,
+          "probability_of_detection": 0.6666666666666666,
+          "false_alarm_ratio": 0.9310344827586207,
+          "critical_success_index": 0.06666666666666667,
+          "base_event_frequency": 0.025210084033613446
+        },
+        "0.50": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        },
+        "1.00": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        }
+      },
+      "events": {
+        "count": 0,
+        "status": "insufficient_independent_events"
+      }
+    },
+    "phase5a_maul1_only:6h": {
+      "n": 119,
+      "mae_ft": 0.0999127219356233,
+      "rmse_ft": 0.15964719348328082,
+      "bias_ft": 0.021998466111202063,
+      "underforecast_frequency_during_rises": 0.5873015873015873,
+      "mean_underforecast_magnitude_during_rises_ft": 0.10001214796285449,
+      "underforecast_p90_ft": 0.16878194320981033,
+      "underforecast_max_ft": 0.31316672203206286,
+      "rapid_rise_n": 0,
+      "rapid_rise_mae_ft": null,
+      "quiet_or_falling_n": 56,
+      "quiet_or_falling_mae_ft": 0.1183245203673223,
+      "absolute_error_p90_ft": 0.17273358441648146,
+      "absolute_error_p99_ft": 0.5818584655944532,
+      "mae_persistence_ft": 0.13523109243697476,
+      "skill_vs_persistence": 0.26117048871591264,
+      "intervals": {
+        "n": 119,
+        "coverage": 0.8235294117647058,
+        "upper_bound_exceedance_frequency": 0.09243697478991597,
+        "mean_width_ft": 0.28409155628220967,
+        "coverage_during_rises": 0.8412698412698413
+      },
+      "input_age_effect": {
+        "le_1h": {
+          "n": 78,
+          "mae_ft": 0.10202845459553431,
+          "rmse_ft": 0.15632279551713835,
+          "bias_ft": 0.01411069258937013
+        },
+        "gt_1h": {
+          "n": 41,
+          "mae_ft": 0.09588766955823164,
+          "rmse_ft": 0.16578771770363787,
+          "bias_ft": 0.03700447427468721
+        },
+        "n_with_age": 119
+      },
+      "observation_latency_minutes": {
+        "n": 119,
+        "median": 156.25,
+        "p90": 5750.116666666667,
+        "max": 5813.916666666667
+      },
+      "rises": {
+        "0.25": {
+          "hits": 0,
+          "misses": 3,
+          "false_alarms": 4,
+          "correct_negatives": 112,
+          "probability_of_detection": 0.0,
+          "false_alarm_ratio": 1.0,
+          "critical_success_index": 0.0,
+          "base_event_frequency": 0.025210084033613446
+        },
+        "0.50": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        },
+        "1.00": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        }
+      },
+      "events": {
+        "count": 0,
+        "status": "insufficient_independent_events"
+      }
+    },
+    "phase5b_coastal_tidal:6h": {
+      "n": 119,
+      "mae_ft": 0.1358144807342153,
+      "rmse_ft": 0.20788480968844006,
+      "bias_ft": 0.10537362853123876,
+      "underforecast_frequency_during_rises": 0.31746031746031744,
+      "mean_underforecast_magnitude_during_rises_ft": 0.05201097601224754,
+      "underforecast_p90_ft": 0.10228094430721502,
+      "underforecast_max_ft": 0.10418986190651136,
+      "rapid_rise_n": 0,
+      "rapid_rise_mae_ft": null,
+      "quiet_or_falling_n": 56,
+      "quiet_or_falling_mae_ft": 0.1485771332147178,
+      "absolute_error_p90_ft": 0.3400000000000003,
+      "absolute_error_p99_ft": 0.7397491803343512,
+      "mae_persistence_ft": 0.13523109243697476,
+      "skill_vs_persistence": -0.0043140100898941824,
+      "intervals": {
+        "n": 119,
+        "coverage": 0.6134453781512605,
+        "upper_bound_exceedance_frequency": 0.03361344537815126,
+        "mean_width_ft": 0.1955741108329639,
+        "coverage_during_rises": 0.5396825396825397
+      },
+      "input_age_effect": {
+        "le_1h": {
+          "n": 78,
+          "mae_ft": 0.139724205448219,
+          "rmse_ft": 0.21053638266319702,
+          "bias_ft": 0.10230707081766524
+        },
+        "gt_1h": {
+          "n": 41,
+          "mae_ft": 0.12837646786367166,
+          "rmse_ft": 0.20274463456628972,
+          "bias_ft": 0.11120756759608592
+        },
+        "n_with_age": 119
+      },
+      "observation_latency_minutes": {
+        "n": 119,
+        "median": 156.25,
+        "p90": 5750.116666666667,
+        "max": 5813.916666666667
+      },
+      "rises": {
+        "0.25": {
+          "hits": 2,
+          "misses": 1,
+          "false_alarms": 28,
+          "correct_negatives": 88,
+          "probability_of_detection": 0.6666666666666666,
+          "false_alarm_ratio": 0.9333333333333333,
+          "critical_success_index": 0.06451612903225806,
+          "base_event_frequency": 0.025210084033613446
+        },
+        "0.50": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        },
+        "1.00": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        }
+      },
+      "events": {
+        "count": 0,
+        "status": "insufficient_independent_events"
+      }
+    },
+    "phase5b_full_multivariable:6h": {
+      "n": 119,
+      "mae_ft": 0.13765984898961148,
+      "rmse_ft": 0.2074175521239206,
+      "bias_ft": 0.10753124815390165,
+      "underforecast_frequency_during_rises": 0.2698412698412698,
+      "mean_underforecast_magnitude_during_rises_ft": 0.06046651417922232,
+      "underforecast_p90_ft": 0.10442041617806108,
+      "underforecast_max_ft": 0.12529640561654887,
+      "rapid_rise_n": 0,
+      "rapid_rise_mae_ft": null,
+      "quiet_or_falling_n": 56,
+      "quiet_or_falling_mae_ft": 0.14935057590738118,
+      "absolute_error_p90_ft": 0.337203422583662,
+      "absolute_error_p99_ft": 0.7147132531971203,
+      "mae_persistence_ft": 0.13523109243697476,
+      "skill_vs_persistence": -0.017960045348067055,
+      "intervals": {
+        "n": 119,
+        "coverage": 0.5798319327731093,
+        "upper_bound_exceedance_frequency": 0.04201680672268908,
+        "mean_width_ft": 0.19529757734592496,
+        "coverage_during_rises": 0.47619047619047616
+      },
+      "input_age_effect": {
+        "le_1h": {
+          "n": 78,
+          "mae_ft": 0.14212802402833888,
+          "rmse_ft": 0.20980399556922602,
+          "bias_ft": 0.10440913738362316
+        },
+        "gt_1h": {
+          "n": 41,
+          "mae_ft": 0.12915941842813008,
+          "rmse_ft": 0.20279997228610944,
+          "bias_ft": 0.11347087352174855
+        },
+        "n_with_age": 119
+      },
+      "observation_latency_minutes": {
+        "n": 119,
+        "median": 156.25,
+        "p90": 5750.116666666667,
+        "max": 5813.916666666667
+      },
+      "rises": {
+        "0.25": {
+          "hits": 2,
+          "misses": 1,
+          "false_alarms": 28,
+          "correct_negatives": 88,
+          "probability_of_detection": 0.6666666666666666,
+          "false_alarm_ratio": 0.9333333333333333,
+          "critical_success_index": 0.06451612903225806,
+          "base_event_frequency": 0.025210084033613446
+        },
+        "0.50": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
+          "probability_of_detection": null,
+          "false_alarm_ratio": null,
+          "critical_success_index": null,
+          "base_event_frequency": 0.0
+        },
+        "1.00": {
+          "hits": 0,
+          "misses": 0,
+          "false_alarms": 0,
+          "correct_negatives": 119,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -822,21 +822,21 @@
       }
     },
     "persistence:24h": {
-      "n": 115,
-      "mae_ft": 0.20629710144927535,
-      "rmse_ft": 0.2604481807018776,
-      "bias_ft": -0.008543478260869587,
+      "n": 116,
+      "mae_ft": 0.20477729885057472,
+      "rmse_ft": 0.2593380882427607,
+      "bias_ft": -0.008211206896551745,
       "underforecast_frequency_during_rises": 1.0,
       "mean_underforecast_magnitude_during_rises_ft": 0.2628368794326241,
       "underforecast_p90_ft": 0.41500000000000004,
       "underforecast_max_ft": 0.6924999999999999,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 68,
-      "quiet_or_falling_mae_ft": 0.16721813725490195,
+      "quiet_or_falling_n": 69,
+      "quiet_or_falling_mae_ft": 0.16522946859903379,
       "absolute_error_p90_ft": 0.41500000000000004,
       "absolute_error_p99_ft": 0.585,
-      "mae_persistence_ft": 0.20629710144927535,
+      "mae_persistence_ft": 0.20477729885057472,
       "skill_vs_persistence": 0.0,
       "intervals": {
         "n": 0,
@@ -853,16 +853,16 @@
           "bias_ft": -0.004622222222222237
         },
         "gt_1h": {
-          "n": 40,
-          "mae_ft": 0.17689583333333334,
-          "rmse_ft": 0.2273784397455289,
-          "bias_ft": -0.015895833333333366
+          "n": 41,
+          "mae_ft": 0.1733130081300813,
+          "rmse_ft": 0.22463727914478446,
+          "bias_ft": -0.014776422764227672
         },
-        "n_with_age": 115
+        "n_with_age": 116
       },
       "observation_latency_minutes": {
-        "n": 115,
-        "median": 212.56666666666666,
+        "n": 116,
+        "median": 212.95833333333331,
         "p90": 5748.1,
         "max": 5812.766666666666
       },
@@ -871,27 +871,27 @@
           "hits": 0,
           "misses": 27,
           "false_alarms": 0,
-          "correct_negatives": 88,
+          "correct_negatives": 89,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": null,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.23478260869565218
+          "base_event_frequency": 0.23275862068965517
         },
         "0.50": {
           "hits": 0,
           "misses": 1,
           "false_alarms": 0,
-          "correct_negatives": 114,
+          "correct_negatives": 115,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": null,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.008695652173913044
+          "base_event_frequency": 0.008620689655172414
         },
         "1.00": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 115,
+          "correct_negatives": 116,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -910,27 +910,27 @@
       }
     },
     "phase5a_coastal:24h": {
-      "n": 115,
-      "mae_ft": 0.2461209762094303,
-      "rmse_ft": 0.3368798673114872,
-      "bias_ft": 0.13832077362353376,
+      "n": 116,
+      "mae_ft": 0.24405553664676935,
+      "rmse_ft": 0.3354252038484659,
+      "bias_ft": 0.1370720601703933,
       "underforecast_frequency_during_rises": 0.6170212765957447,
       "mean_underforecast_magnitude_during_rises_ft": 0.18063542322317053,
       "underforecast_p90_ft": 0.2891341598027064,
       "underforecast_max_ft": 0.501829620792877,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 68,
-      "quiet_or_falling_mae_ft": 0.27337631169068194,
+      "quiet_or_falling_n": 69,
+      "quiet_or_falling_mae_ft": 0.269508973650828,
       "absolute_error_p90_ft": 0.5301913922461909,
       "absolute_error_p99_ft": 0.9174458342118301,
-      "mae_persistence_ft": 0.20629710144927535,
-      "skill_vs_persistence": -0.1930413683972525,
+      "mae_persistence_ft": 0.20477729885057472,
+      "skill_vs_persistence": -0.19180953170427273,
       "intervals": {
-        "n": 115,
-        "coverage": 0.7739130434782608,
-        "upper_bound_exceedance_frequency": 0.017391304347826087,
-        "mean_width_ft": 0.622072431359781,
+        "n": 116,
+        "coverage": 0.7758620689655172,
+        "upper_bound_exceedance_frequency": 0.017241379310344827,
+        "mean_width_ft": 0.6220724313597811,
         "coverage_during_rises": 0.8936170212765957
       },
       "input_age_effect": {
@@ -941,16 +941,16 @@
           "bias_ft": 0.13198231232812638
         },
         "gt_1h": {
-          "n": 40,
-          "mae_ft": 0.2347627563133976,
-          "rmse_ft": 0.3288113242355988,
-          "bias_ft": 0.1502053885524226
+          "n": 41,
+          "mae_ft": 0.22919610340186983,
+          "rmse_ft": 0.3247782777846829,
+          "bias_ft": 0.14638257451600353
         },
-        "n_with_age": 115
+        "n_with_age": 116
       },
       "observation_latency_minutes": {
-        "n": 115,
-        "median": 212.56666666666666,
+        "n": 116,
+        "median": 212.95833333333331,
         "p90": 5748.1,
         "max": 5812.766666666666
       },
@@ -959,27 +959,27 @@
           "hits": 14,
           "misses": 13,
           "false_alarms": 25,
-          "correct_negatives": 63,
+          "correct_negatives": 64,
           "probability_of_detection": 0.5185185185185185,
           "false_alarm_ratio": 0.6410256410256411,
           "critical_success_index": 0.2692307692307692,
-          "base_event_frequency": 0.23478260869565218
+          "base_event_frequency": 0.23275862068965517
         },
         "0.50": {
           "hits": 0,
           "misses": 1,
           "false_alarms": 12,
-          "correct_negatives": 102,
+          "correct_negatives": 103,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.008695652173913044
+          "base_event_frequency": 0.008620689655172414
         },
         "1.00": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 115,
+          "correct_negatives": 116,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -998,26 +998,26 @@
       }
     },
     "phase5a_maul1_only:24h": {
-      "n": 115,
-      "mae_ft": 0.19057186084946742,
-      "rmse_ft": 0.25697993230076943,
-      "bias_ft": -0.08206088504829528,
+      "n": 116,
+      "mae_ft": 0.18938521359261423,
+      "rmse_ft": 0.2559170368913723,
+      "bias_ft": -0.08180967723800393,
       "underforecast_frequency_during_rises": 1.0,
       "mean_underforecast_magnitude_during_rises_ft": 0.2726071714118587,
       "underforecast_p90_ft": 0.4395563560485858,
       "underforecast_max_ft": 0.6968001785484357,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 68,
-      "quiet_or_falling_mae_ft": 0.13387098443134404,
+      "quiet_or_falling_n": 69,
+      "quiet_or_falling_mae_ft": 0.1326977930490709,
       "absolute_error_p90_ft": 0.4014670051082363,
       "absolute_error_p99_ft": 0.6559510436641687,
-      "mae_persistence_ft": 0.20629710144927535,
-      "skill_vs_persistence": 0.07622618296299466,
+      "mae_persistence_ft": 0.20477729885057472,
+      "skill_vs_persistence": 0.07516499799712684,
       "intervals": {
-        "n": 115,
-        "coverage": 0.8347826086956521,
-        "upper_bound_exceedance_frequency": 0.11304347826086956,
+        "n": 116,
+        "coverage": 0.8362068965517241,
+        "upper_bound_exceedance_frequency": 0.11206896551724138,
         "mean_width_ft": 0.7007711580665053,
         "coverage_during_rises": 0.7446808510638298
       },
@@ -1029,16 +1029,16 @@
           "bias_ft": -0.08736297992734733
         },
         "gt_1h": {
-          "n": 40,
-          "mae_ft": 0.16588049545465616,
-          "rmse_ft": 0.24097868008097828,
-          "bias_ft": -0.07211945715007272
+          "n": 41,
+          "mae_ft": 0.16312538042050598,
+          "rmse_ft": 0.23816522134539567,
+          "bias_ft": -0.07165119670871722
         },
-        "n_with_age": 115
+        "n_with_age": 116
       },
       "observation_latency_minutes": {
-        "n": 115,
-        "median": 212.56666666666666,
+        "n": 116,
+        "median": 212.95833333333331,
         "p90": 5748.1,
         "max": 5812.766666666666
       },
@@ -1047,27 +1047,27 @@
           "hits": 0,
           "misses": 27,
           "false_alarms": 1,
-          "correct_negatives": 87,
+          "correct_negatives": 88,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.23478260869565218
+          "base_event_frequency": 0.23275862068965517
         },
         "0.50": {
           "hits": 0,
           "misses": 1,
           "false_alarms": 0,
-          "correct_negatives": 114,
+          "correct_negatives": 115,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": null,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.008695652173913044
+          "base_event_frequency": 0.008620689655172414
         },
         "1.00": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 115,
+          "correct_negatives": 116,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -1086,26 +1086,26 @@
       }
     },
     "phase5b_coastal_tidal:24h": {
-      "n": 115,
-      "mae_ft": 0.24464805041212373,
-      "rmse_ft": 0.34079794145255854,
-      "bias_ft": 0.1382230737846703,
+      "n": 116,
+      "mae_ft": 0.2426498149267235,
+      "rmse_ft": 0.3393279036169763,
+      "bias_ft": 0.13692069613044303,
       "underforecast_frequency_during_rises": 0.6382978723404256,
       "mean_underforecast_magnitude_during_rises_ft": 0.17216584692378234,
       "underforecast_p90_ft": 0.2808724598605914,
       "underforecast_max_ft": 0.38957965556936136,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 68,
-      "quiet_or_falling_mae_ft": 0.27548349377750236,
+      "quiet_or_falling_n": 69,
+      "quiet_or_falling_mae_ft": 0.27167725088370803,
       "absolute_error_p90_ft": 0.5857387277767927,
       "absolute_error_p99_ft": 1.0301801266776138,
-      "mae_persistence_ft": 0.20629710144927535,
-      "skill_vs_persistence": -0.18590154051329777,
+      "mae_persistence_ft": 0.20477729885057472,
+      "skill_vs_persistence": -0.18494489520434687,
       "intervals": {
-        "n": 115,
-        "coverage": 0.7739130434782608,
-        "upper_bound_exceedance_frequency": 0.017391304347826087,
+        "n": 116,
+        "coverage": 0.7758620689655172,
+        "upper_bound_exceedance_frequency": 0.017241379310344827,
         "mean_width_ft": 0.6129356756730298,
         "coverage_during_rises": 0.8936170212765957
       },
@@ -1117,16 +1117,16 @@
           "bias_ft": 0.13402079630403663
         },
         "gt_1h": {
-          "n": 40,
-          "mae_ft": 0.234991071464057,
-          "rmse_ft": 0.3356138771776702,
-          "bias_ft": 0.14610234406085848
+          "n": 41,
+          "mae_ft": 0.22957306323580426,
+          "rmse_ft": 0.33150183661865223,
+          "bias_ft": 0.142225390934845
         },
-        "n_with_age": 115
+        "n_with_age": 116
       },
       "observation_latency_minutes": {
-        "n": 115,
-        "median": 212.56666666666666,
+        "n": 116,
+        "median": 212.95833333333331,
         "p90": 5748.1,
         "max": 5812.766666666666
       },
@@ -1135,27 +1135,27 @@
           "hits": 14,
           "misses": 13,
           "false_alarms": 23,
-          "correct_negatives": 65,
+          "correct_negatives": 66,
           "probability_of_detection": 0.5185185185185185,
           "false_alarm_ratio": 0.6216216216216216,
           "critical_success_index": 0.28,
-          "base_event_frequency": 0.23478260869565218
+          "base_event_frequency": 0.23275862068965517
         },
         "0.50": {
           "hits": 0,
           "misses": 1,
           "false_alarms": 14,
-          "correct_negatives": 100,
+          "correct_negatives": 101,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.008695652173913044
+          "base_event_frequency": 0.008620689655172414
         },
         "1.00": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 115,
+          "correct_negatives": 116,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -1174,26 +1174,26 @@
       }
     },
     "phase5b_full_multivariable:24h": {
-      "n": 115,
-      "mae_ft": 0.25372746469876145,
-      "rmse_ft": 0.34635372946761267,
-      "bias_ft": 0.15932898917492364,
+      "n": 116,
+      "mae_ft": 0.25156408370140865,
+      "rmse_ft": 0.3448576903202789,
+      "bias_ft": 0.1579793881389832,
       "underforecast_frequency_during_rises": 0.574468085106383,
       "mean_underforecast_magnitude_during_rises_ft": 0.16916255859282783,
       "underforecast_p90_ft": 0.27447341642375855,
       "underforecast_max_ft": 0.48879586033473643,
       "rapid_rise_n": 0,
       "rapid_rise_mae_ft": null,
-      "quiet_or_falling_n": 68,
-      "quiet_or_falling_mae_ft": 0.2868914751903622,
+      "quiet_or_falling_n": 69,
+      "quiet_or_falling_mae_ft": 0.28277384901377484,
       "absolute_error_p90_ft": 0.5443859905605399,
       "absolute_error_p99_ft": 0.93087250240713,
-      "mae_persistence_ft": 0.20629710144927535,
-      "skill_vs_persistence": -0.22991289221360356,
+      "mae_persistence_ft": 0.20477729885057472,
+      "skill_vs_persistence": -0.2284764234778489,
       "intervals": {
-        "n": 115,
-        "coverage": 0.7478260869565218,
-        "upper_bound_exceedance_frequency": 0.017391304347826087,
+        "n": 116,
+        "coverage": 0.75,
+        "upper_bound_exceedance_frequency": 0.017241379310344827,
         "mean_width_ft": 0.6184023168650326,
         "coverage_during_rises": 0.8723404255319149
       },
@@ -1205,16 +1205,16 @@
           "bias_ft": 0.15572303090908918
         },
         "gt_1h": {
-          "n": 40,
-          "mae_ft": 0.2452398885799847,
-          "rmse_ft": 0.3396609480144626,
-          "bias_ft": 0.16609016092336326
+          "n": 41,
+          "mae_ft": 0.23932611737085902,
+          "rmse_ft": 0.33549345115055834,
+          "bias_ft": 0.16210687087659423
         },
-        "n_with_age": 115
+        "n_with_age": 116
       },
       "observation_latency_minutes": {
-        "n": 115,
-        "median": 212.56666666666666,
+        "n": 116,
+        "median": 212.95833333333331,
         "p90": 5748.1,
         "max": 5812.766666666666
       },
@@ -1223,27 +1223,27 @@
           "hits": 14,
           "misses": 13,
           "false_alarms": 27,
-          "correct_negatives": 61,
+          "correct_negatives": 62,
           "probability_of_detection": 0.5185185185185185,
           "false_alarm_ratio": 0.6585365853658537,
           "critical_success_index": 0.25925925925925924,
-          "base_event_frequency": 0.23478260869565218
+          "base_event_frequency": 0.23275862068965517
         },
         "0.50": {
           "hits": 0,
           "misses": 1,
           "false_alarms": 13,
-          "correct_negatives": 101,
+          "correct_negatives": 102,
           "probability_of_detection": 0.0,
           "false_alarm_ratio": 1.0,
           "critical_success_index": 0.0,
-          "base_event_frequency": 0.008695652173913044
+          "base_event_frequency": 0.008620689655172414
         },
         "1.00": {
           "hits": 0,
           "misses": 0,
           "false_alarms": 0,
-          "correct_negatives": 115,
+          "correct_negatives": 116,
           "probability_of_detection": null,
           "false_alarm_ratio": null,
           "critical_success_index": null,
@@ -1264,157 +1264,157 @@
   },
   "verification_completeness": {
     "persistence:12h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 116,
-      "verified": 116,
+      "matured": 118,
+      "verified": 118,
       "due_unverified": 0,
-      "not_yet_due": 3
+      "not_yet_due": 2
     },
     "phase5a_coastal:12h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 116,
-      "verified": 116,
+      "matured": 118,
+      "verified": 118,
       "due_unverified": 0,
-      "not_yet_due": 3
+      "not_yet_due": 2
     },
     "phase5a_maul1_only:12h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 116,
-      "verified": 116,
+      "matured": 118,
+      "verified": 118,
       "due_unverified": 0,
-      "not_yet_due": 3
+      "not_yet_due": 2
     },
     "phase5b_coastal_tidal:12h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 116,
-      "verified": 116,
+      "matured": 118,
+      "verified": 118,
       "due_unverified": 0,
-      "not_yet_due": 3
+      "not_yet_due": 2
     },
     "phase5b_full_multivariable:12h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
+      "abstained": 1,
+      "other_unavailable": 0,
+      "matured": 118,
+      "verified": 118,
+      "due_unverified": 0,
+      "not_yet_due": 2
+    },
+    "persistence:24h": {
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
       "matured": 116,
       "verified": 116,
-      "due_unverified": 0,
-      "not_yet_due": 3
-    },
-    "persistence:24h": {
-      "forecast_slots": 120,
-      "issued": 119,
-      "abstained": 1,
-      "other_unavailable": 0,
-      "matured": 115,
-      "verified": 115,
       "due_unverified": 0,
       "not_yet_due": 4
     },
     "phase5a_coastal:24h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 115,
-      "verified": 115,
+      "matured": 116,
+      "verified": 116,
       "due_unverified": 0,
       "not_yet_due": 4
     },
     "phase5a_maul1_only:24h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 115,
-      "verified": 115,
+      "matured": 116,
+      "verified": 116,
       "due_unverified": 0,
       "not_yet_due": 4
     },
     "phase5b_coastal_tidal:24h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 115,
-      "verified": 115,
+      "matured": 116,
+      "verified": 116,
       "due_unverified": 0,
       "not_yet_due": 4
     },
     "phase5b_full_multivariable:24h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 115,
-      "verified": 115,
+      "matured": 116,
+      "verified": 116,
       "due_unverified": 0,
       "not_yet_due": 4
     },
     "persistence:6h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 117,
-      "verified": 117,
+      "matured": 119,
+      "verified": 119,
       "due_unverified": 0,
-      "not_yet_due": 2
+      "not_yet_due": 1
     },
     "phase5a_coastal:6h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 117,
-      "verified": 117,
+      "matured": 119,
+      "verified": 119,
       "due_unverified": 0,
-      "not_yet_due": 2
+      "not_yet_due": 1
     },
     "phase5a_maul1_only:6h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 117,
-      "verified": 117,
+      "matured": 119,
+      "verified": 119,
       "due_unverified": 0,
-      "not_yet_due": 2
+      "not_yet_due": 1
     },
     "phase5b_coastal_tidal:6h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 117,
-      "verified": 117,
+      "matured": 119,
+      "verified": 119,
       "due_unverified": 0,
-      "not_yet_due": 2
+      "not_yet_due": 1
     },
     "phase5b_full_multivariable:6h": {
-      "forecast_slots": 120,
-      "issued": 119,
+      "forecast_slots": 121,
+      "issued": 120,
       "abstained": 1,
       "other_unavailable": 0,
-      "matured": 117,
-      "verified": 117,
+      "matured": 119,
+      "verified": 119,
       "due_unverified": 0,
-      "not_yet_due": 2
+      "not_yet_due": 1
     }
   },
-  "verification_count": 1740,
-  "revision_count": 1915,
-  "evaluation_time_utc": "2026-11-14T03:15:46Z"
+  "verification_count": 1765,
+  "revision_count": 1940,
+  "evaluation_time_utc": "2026-11-14T10:35:18Z"
 }
