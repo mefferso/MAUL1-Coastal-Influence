@@ -1,0 +1,603 @@
+{
+  "completed_at": "2026-11-18T04:43:52Z",
+  "critical_failures": [
+    "NOAA CO-OPS 8761927 wind"
+  ],
+  "receipt_file": "research/prospective-forcing-archive/receipts/20261118.jsonl",
+  "records_added": 577,
+  "records_seen": 23043,
+  "run_id": "20261118T044331Z-70d97890",
+  "schema_version": "forcing-run-1",
+  "shadow_failures": [],
+  "sources": [
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 8,
+      "critical": false,
+      "freshness_limit_seconds": 7200,
+      "newest_valid_age_seconds": 3048,
+      "provider_item_count": 2,
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:48Z",
+      "source": "NOAA AWC METAR KNEW",
+      "status": "success",
+      "url": "https://aviationweather.gov/api/data/metar?ids=KNEW&format=json&hours=2",
+      "valid_time_max": "2026-11-18T03:53:00Z"
+    },
+    {
+      "attempts": 1,
+      "count": 22616,
+      "critical": true,
+      "invalid_or_unmapped_item_count": 3,
+      "newest_valid_age_seconds": 469,
+      "provider_item_count": 5657,
+      "qc_flag_counts": {},
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:49 GMT",
+          "path": "raw/7794ab4406bfa3ff75d1b35e1e4d5ca0a0744c543b511b26a10ff4a8a1769b6b.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:49Z",
+          "sha256": "7794ab4406bfa3ff75d1b35e1e4d5ca0a0744c543b511b26a10ff4a8a1769b6b",
+          "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=wind&station=8761927&units=english&time_zone=gmt&format=json&begin_date=20261025+15%3A00&end_date=20261118+04%3A43"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:49Z",
+      "source": "NOAA CO-OPS 8761927 wind",
+      "status": "partial",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=wind&station=8761927&units=english&time_zone=gmt&format=json&begin_date=20261025+15%3A00&end_date=20261118+04%3A43",
+      "valid_time_max": "2026-11-18T04:36:00Z",
+      "valid_time_min": "2026-10-25T15:00:00Z",
+      "window_begin": "20261025 15:00",
+      "window_end": "20261118 04:43"
+    },
+    {
+      "attempts": 1,
+      "count": 67,
+      "critical": true,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 470,
+      "provider_item_count": 67,
+      "qc_flag_counts": {
+        "provider_flag:1": 39
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:50 GMT",
+          "path": "raw/5be833fc9a698e079fd58841821f791206800065f7700b2a5d35b1d61172648d.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:50Z",
+          "sha256": "5be833fc9a698e079fd58841821f791206800065f7700b2a5d35b1d61172648d",
+          "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&station=8761927&units=english&time_zone=gmt&format=json&begin_date=20261117+22%3A00&end_date=20261118+04%3A43&datum=MLLW"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:50Z",
+      "source": "NOAA CO-OPS 8761927 water_level",
+      "status": "success",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&station=8761927&units=english&time_zone=gmt&format=json&begin_date=20261117+22%3A00&end_date=20261118+04%3A43&datum=MLLW",
+      "valid_time_max": "2026-11-18T04:36:00Z",
+      "valid_time_min": "2026-11-17T22:00:00Z",
+      "window_begin": "20261117 22:00",
+      "window_end": "20261118 04:43"
+    },
+    {
+      "attempts": 1,
+      "count": 6,
+      "critical": true,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": null,
+      "provider_item_count": 6,
+      "qc_flag_counts": {},
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:50 GMT",
+          "path": "raw/38f84b0c188ffaae43a2a509fb936f772455cc75c2c3400f1e77168feeaa2d5f.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:50Z",
+          "sha256": "38f84b0c188ffaae43a2a509fb936f772455cc75c2c3400f1e77168feeaa2d5f",
+          "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&station=8761927&units=english&time_zone=gmt&format=json&date=latest&datum=MLLW"
+        }
+      ],
+      "request_window": "latest",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:50Z",
+      "source": "NOAA CO-OPS 8761927 predictions",
+      "status": "success",
+      "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&station=8761927&units=english&time_zone=gmt&format=json&date=latest&datum=MLLW",
+      "valid_time_max": "2026-11-18T04:42:00Z",
+      "valid_time_min": "2026-11-18T04:12:00Z",
+      "window_begin": null,
+      "window_end": null
+    },
+    {
+      "attempts": 1,
+      "category": "core",
+      "count": 29,
+      "critical": true,
+      "hydrologic_role": null,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 1730,
+      "parameters_returned": [
+        "00060"
+      ],
+      "provider_item_count": 29,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 29
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:50 GMT",
+          "path": "raw/273c3e48ccad6621a811416c4587c3f8014a13a6a6e26728a879b321f90a3dd6.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:50Z",
+          "sha256": "273c3e48ccad6621a811416c4587c3f8014a13a6a6e26728a879b321f90a3dd6",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378500&parameter_code=00060&limit=10000&f=json&time=2026-11-17T21%3A15%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:50Z",
+      "source": "USGS DENL1 USGS-07378500 parameter 00060",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378500&parameter_code=00060&limit=10000&f=json&time=2026-11-17T21%3A15%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:15:00Z",
+      "valid_time_min": "2026-11-17T21:15:00Z",
+      "window_begin": "2026-11-17T21:15:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "core",
+      "count": 29,
+      "critical": true,
+      "hydrologic_role": null,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 1730,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 29,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 29
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:50 GMT",
+          "path": "raw/71317ad97bf1d1c1b40ef775fa460b17632419ab1680944cdf8755938637a7eb.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:50Z",
+          "sha256": "71317ad97bf1d1c1b40ef775fa460b17632419ab1680944cdf8755938637a7eb",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378500&parameter_code=00065&limit=10000&f=json&time=2026-11-17T21%3A15%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:50Z",
+      "source": "USGS DENL1 USGS-07378500 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378500&parameter_code=00065&limit=10000&f=json&time=2026-11-17T21%3A15%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:15:00Z",
+      "valid_time_min": "2026-11-17T21:15:00Z",
+      "window_begin": "2026-11-17T21:15:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "core",
+      "count": 25,
+      "critical": true,
+      "hydrologic_role": null,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2630,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 25,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 25
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:50 GMT",
+          "path": "raw/9d063f0fcc324eada991967b4fd8323dad19267bf2d6d16badbc5a958234c63e.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:50Z",
+          "sha256": "9d063f0fcc324eada991967b4fd8323dad19267bf2d6d16badbc5a958234c63e",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-301200090072400&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:50Z",
+      "source": "USGS MDLL1 USGS-301200090072400 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-301200090072400&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:00:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "core",
+      "count": 24,
+      "critical": true,
+      "hydrologic_role": null,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2631,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 24,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 24
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:51 GMT",
+          "path": "raw/36177798d6cea1316a388c7e0551123cf1d2cf4eef25258318a13b360907f55d.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:51Z",
+          "sha256": "36177798d6cea1316a388c7e0551123cf1d2cf4eef25258318a13b360907f55d",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07380215&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:51Z",
+      "source": "USGS MAUL1 USGS-07380215 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07380215&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:15:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "core",
+      "count": 24,
+      "critical": false,
+      "hydrologic_role": null,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2631,
+      "parameters_returned": [
+        "63160"
+      ],
+      "provider_item_count": 24,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 24
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:51 GMT",
+          "path": "raw/77b36a1a2305ebba2717eb443b8a42355ee0b9fb15dde3705f9985529f6d40e5.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:51Z",
+          "sha256": "77b36a1a2305ebba2717eb443b8a42355ee0b9fb15dde3705f9985529f6d40e5",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07380215&parameter_code=63160&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:51Z",
+      "source": "USGS MAUL1 USGS-07380215 parameter 63160",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07380215&parameter_code=63160&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:15:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 28,
+      "critical": false,
+      "hydrologic_role": null,
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 832,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 28,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 28
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/611bf1107e9ec998d4e5bdb75020e5a92bacf85905fee4f70f4144dccc357756.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "611bf1107e9ec998d4e5bdb75020e5a92bacf85905fee4f70f4144dccc357756",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-073802302&parameter_code=00065&limit=10000&f=json&time=2026-11-17T21%3A45%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS MCHL1-USGS USGS-073802302 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-073802302&parameter_code=00065&limit=10000&f=json&time=2026-11-17T21%3A45%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:30:00Z",
+      "valid_time_min": "2026-11-17T21:45:00Z",
+      "window_begin": "2026-11-17T21:45:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 25,
+      "critical": false,
+      "hydrologic_role": "point precipitation near the MAUL1 lower-basin outlet",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00045"
+      ],
+      "provider_item_count": 25,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 25
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/4149b9fdf30379ae1b6ebcc1c43c5a7ddb0811924d13e2ed373271cdf5109653.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "4149b9fdf30379ae1b6ebcc1c43c5a7ddb0811924d13e2ed373271cdf5109653",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-301828090363100&parameter_code=00045&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-301828090363100 USGS-301828090363100 parameter 00045",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-301828090363100&parameter_code=00045&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:00:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 25,
+      "critical": false,
+      "hydrologic_role": "urban tributary stage and temporary point precipitation",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00045"
+      ],
+      "provider_item_count": 25,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 25
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/6f2186390a48b9aac2acf587343e785baa7b21e94d2407f33d272d3e71f2ddd2.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "6f2186390a48b9aac2acf587343e785baa7b21e94d2407f33d272d3e71f2ddd2",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07379960&parameter_code=00045&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-07379960 USGS-07379960 parameter 00045",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07379960&parameter_code=00045&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:00:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 25,
+      "critical": false,
+      "hydrologic_role": "urban tributary stage and temporary point precipitation",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 25,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 25
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/d0678eb0be35e9083b89977158d6aa21adca91a3f1efc3135235280466722ff0.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "d0678eb0be35e9083b89977158d6aa21adca91a3f1efc3135235280466722ff0",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07379960&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-07379960 USGS-07379960 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07379960&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:00:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 29,
+      "critical": false,
+      "hydrologic_role": "tributary stage and temporary point precipitation",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00045"
+      ],
+      "provider_item_count": 29,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 29
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/90e00b91594f5bc90d23847abda35f07cf64d8161330580697fa77e91d7af64d.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "90e00b91594f5bc90d23847abda35f07cf64d8161330580697fa77e91d7af64d",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378810&parameter_code=00045&limit=10000&f=json&time=2026-11-17T21%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-07378810 USGS-07378810 parameter 00045",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378810&parameter_code=00045&limit=10000&f=json&time=2026-11-17T21%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T21:00:00Z",
+      "window_begin": "2026-11-17T21:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 25,
+      "critical": false,
+      "hydrologic_role": "tributary stage and temporary point precipitation",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 25,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 25
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/097b43dabf0906a6861e861efbd3c09ad839be92fd05280dd240890c09fdc385.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "097b43dabf0906a6861e861efbd3c09ad839be92fd05280dd240890c09fdc385",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378810&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-07378810 USGS-07378810 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378810&parameter_code=00065&limit=10000&f=json&time=2026-11-17T22%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T22:00:00Z",
+      "window_begin": "2026-11-17T22:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 29,
+      "critical": false,
+      "hydrologic_role": "downstream boundary/backwater stage and temporary point precipitation",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00045"
+      ],
+      "provider_item_count": 29,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 29
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/115a5e7bd264c15c4993ecd02f2d92eaf13ddb5db618cebfb21b978dc6fcc82e.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "115a5e7bd264c15c4993ecd02f2d92eaf13ddb5db618cebfb21b978dc6fcc82e",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378746&parameter_code=00045&limit=10000&f=json&time=2026-11-17T21%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-07378746 USGS-07378746 parameter 00045",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378746&parameter_code=00045&limit=10000&f=json&time=2026-11-17T21%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T21:00:00Z",
+      "window_begin": "2026-11-17T21:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    },
+    {
+      "attempts": 1,
+      "category": "shadow",
+      "count": 29,
+      "critical": false,
+      "hydrologic_role": "downstream boundary/backwater stage and temporary point precipitation",
+      "invalid_or_unmapped_item_count": 0,
+      "newest_valid_age_seconds": 2632,
+      "parameters_returned": [
+        "00065"
+      ],
+      "provider_item_count": 29,
+      "qc_flag_counts": {
+        "approval_status:Provisional": 29
+      },
+      "raw_responses": [
+        {
+          "attempts": 1,
+          "http_date": "Wed, 18 Nov 2026 04:43:52 GMT",
+          "path": "raw/b2414d3dff4bb3c0d75602e61522a0865a06b48cd0a3a665d86242a6c6015960.json",
+          "response_code": 200,
+          "retrieved_at": "2026-11-18T04:43:52Z",
+          "sha256": "b2414d3dff4bb3c0d75602e61522a0865a06b48cd0a3a665d86242a6c6015960",
+          "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378746&parameter_code=00065&limit=10000&f=json&time=2026-11-17T21%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z"
+        }
+      ],
+      "request_window": "history",
+      "response_code": 200,
+      "retrieved_at": "2026-11-18T04:43:52Z",
+      "source": "USGS USGS-07378746 USGS-07378746 parameter 00065",
+      "status": "success",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items?monitoring_location_id=USGS-07378746&parameter_code=00065&limit=10000&f=json&time=2026-11-17T21%3A00%3A00Z%2F2026-11-18T04%3A43%3A31Z",
+      "valid_time_max": "2026-11-18T04:00:00Z",
+      "valid_time_min": "2026-11-17T21:00:00Z",
+      "window_begin": "2026-11-17T21:00:00Z",
+      "window_end": "2026-11-18T04:43:31Z"
+    }
+  ],
+  "started_at": "2026-11-18T04:43:31Z"
+}
