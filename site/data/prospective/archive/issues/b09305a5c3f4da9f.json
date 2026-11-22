@@ -1,0 +1,306 @@
+{
+  "actual_issue_time_utc": "2026-11-22T03:16:12Z",
+  "feature_anchor_time_utc": "2026-11-22T03:00:00Z",
+  "forecast_snapshot_sha256": "43e12326d791825ec09f1253ee4532d7d6e2fd98625be9fd6e1980e715e78286",
+  "forecasts": {
+    "12": {
+      "effective_lead_hours": 11.73,
+      "models": {
+        "persistence": {
+          "reason": "MAUL1 00065 missing or older than 2 hours",
+          "status": "abstained"
+        },
+        "phase5a_coastal": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5a_maul1_only": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5b_coastal_tidal": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5b_full_multivariable": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        }
+      },
+      "valid_time_utc": "2026-11-22T15:00:00Z"
+    },
+    "24": {
+      "effective_lead_hours": 23.73,
+      "models": {
+        "persistence": {
+          "reason": "MAUL1 00065 missing or older than 2 hours",
+          "status": "abstained"
+        },
+        "phase5a_coastal": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5a_maul1_only": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5b_coastal_tidal": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5b_full_multivariable": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        }
+      },
+      "valid_time_utc": "2026-11-23T03:00:00Z"
+    },
+    "6": {
+      "effective_lead_hours": 5.73,
+      "models": {
+        "persistence": {
+          "reason": "MAUL1 00065 missing or older than 2 hours",
+          "status": "abstained"
+        },
+        "phase5a_coastal": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5a_maul1_only": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5b_coastal_tidal": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        },
+        "phase5b_full_multivariable": {
+          "reason": "eligible recent MAUL1 native stage unavailable",
+          "status": "abstained"
+        }
+      },
+      "valid_time_utc": "2026-11-22T09:00:00Z"
+    }
+  },
+  "issuance_id": "b09305a5c3f4da9f",
+  "latest_maul1_native_stage_ft": null,
+  "mode": "authentic",
+  "model_anchor_time_utc": "2026-11-22T03:00:00Z",
+  "nominal_issue_time_utc": "2026-11-22T02:17:00Z",
+  "run_id": "44979744372-1",
+  "schema": "phase6.forecast.v2",
+  "snapshot": {
+    "availability": {
+      "DENL1": {
+        "age_hours": 1.02,
+        "maximum_age_hours": 3,
+        "observation": {
+          "age_seconds_at_retrieval": 3666.0,
+          "datum": "native",
+          "eligible_completed_hour": true,
+          "original_source_time": "2026-11-22T02:15:00Z",
+          "parameter": "discharge",
+          "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=07378500&parameterCd=00060%2C00065&period=P4D&siteStatus=all",
+          "qc": [
+            "P"
+          ],
+          "response_sha256": "b50332c414528873b970070a9415e2013c2876d592c5c1a94086eb5850f57ee3",
+          "retrieved_utc": "2026-11-22T03:16:06Z",
+          "source": "USGS NWIS IV",
+          "station": "DENL1",
+          "units": "cfs",
+          "valid_time_utc": "2026-11-22T02:15:00Z",
+          "value": 311.0
+        },
+        "status": "eligible"
+      },
+      "MAUL1_00065": {
+        "model_feature_available": false,
+        "observation": null,
+        "status": "missing_or_stale"
+      },
+      "MAUL1_63160": {
+        "maximum_age_hours": 2,
+        "observation": null,
+        "status": "missing"
+      },
+      "MCHL1": {
+        "maximum_age_hours": 3,
+        "observation": null,
+        "status": "missing"
+      },
+      "MDLL1": {
+        "age_hours": 0.52,
+        "maximum_age_hours": 3,
+        "observation": {
+          "age_seconds_at_retrieval": 1871.0,
+          "datum": "gage height",
+          "eligible_completed_hour": true,
+          "original_source_time": "2026-11-22T02:45:00Z",
+          "parameter": "stage",
+          "provenance_url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=301200090072400&parameterCd=00065&period=P4D&siteStatus=all",
+          "qc": [
+            "P"
+          ],
+          "response_sha256": "1cf810604e17adc9e47b46f21c4e1d3c30b278e59257d9392850fa18ae6dcfa6",
+          "retrieved_utc": "2026-11-22T03:16:11Z",
+          "source": "USGS NWIS IV",
+          "station": "MDLL1",
+          "units": "ft",
+          "valid_time_utc": "2026-11-22T02:45:00Z",
+          "value": 1.18
+        },
+        "status": "eligible"
+      },
+      "NWCL1": {
+        "age_hours": 1.17,
+        "maximum_age_hours": 3,
+        "observation": {
+          "age_seconds_at_retrieval": 4211.0,
+          "datum": "MLLW",
+          "eligible_completed_hour": true,
+          "original_source_time": "2026-11-22T02:06:00Z",
+          "parameter": "water_level",
+          "provenance_url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8761927&begin_date=20261118&end_date=20261122&time_zone=gmt&units=english&format=json&application=MAUL1-research&product=water_level&datum=MLLW&interval=h",
+          "qc": "0,0,0,0",
+          "response_sha256": "9de1902f00c1b8f0f2c7dd6dc9b962b9eed4d8e275cc38da685678623c35671d",
+          "retrieved_utc": "2026-11-22T03:16:11Z",
+          "source": "NOAA CO-OPS 8761927",
+          "station": "NWCL1",
+          "units": "ft",
+          "valid_time_utc": "2026-11-22T02:06:00Z",
+          "value": 1.358
+        },
+        "status": "eligible"
+      }
+    },
+    "feature_diagnostics": {
+      "expected_latest_bin_utc": "2026-11-22T02:00:00Z",
+      "mchl1_shadow": {
+        "candidate_observation_count": 381,
+        "features": {
+          "mchl1_stage_change_24h_native_ft": -0.37416666666666676,
+          "mchl1_stage_change_6h_native_ft": 0.03583333333333316,
+          "mchl1_stage_change_72h_native_ft": -0.8266666666666669
+        },
+        "forecast_eligible": false,
+        "latest_completed_bin_present": true,
+        "latest_completed_bin_utc": "2026-11-22T02:00:00Z",
+        "note": "Shadow-only native-stage changes, no source QC approval or model inference"
+      },
+      "missing_features": {
+        "coastal": [
+          "nwcl1_residual_change_12h_ft",
+          "nwcl1_residual_change_6h_ft"
+        ],
+        "river": [
+          "mchl1_stage_change_24h_native_ft",
+          "mchl1_stage_change_6h_native_ft",
+          "mchl1_stage_change_72h_native_ft"
+        ],
+        "target": [
+          "maul1_change_12h_ft",
+          "maul1_change_1h_ft",
+          "maul1_change_24h_ft",
+          "maul1_change_3h_ft",
+          "maul1_change_6h_ft",
+          "maul1_change_72h_ft",
+          "maul1_sd_24h_ft",
+          "maul1_slope_6h_ft_per_h",
+          "maul1_stage_native_ft"
+        ]
+      },
+      "model_anchor_utc": "2026-11-22T03:00:00Z",
+      "stations": {
+        "DENL1": {
+          "expected_bin_present": true,
+          "lag_from_expected_hours": 0.0,
+          "latest_eligible_bin_utc": "2026-11-22T02:00:00Z"
+        },
+        "MAUL1": {
+          "expected_bin_present": false,
+          "lag_from_expected_hours": null,
+          "latest_eligible_bin_utc": null
+        },
+        "MDLL1": {
+          "expected_bin_present": true,
+          "lag_from_expected_hours": 0.0,
+          "latest_eligible_bin_utc": "2026-11-22T02:00:00Z"
+        },
+        "NWCL1": {
+          "expected_bin_present": true,
+          "lag_from_expected_hours": 0.0,
+          "latest_eligible_bin_utc": "2026-11-22T02:00:00Z"
+        },
+        "NWCL1_residual": {
+          "expected_bin_present": true,
+          "lag_from_expected_hours": 0.0,
+          "latest_eligible_bin_utc": "2026-11-22T02:00:00Z"
+        },
+        "NWCL1_wind_u": {
+          "expected_bin_present": true,
+          "lag_from_expected_hours": 0.0,
+          "latest_eligible_bin_utc": "2026-11-22T02:00:00Z"
+        },
+        "NWCL1_wind_v": {
+          "expected_bin_present": true,
+          "lag_from_expected_hours": 0.0,
+          "latest_eligible_bin_utc": "2026-11-22T02:00:00Z"
+        }
+      }
+    },
+    "features": {
+      "denl1_log_change_12h": -0.001606426048273768,
+      "denl1_log_change_24h": -0.001606426048273768,
+      "denl1_log_change_6h": 0.014575156802967726,
+      "denl1_log_change_72h": -0.008006447893741608,
+      "denl1_log_discharge": 5.739792912179234,
+      "denl1_stage_change_24h_ft": -0.002500000000001279,
+      "denl1_stage_change_6h_ft": 0.019999999999999574,
+      "diurnal_cos": 0.6554001709089154,
+      "diurnal_sin": 0.7552818122876814,
+      "maul1_change_12h_ft": null,
+      "maul1_change_1h_ft": null,
+      "maul1_change_24h_ft": null,
+      "maul1_change_3h_ft": null,
+      "maul1_change_6h_ft": null,
+      "maul1_change_72h_ft": null,
+      "maul1_sd_24h_ft": null,
+      "maul1_slope_6h_ft_per_h": null,
+      "maul1_stage_native_ft": null,
+      "mchl1_stage_change_24h_native_ft": null,
+      "mchl1_stage_change_6h_native_ft": null,
+      "mchl1_stage_change_72h_native_ft": null,
+      "mdll1_stage_change_24h_ft": -0.2124999999999999,
+      "mdll1_stage_change_6h_ft": 0.19250000000000012,
+      "mdll1_stage_change_72h_ft": -0.71,
+      "nwcl1_residual_change_12h_ft": null,
+      "nwcl1_residual_change_24h_ft": -0.2123571428571429,
+      "nwcl1_residual_change_6h_ft": null,
+      "nwcl1_residual_mllw_ft": 1.1175000000000002,
+      "nwcl1_wind_directional_persistence_6h": 0.39445347440259276,
+      "nwcl1_wind_u_knots": 0.1037073746411267,
+      "nwcl1_wind_u_mean_24h_knots": -3.112983085719344,
+      "nwcl1_wind_u_mean_6h_knots": -0.6110448729353495,
+      "nwcl1_wind_v_knots": 2.2468332132814473,
+      "nwcl1_wind_v_mean_24h_knots": -2.0012133240901857,
+      "nwcl1_wind_v_mean_6h_knots": -0.0454341263182998,
+      "phase4_coastal_present": 0.0,
+      "phase4_coastal_unknown": 0.0,
+      "phase4_river_present": 0.0,
+      "phase4_river_unknown": 0.0,
+      "semidiurnal_cos": 0.8771826024166617,
+      "semidiurnal_sin": -0.48015693478021615,
+      "spring_neap_cos": -0.4473901725732553,
+      "spring_neap_sin": 0.8943388806738041
+    },
+    "maul1_stage_native_ft": null,
+    "model_artifact_sha256": "c98d96c83e80110aa03165929f6eb4355bae5a38e590e8599a79f63ae0652a72",
+    "source_snapshot_ref": {
+      "encoding": "gzip+json",
+      "path": "../snapshots/7a61afa64aa495a03c05bae0d2bfc017e0d0e389e8352d08d74874c2bd056c5a.json.gz",
+      "sha256": "7a61afa64aa495a03c05bae0d2bfc017e0d0e389e8352d08d74874c2bd056c5a"
+    }
+  },
+  "valid_time_basis": "feature_anchor_plus_horizon"
+}
